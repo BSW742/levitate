@@ -1,0 +1,2236 @@
+---
+// Levitate - Power hour task board that syncs across devices
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Levitate</title>
+
+  <!-- PWA -->
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Levitate">
+
+  <script>
+    const theme = localStorage.getItem('theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+  </script>
+
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #1a1a1a;
+      --text-muted: #666666;
+      --border: #e5e5e5;
+      --card-bg: #f5f5f5;
+    }
+    [data-theme="dark"] {
+      --bg: #0a0a0a;
+      --text: #fafafa;
+      --text-muted: #a1a1a1;
+      --border: #262626;
+      --card-bg: #171717;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+<style is:global>
+  body:has(.levitate) header,
+  body:has(.levitate) footer {
+    display: none;
+  }
+
+  body:has(.levitate) .container {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  #app {
+    height: 100vh;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .levitate {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+  }
+
+  /* Top bar */
+  .lev-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .lev-brand {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .lev-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #22c55e, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .lev-tagline {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    padding-left: 1rem;
+    border-left: 1px solid var(--border);
+  }
+
+  /* Power Hour Timer */
+  .power-hour-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .power-hour-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+  }
+
+  .power-hour-time {
+    font-size: 1.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(135deg, #22c55e, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .power-hour-time.urgent {
+    background: linear-gradient(135deg, #f97316, #ef4444);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: pulse-urgent 1s ease-in-out infinite;
+  }
+
+  .power-hour-time.paused {
+    opacity: 0.5;
+  }
+
+  @keyframes pulse-urgent {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  .power-hour-bar {
+    width: 120px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .power-hour-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #3b82f6, #8b5cf6);
+    border-radius: 3px;
+    transition: width 1s linear;
+  }
+
+  .power-hour-controls {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .power-hour-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .power-hour-btn:hover {
+    background: var(--border);
+  }
+
+  .power-hour-btn.active {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: white;
+  }
+
+  .theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+    border-radius: 8px;
+  }
+
+  .theme-toggle:hover {
+    color: var(--text);
+    background: var(--card-bg);
+  }
+
+  [data-theme="light"] .moon-icon,
+  [data-theme="dark"] .sun-icon {
+    display: none;
+  }
+
+  /* Objective Switcher */
+  .objective-switcher {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .objective-nav-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+  }
+  .objective-nav-btn:hover { opacity: 1; }
+
+  .objective-pills {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 0;
+    flex: 1;
+    overflow-x: auto;
+  }
+
+  .objective-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    border: 2px solid transparent;
+    background: var(--card-bg);
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .objective-pill:hover { color: var(--text); }
+  .objective-pill.active {
+    border-color: var(--obj-color, #8b5cf6);
+    color: var(--text);
+    background: color-mix(in srgb, var(--obj-color, #8b5cf6) 15%, var(--card-bg));
+  }
+  .objective-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--obj-color, #8b5cf6);
+  }
+  .objective-count {
+    background: var(--border);
+    padding: 0.125rem 0.5rem;
+    border-radius: 10px;
+    font-size: 0.7rem;
+  }
+
+  .objective-add-btn {
+    background: none;
+    border: 2px dashed var(--border);
+    color: var(--text-muted);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .objective-add-btn:hover {
+    border-color: var(--text-muted);
+    color: var(--text);
+  }
+
+  .dashboard-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    margin-left: auto;
+    transition: all 0.15s;
+  }
+  .dashboard-btn:hover {
+    background: var(--card-bg);
+    color: var(--text);
+  }
+
+  /* Dashboard Panel */
+  .dashboard-panel {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    width: 400px;
+    max-width: 90vw;
+    height: 100vh;
+    background: var(--bg);
+    border-left: 1px solid var(--border);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    transition: right 0.3s ease;
+  }
+  .dashboard-panel.open { right: 0; }
+
+  .dashboard-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .dashboard-overlay.open { opacity: 1; pointer-events: auto; }
+
+  .dashboard-header {
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .dashboard-title { font-size: 1.125rem; font-weight: 600; }
+  .dashboard-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
+  .dashboard-content {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+  }
+
+  .objective-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .objective-card:hover { border-color: var(--text-muted); }
+
+  .objective-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .objective-card-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .objective-card-name {
+    font-weight: 600;
+    flex: 1;
+  }
+  .objective-card-actions {
+    display: flex;
+    gap: 0.25rem;
+  }
+  .objective-card-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    font-size: 0.875rem;
+  }
+  .objective-card-btn:hover { color: var(--text); }
+
+  .objective-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .objective-progress-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .objective-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+  }
+  .objective-progress-text {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    min-width: 50px;
+    text-align: right;
+  }
+
+  .color-picker {
+    display: flex;
+    gap: 0.375rem;
+    margin-top: 0.75rem;
+  }
+  .color-option {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .color-option:hover { transform: scale(1.1); }
+  .color-option.selected { border-color: var(--text); }
+
+  .add-objective-card {
+    background: transparent;
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .add-objective-card:hover {
+    border-color: var(--text-muted);
+    color: var(--text);
+  }
+
+  /* Kanban board */
+  .kanban {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    overflow: hidden;
+  }
+
+  .kanban-column {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .kanban-column.drag-over {
+    border-color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.05);
+  }
+
+  .column-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .column-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .column-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .column-count {
+    background: var(--border);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 10px;
+  }
+
+  .total-time-done {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    background: var(--border);
+  }
+
+  [data-theme="dark"] .total-time-done {
+    color: #22c55e;
+    background: transparent;
+    text-shadow: 0 0 10px #22c55e;
+  }
+
+  .column-cards {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    margin-right: -0.5rem;
+  }
+
+  .column-cards::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .column-cards::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .column-cards::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+  }
+
+  .column-cards::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
+
+  /* Cards */
+  .card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    cursor: grab;
+    transition: all 0.2s;
+    position: relative;
+  }
+
+  .card:hover {
+    border-color: #8b5cf6;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15);
+  }
+
+  .card:active {
+    cursor: grabbing;
+  }
+
+  .card.dragging {
+    opacity: 0.5;
+    transform: rotate(3deg);
+  }
+
+  .card-text {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .card-time {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .card-icon {
+    margin-right: 0.25rem;
+  }
+
+  /* Subtask styling */
+  .card.subtask {
+    border-left: 3px solid var(--text-muted);
+    margin-left: 1rem;
+  }
+
+  .card.has-subtasks {
+    border-left: 3px solid #8b5cf6;
+  }
+
+  .card.blocked {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .subtask-progress {
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .subtask-progress-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .subtask-progress-fill {
+    height: 100%;
+    background: #8b5cf6;
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+
+  .subtask-progress-text {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+  }
+
+  .subtask-btn {
+    opacity: 0;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: all 0.2s;
+    font-size: 0.75rem;
+  }
+
+  .card:hover .subtask-btn {
+    opacity: 1;
+  }
+
+  .subtask-btn:hover {
+    color: var(--text);
+  }
+
+  /* Editing */
+  .card-edit-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: inherit;
+    resize: none;
+    min-height: 60px;
+  }
+
+  .card-edit-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .card-edit-save,
+  .card-edit-cancel {
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    border: none;
+  }
+
+  .card-edit-save {
+    background: #8b5cf6;
+    color: white;
+  }
+
+  .card-edit-cancel {
+    background: var(--card-bg);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  /* Add card form */
+  .add-card-form {
+    margin-top: auto;
+    padding-top: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .add-card-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: transparent;
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .add-card-btn:hover {
+    border-color: var(--text-muted);
+    color: var(--text);
+  }
+
+  .add-card-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid #8b5cf6;
+    border-radius: 8px;
+    padding: 0.75rem;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: inherit;
+    resize: none;
+    min-height: 60px;
+  }
+
+  .add-card-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+  }
+
+  .add-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .add-card-submit {
+    flex: 1;
+    padding: 0.5rem;
+    background: #8b5cf6;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .add-card-submit:hover {
+    background: #7c3aed;
+  }
+
+  .add-card-cancel {
+    padding: 0.5rem 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  .empty-column {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 2rem 1rem;
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+  }
+
+  /* Bulk paste modal */
+  .bulk-paste-modal,
+  .subtask-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .bulk-paste-content,
+  .subtask-modal-content {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .bulk-paste-header,
+  .subtask-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .bulk-paste-title,
+  .subtask-modal-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  .bulk-paste-close {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+
+  .bulk-paste-hint {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .bulk-paste-textarea {
+    width: 100%;
+    min-height: 150px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: inherit;
+    resize: vertical;
+  }
+
+  .bulk-paste-preview {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .bulk-paste-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    justify-content: flex-end;
+  }
+
+  .bulk-paste-cancel {
+    padding: 0.5rem 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .bulk-paste-submit {
+    padding: 0.5rem 1.5rem;
+    background: #8b5cf6;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-weight: 500;
+  }
+
+  .bulk-paste-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .bulk-paste-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+
+  .bulk-paste-btn:hover {
+    opacity: 1;
+  }
+
+  .subtask-modal-parent {
+    background: var(--card-bg);
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+  }
+
+  .icon-picker {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .icon-option {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card-bg);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .icon-option:hover {
+    border-color: var(--text-muted);
+  }
+
+  .icon-option.selected {
+    border-color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.1);
+  }
+
+  /* Confetti */
+  .confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    top: -10px;
+    border-radius: 2px;
+    animation: confetti-fall 3s ease-out forwards;
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  @keyframes confetti-fall {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh) rotate(720deg);
+      opacity: 0;
+    }
+  }
+
+  .card.celebrate {
+    animation: celebrate-glow 1.5s ease;
+  }
+
+  @keyframes celebrate-glow {
+    0%, 100% { box-shadow: none; }
+    50% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.5); }
+  }
+
+  .card.pulse-start {
+    animation: pulse-start 0.8s ease;
+  }
+
+  @keyframes pulse-start {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
+  }
+
+  /* Mobile */
+  .mobile-pill-nav {
+    display: none;
+  }
+
+  .mobile-move-btns {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    .kanban {
+      grid-template-columns: 1fr;
+      padding: 0.5rem;
+    }
+
+    .kanban-column {
+      display: none;
+    }
+
+    .kanban-column.active {
+      display: flex;
+    }
+
+    .mobile-pill-nav {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+
+    .pill-btn {
+      flex: 1;
+      padding: 0.625rem 1rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.375rem;
+      transition: all 0.15s;
+    }
+
+    .pill-btn.active {
+      background: #8b5cf6;
+      border-color: #8b5cf6;
+      color: white;
+    }
+
+    .pill-count {
+      background: rgba(255,255,255,0.2);
+      padding: 0.125rem 0.5rem;
+      border-radius: 10px;
+      font-size: 0.7rem;
+    }
+
+    .lev-topbar {
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+    }
+
+    .lev-tagline {
+      display: none;
+    }
+
+    .power-hour-container {
+      order: 3;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .mobile-move-btns {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .move-btn {
+      flex: 1;
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: none;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .move-btn.move-left {
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .move-btn.move-right {
+      background: #22c55e;
+      color: white;
+    }
+
+    .move-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .card {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+</style>
+
+<script>
+  const WORKER_URL = 'https://loom-upload.ben-6a6.workers.dev';
+  const R2_BASE = 'https://pub-17ea8d32c4a94a5fbc8eb9a70e6047a8.r2.dev';
+
+  interface Card {
+    id: string;
+    text: string;
+    createdAt: number;
+    startedAt?: number;
+    timeInDoing?: number;
+    parentId?: string;
+    icon?: string;
+    objectiveId?: string;
+  }
+
+  interface Objective {
+    id: string;
+    name: string;
+    color: string;
+  }
+
+  interface BoardState {
+    objectives: Objective[];
+    activeObjectiveId: string | null;
+    columns: {
+      todo: Card[];
+      doing: Card[];
+      done: Card[];
+    };
+  }
+
+  interface PowerHourState {
+    duration: number; // in seconds (default 3600 = 1 hour)
+    remaining: number; // seconds remaining
+    running: boolean;
+    startedAt: number | null;
+  }
+
+  const OBJECTIVE_COLORS = ['#8b5cf6', '#ec4899', '#f97316', '#22c55e', '#3b82f6', '#eab308'];
+
+  const STORAGE_KEY = 'levitate-board';
+  const POWER_HOUR_KEY = 'levitate-power-hour';
+  let syncInProgress = false;
+
+  const WELCOME_TASK: Card = {
+    id: 'welcome-task',
+    text: 'Welcome to Levitate! Start a Power Hour and smash through your tasks.',
+    createdAt: Date.now()
+  };
+
+  function createFreshBoard(): BoardState {
+    const defaultObjective: Objective = { id: 'default', name: 'General', color: '#8b5cf6' };
+    return {
+      objectives: [defaultObjective],
+      activeObjectiveId: 'default',
+      columns: {
+        todo: [{ ...WELCOME_TASK, id: 'welcome-' + Date.now(), createdAt: Date.now(), objectiveId: 'default' }],
+        doing: [],
+        done: []
+      }
+    };
+  }
+
+  function createFreshPowerHour(): PowerHourState {
+    return {
+      duration: 3600,
+      remaining: 3600,
+      running: false,
+      startedAt: null
+    };
+  }
+
+  function migrateBoard(board: BoardState): BoardState {
+    if (!board.objectives) {
+      const defaultObjective: Objective = { id: 'default', name: 'General', color: '#8b5cf6' };
+      board.objectives = [defaultObjective];
+      board.activeObjectiveId = 'default';
+      ['todo', 'doing', 'done'].forEach(col => {
+        board.columns[col as keyof BoardState['columns']].forEach(card => {
+          if (!card.objectiveId) card.objectiveId = 'default';
+        });
+      });
+    }
+    return board;
+  }
+
+  function loadBoardFromLocal(): BoardState {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored) as BoardState;
+      return migrateBoard(parsed);
+    }
+    return createFreshBoard();
+  }
+
+  function loadPowerHour(): PowerHourState {
+    const stored = localStorage.getItem(POWER_HOUR_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored) as PowerHourState;
+      // Recalculate remaining time if it was running
+      if (parsed.running && parsed.startedAt) {
+        const elapsed = Math.floor((Date.now() - parsed.startedAt) / 1000);
+        parsed.remaining = Math.max(0, parsed.duration - elapsed);
+        if (parsed.remaining === 0) {
+          parsed.running = false;
+        }
+      }
+      return parsed;
+    }
+    return createFreshPowerHour();
+  }
+
+  async function loadBoardFromR2(): Promise<BoardState | null> {
+    try {
+      const response = await fetch(`${R2_BASE}/levitate-board.json?t=${Date.now()}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data;
+      }
+    } catch (e) {
+      console.log('Failed to load from R2');
+    }
+    return null;
+  }
+
+  async function loadBoard(): Promise<BoardState> {
+    const r2Board = await loadBoardFromR2();
+    if (r2Board) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(r2Board));
+      return migrateBoard(r2Board);
+    }
+    return loadBoardFromLocal();
+  }
+
+  function saveBoard(boardState: BoardState): void {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(boardState));
+    syncToR2(boardState);
+  }
+
+  function savePowerHour(powerHour: PowerHourState): void {
+    localStorage.setItem(POWER_HOUR_KEY, JSON.stringify(powerHour));
+  }
+
+  let syncTimeout: number | null = null;
+  function syncToR2(boardState: BoardState): void {
+    if (syncTimeout) clearTimeout(syncTimeout);
+    syncTimeout = window.setTimeout(async () => {
+      if (syncInProgress) return;
+      syncInProgress = true;
+      try {
+        const formData = new FormData();
+        formData.append('json', new Blob([JSON.stringify(boardState)], { type: 'application/json' }), 'levitate-board.json');
+        formData.append('type', 'levitate-data');
+        await fetch(WORKER_URL, { method: 'POST', body: formData });
+      } catch (e) {
+        console.log('Failed to sync to R2');
+      }
+      syncInProgress = false;
+    }, 500);
+  }
+
+  function formatPowerTime(seconds: number): string {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+
+  function formatCardTime(createdAt: number): string {
+    const date = new Date(createdAt);
+    return date.toLocaleTimeString('en-NZ', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function formatDuration(ms: number): string {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+
+    if (hours > 0) {
+      return `${hours}h ${minutes % 60}m`;
+    } else if (minutes > 0) {
+      return `${minutes}m`;
+    } else {
+      return `${seconds}s`;
+    }
+  }
+
+  function getTotalTimeInDoing(): number {
+    return state.columns.done.reduce((total, card) => total + (card.timeInDoing || 0), 0);
+  }
+
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function createConfetti() {
+    const colors = ['#8b5cf6', '#ec4899', '#f97316', '#22c55e', '#3b82f6', '#eab308'];
+    for (let i = 0; i < 50; i++) {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      confetti.style.left = Math.random() * 100 + 'vw';
+      confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+      confetti.style.animationDelay = Math.random() * 0.5 + 's';
+      confetti.style.animationDuration = (2 + Math.random() * 2) + 's';
+      document.body.appendChild(confetti);
+      setTimeout(() => confetti.remove(), 4000);
+    }
+  }
+
+  function celebrateCompletion(cardId: string) {
+    createConfetti();
+    setTimeout(() => {
+      const cardEl = document.querySelector(`[data-id="${cardId}"]`) as HTMLElement;
+      if (cardEl) {
+        cardEl.classList.add('celebrate');
+        setTimeout(() => cardEl.classList.remove('celebrate'), 1500);
+      }
+    }, 50);
+  }
+
+  function pulseCard(cardId: string) {
+    setTimeout(() => {
+      const cardEl = document.querySelector(`[data-id="${cardId}"]`) as HTMLElement;
+      if (cardEl) {
+        cardEl.classList.add('pulse-start');
+        setTimeout(() => cardEl.classList.remove('pulse-start'), 800);
+      }
+    }, 50);
+  }
+
+  const SUBTASK_ICONS = ['🔵', '🟢', '🟡', '🟠', '🔴', '🟣', '⚪', '🟤'];
+
+  function getSubtasks(parentId: string): Card[] {
+    const allCards = [...state.columns.todo, ...state.columns.doing, ...state.columns.done];
+    return allCards.filter(c => c.parentId === parentId);
+  }
+
+  function hasIncompleteSubtasks(parentId: string): boolean {
+    const subtasks = getSubtasks(parentId);
+    if (subtasks.length === 0) return false;
+    return subtasks.some(s => !state.columns.done.find(c => c.id === s.id));
+  }
+
+  function getSubtaskProgress(parentId: string): { done: number; total: number } {
+    const subtasks = getSubtasks(parentId);
+    const done = subtasks.filter(s => state.columns.done.find(c => c.id === s.id)).length;
+    return { done, total: subtasks.length };
+  }
+
+  function getNextIcon(): string {
+    const usedIcons = new Set(
+      [...state.columns.todo, ...state.columns.doing, ...state.columns.done]
+        .filter(c => c.icon && !c.parentId)
+        .map(c => c.icon)
+    );
+    return SUBTASK_ICONS.find(i => !usedIcons.has(i)) || SUBTASK_ICONS[0];
+  }
+
+  function showSubtaskModal(parentCard: Card, parentColumn: keyof BoardState['columns']) {
+    const modal = document.createElement('div');
+    modal.className = 'subtask-modal';
+
+    const existingIcon = parentCard.icon || getNextIcon();
+
+    modal.innerHTML = `
+      <div class="subtask-modal-content">
+        <div class="subtask-modal-header">
+          <span class="subtask-modal-title">Add Subtasks</span>
+          <button class="bulk-paste-close">×</button>
+        </div>
+        <div class="subtask-modal-parent">
+          <strong>Parent:</strong> ${escapeHtml(parentCard.text)}
+        </div>
+        <p class="bulk-paste-hint">Choose an icon to link parent and subtasks:</p>
+        <div class="icon-picker">
+          ${SUBTASK_ICONS.map(icon => `
+            <button class="icon-option ${icon === existingIcon ? 'selected' : ''}" data-icon="${icon}">${icon}</button>
+          `).join('')}
+        </div>
+        <p class="bulk-paste-hint">Add subtasks (one per line):</p>
+        <textarea class="bulk-paste-textarea" placeholder="- Research options&#10;- Draft proposal&#10;- Get feedback"></textarea>
+        <div class="bulk-paste-preview"></div>
+        <div class="bulk-paste-actions">
+          <button class="bulk-paste-cancel">Cancel</button>
+          <button class="bulk-paste-submit" disabled>Create Subtasks</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    let selectedIcon = existingIcon;
+    const textarea = modal.querySelector('.bulk-paste-textarea') as HTMLTextAreaElement;
+    const preview = modal.querySelector('.bulk-paste-preview') as HTMLElement;
+    const submitBtn = modal.querySelector('.bulk-paste-submit') as HTMLButtonElement;
+
+    setTimeout(() => textarea.focus(), 0);
+
+    modal.querySelectorAll('.icon-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        modal.querySelectorAll('.icon-option').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedIcon = btn.dataset.icon!;
+      });
+    });
+
+    function parseLines(): string[] {
+      return textarea.value
+        .split('\n')
+        .map(line => line.replace(/^[-•*]\s*/, '').trim())
+        .filter(line => line.length > 0);
+    }
+
+    function updatePreview() {
+      const tasks = parseLines();
+      if (tasks.length > 0) {
+        preview.innerHTML = `<strong>${tasks.length}</strong> subtask${tasks.length !== 1 ? 's' : ''} will be created`;
+        submitBtn.disabled = false;
+      } else {
+        preview.innerHTML = '';
+        submitBtn.disabled = true;
+      }
+    }
+
+    textarea.addEventListener('input', updatePreview);
+
+    const closeModal = () => {
+      modal.style.animation = 'fadeIn 0.2s ease reverse';
+      setTimeout(() => modal.remove(), 200);
+    };
+
+    modal.querySelector('.bulk-paste-close')?.addEventListener('click', closeModal);
+    modal.querySelector('.bulk-paste-cancel')?.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    modal.querySelector('.bulk-paste-submit')?.addEventListener('click', () => {
+      const tasks = parseLines();
+
+      const parent = state.columns[parentColumn].find(c => c.id === parentCard.id);
+      if (parent && !parent.icon) {
+        parent.icon = selectedIcon;
+      }
+
+      tasks.forEach(text => {
+        state.columns.todo.push({
+          id: crypto.randomUUID(),
+          text,
+          createdAt: Date.now(),
+          parentId: parentCard.id,
+          icon: selectedIcon,
+          objectiveId: parentCard.objectiveId || state.activeObjectiveId || 'default'
+        });
+      });
+
+      saveBoard(state);
+      closeModal();
+      render();
+    });
+
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        if (!submitBtn.disabled) submitBtn.click();
+      }
+    });
+  }
+
+  function showBulkPasteModal() {
+    const modal = document.createElement('div');
+    modal.className = 'bulk-paste-modal';
+    modal.innerHTML = `
+      <div class="bulk-paste-content">
+        <div class="bulk-paste-header">
+          <span class="bulk-paste-title">Bulk Paste Tasks</span>
+          <button class="bulk-paste-close">×</button>
+        </div>
+        <p class="bulk-paste-hint">Paste tasks from Notes or any text. One task per line.</p>
+        <textarea class="bulk-paste-textarea" placeholder="- Buy groceries&#10;- Call mom&#10;- Finish report"></textarea>
+        <div class="bulk-paste-preview"></div>
+        <div class="bulk-paste-actions">
+          <button class="bulk-paste-cancel">Cancel</button>
+          <button class="bulk-paste-submit" disabled>Add Tasks</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    const textarea = modal.querySelector('.bulk-paste-textarea') as HTMLTextAreaElement;
+    const preview = modal.querySelector('.bulk-paste-preview') as HTMLElement;
+    const submitBtn = modal.querySelector('.bulk-paste-submit') as HTMLButtonElement;
+
+    setTimeout(() => textarea.focus(), 0);
+
+    function parseLines(): string[] {
+      return textarea.value
+        .split('\n')
+        .map(line => line.replace(/^[-•*]\s*/, '').trim())
+        .filter(line => line.length > 0);
+    }
+
+    function updatePreview() {
+      const tasks = parseLines();
+      if (tasks.length > 0) {
+        preview.innerHTML = `<strong>${tasks.length}</strong> task${tasks.length !== 1 ? 's' : ''} will be added`;
+        submitBtn.disabled = false;
+      } else {
+        preview.innerHTML = '';
+        submitBtn.disabled = true;
+      }
+    }
+
+    textarea.addEventListener('input', updatePreview);
+
+    const closeModal = () => {
+      modal.style.animation = 'fadeIn 0.2s ease reverse';
+      setTimeout(() => modal.remove(), 200);
+    };
+
+    modal.querySelector('.bulk-paste-close')?.addEventListener('click', closeModal);
+    modal.querySelector('.bulk-paste-cancel')?.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    modal.querySelector('.bulk-paste-submit')?.addEventListener('click', () => {
+      const tasks = parseLines();
+      tasks.forEach(text => {
+        state.columns.todo.push({
+          id: crypto.randomUUID(),
+          text,
+          createdAt: Date.now(),
+          objectiveId: state.activeObjectiveId || 'default'
+        });
+      });
+      saveBoard(state);
+      closeModal();
+      render();
+    });
+
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        if (!submitBtn.disabled) submitBtn.click();
+      }
+    });
+  }
+
+  let state: BoardState = loadBoardFromLocal();
+  let powerHour: PowerHourState = loadPowerHour();
+  let draggedCard: { id: string; fromColumn: keyof BoardState['columns'] } | null = null;
+  let addingTo: keyof BoardState['columns'] | null = null;
+  let editingCard: { id: string; column: keyof BoardState['columns'] } | null = null;
+  let activeColumn: keyof BoardState['columns'] = 'todo';
+
+  // Load from R2 in background
+  loadBoard().then(board => {
+    state = board;
+    render();
+  });
+
+  function render() {
+    const app = document.getElementById('app')!;
+    const percentage = (powerHour.remaining / powerHour.duration) * 100;
+    const isUrgent = powerHour.remaining < 300 && powerHour.running; // Less than 5 min
+
+    const columnConfig = [
+      { key: 'todo' as const, title: 'To Do', icon: '📋' },
+      { key: 'doing' as const, title: 'Doing', icon: '🔨' },
+      { key: 'done' as const, title: 'Done', icon: '✅' }
+    ];
+
+    app.innerHTML = `
+      <div class="levitate">
+        <div class="lev-topbar">
+          <div class="lev-brand">
+            <h1 class="lev-title">Levitate</h1>
+            <span class="lev-tagline">Power Hour Task Smashing</span>
+          </div>
+
+          <div class="power-hour-container">
+            <div class="power-hour-bar">
+              <div class="power-hour-bar-fill" style="width: ${percentage}%"></div>
+            </div>
+            <div class="power-hour-time ${isUrgent ? 'urgent' : ''} ${!powerHour.running ? 'paused' : ''}">${formatPowerTime(powerHour.remaining)}</div>
+            <div class="power-hour-controls">
+              <button class="power-hour-btn ${powerHour.running ? 'active' : ''}" id="power-toggle">
+                ${powerHour.running ? 'Pause' : 'Start'}
+              </button>
+              <button class="power-hour-btn" id="power-reset">Reset</button>
+            </div>
+          </div>
+
+          <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+            <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Objective Switcher -->
+        <div class="objective-switcher">
+          <button class="objective-nav-btn" id="obj-prev">‹</button>
+          <div class="objective-pills">
+            ${state.objectives.map(obj => {
+              const todoCount = state.columns.todo.filter(c => c.objectiveId === obj.id).length;
+              const doingCount = state.columns.doing.filter(c => c.objectiveId === obj.id).length;
+              const doneCount = state.columns.done.filter(c => c.objectiveId === obj.id).length;
+              const total = todoCount + doingCount + doneCount;
+              return `
+                <button class="objective-pill ${state.activeObjectiveId === obj.id ? 'active' : ''}"
+                        data-id="${obj.id}"
+                        style="--obj-color: ${obj.color}">
+                  <span class="objective-dot"></span>
+                  ${escapeHtml(obj.name)}
+                  <span class="objective-count">${doneCount}/${total}</span>
+                </button>
+              `;
+            }).join('')}
+            <button class="objective-add-btn" id="add-objective-inline">+ New</button>
+          </div>
+          <button class="objective-nav-btn" id="obj-next">›</button>
+          <button class="dashboard-btn" id="open-dashboard">Dashboard</button>
+        </div>
+
+        <nav class="mobile-pill-nav">
+          ${columnConfig.map(col => {
+            const filteredCount = state.columns[col.key].filter(c => c.objectiveId === state.activeObjectiveId).length;
+            return `
+              <button class="pill-btn ${activeColumn === col.key ? 'active' : ''}" data-column="${col.key}">
+                ${col.icon} ${col.title}
+                <span class="pill-count">${filteredCount}</span>
+              </button>
+            `;
+          }).join('')}
+        </nav>
+
+        <div class="kanban">
+          ${columnConfig.map(col => `
+            <div class="kanban-column ${activeColumn === col.key ? 'active' : ''}" data-column="${col.key}">
+              <div class="column-header">
+                <span class="column-title">${col.icon} ${col.title}</span>
+                <div class="column-header-right">
+                  ${col.key === 'todo' ? `<button class="bulk-paste-btn" title="Bulk paste tasks"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg></button>` : ''}
+                  ${col.key === 'done' && getTotalTimeInDoing() > 0 ? `<span class="total-time-done">${formatDuration(getTotalTimeInDoing())}</span>` : ''}
+                  <span class="column-count">${state.columns[col.key].filter(c => c.objectiveId === state.activeObjectiveId).length}</span>
+                </div>
+              </div>
+              <div class="column-cards ${addingTo === col.key ? 'adding' : ''}">
+                ${state.columns[col.key].filter(c => c.objectiveId === state.activeObjectiveId).length === 0 && addingTo !== col.key ? `
+                  <div class="empty-column">${col.key === 'todo' ? 'Tap anywhere to add a task' : 'Drag tasks here'}</div>
+                ` : ''}
+                ${state.columns[col.key].filter(c => c.objectiveId === state.activeObjectiveId).map(card => {
+                    const subtasks = getSubtasks(card.id);
+                    const hasSubtasks = subtasks.length > 0;
+                    const isSubtask = !!card.parentId;
+                    const isBlocked = hasSubtasks && hasIncompleteSubtasks(card.id);
+                    const progress = hasSubtasks ? getSubtaskProgress(card.id) : null;
+
+                    return `
+                  <div class="card ${(col.key === 'todo' || col.key === 'doing') ? 'editable' : ''} ${isSubtask ? 'subtask' : ''} ${hasSubtasks ? 'has-subtasks' : ''} ${isBlocked ? 'blocked' : ''}"
+                       draggable="${editingCard?.id === card.id || isBlocked ? 'false' : 'true'}"
+                       data-id="${card.id}"
+                       data-column="${col.key}"
+                       ${card.parentId ? `data-parent="${card.parentId}"` : ''}>
+                    ${editingCard?.id === card.id ? `
+                      <textarea class="card-edit-input" data-id="${card.id}" data-column="${col.key}">${escapeHtml(card.text)}</textarea>
+                      <div class="card-edit-actions">
+                        <button class="card-edit-save" data-id="${card.id}" data-column="${col.key}">Save</button>
+                        <button class="card-edit-cancel">Cancel</button>
+                      </div>
+                    ` : `
+                      <div class="card-text">${card.icon ? `<span class="card-icon">${card.icon}</span>` : ''}${escapeHtml(card.text)}</div>
+                      <div class="card-meta">
+                        <span class="card-time">🕐 ${formatCardTime(card.createdAt)}${col.key === 'done' && card.timeInDoing ? ` · ⏱ ${formatDuration(card.timeInDoing)}` : ''}</span>
+                        <span style="display: flex; align-items: center; gap: 0.25rem;">
+                          ${!isSubtask && (col.key === 'todo' || col.key === 'doing') ? `<button class="subtask-btn" data-id="${card.id}" data-column="${col.key}" title="Add subtasks">+</button>` : ''}
+                        </span>
+                      </div>
+                      ${progress && progress.total > 0 ? `
+                        <div class="subtask-progress">
+                          <div class="subtask-progress-bar">
+                            <div class="subtask-progress-fill" style="width: ${(progress.done / progress.total) * 100}%"></div>
+                          </div>
+                          <span class="subtask-progress-text">${progress.done}/${progress.total}</span>
+                        </div>
+                      ` : ''}
+                      <div class="mobile-move-btns">
+                        ${col.key === 'todo' ? `
+                          <button class="move-btn move-right" data-id="${card.id}" data-from="todo" data-to="doing" ${isBlocked ? 'disabled' : ''}>Start →</button>
+                        ` : col.key === 'doing' ? `
+                          <button class="move-btn move-left" data-id="${card.id}" data-from="doing" data-to="todo">← Back</button>
+                          <button class="move-btn move-right" data-id="${card.id}" data-from="doing" data-to="done" ${isBlocked ? 'disabled' : ''}>Done →</button>
+                        ` : `
+                          <button class="move-btn move-left" data-id="${card.id}" data-from="done" data-to="doing">← Redo</button>
+                        `}
+                      </div>
+                    `}
+                  </div>
+                `}).join('')}
+              </div>
+              ${col.key === 'todo' ? `
+                <div class="add-card-form">
+                  ${addingTo === 'todo' ? `
+                    <textarea class="add-card-input" placeholder="What needs to happen?" autofocus></textarea>
+                    <div class="add-card-actions">
+                      <button class="add-card-submit" data-column="todo">Add</button>
+                      <button class="add-card-cancel">Cancel</button>
+                    </div>
+                  ` : `
+                    <button class="add-card-btn" data-column="todo">+ Add a task</button>
+                  `}
+                </div>
+              ` : ''}
+            </div>
+          `).join('')}
+        </div>
+
+        <!-- Dashboard Panel -->
+        <div class="dashboard-overlay" id="dashboard-overlay"></div>
+        <div class="dashboard-panel" id="dashboard-panel">
+          <div class="dashboard-header">
+            <span class="dashboard-title">Objectives</span>
+            <button class="dashboard-close" id="dashboard-close">×</button>
+          </div>
+          <div class="dashboard-content">
+            ${state.objectives.map(obj => {
+              const todoCount = state.columns.todo.filter(c => c.objectiveId === obj.id).length;
+              const doingCount = state.columns.doing.filter(c => c.objectiveId === obj.id).length;
+              const doneCount = state.columns.done.filter(c => c.objectiveId === obj.id).length;
+              const total = todoCount + doingCount + doneCount;
+              const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+              return `
+                <div class="objective-card" data-id="${obj.id}">
+                  <div class="objective-card-header">
+                    <div class="objective-card-dot" style="background: ${obj.color}"></div>
+                    <span class="objective-card-name">${escapeHtml(obj.name)}</span>
+                    <div class="objective-card-actions">
+                      <button class="objective-card-btn obj-edit" data-id="${obj.id}">Edit</button>
+                    </div>
+                  </div>
+                  <div class="objective-progress">
+                    <div class="objective-progress-bar">
+                      <div class="objective-progress-fill" style="width: ${pct}%; background: ${obj.color}"></div>
+                    </div>
+                    <span class="objective-progress-text">${doneCount}/${total} (${pct}%)</span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+            <div class="add-objective-card" id="add-objective-dash">+ Add Objective</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    attachEventListeners();
+  }
+
+  function attachEventListeners() {
+    // Power hour controls
+    document.getElementById('power-toggle')?.addEventListener('click', () => {
+      if (powerHour.running) {
+        // Pause
+        const elapsed = Math.floor((Date.now() - (powerHour.startedAt || Date.now())) / 1000);
+        powerHour.remaining = Math.max(0, powerHour.duration - elapsed);
+        powerHour.running = false;
+        powerHour.startedAt = null;
+      } else {
+        // Start
+        powerHour.running = true;
+        powerHour.startedAt = Date.now() - ((powerHour.duration - powerHour.remaining) * 1000);
+      }
+      savePowerHour(powerHour);
+      render();
+    });
+
+    document.getElementById('power-reset')?.addEventListener('click', () => {
+      powerHour = createFreshPowerHour();
+      savePowerHour(powerHour);
+      render();
+    });
+
+    // Click anywhere in todo column-cards to add task
+    const todoColumn = document.querySelector('.kanban-column[data-column="todo"] .column-cards');
+    todoColumn?.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('.card') || target.closest('button') || target.closest('textarea')) return;
+      if (addingTo === 'todo') return;
+
+      addingTo = 'todo';
+      render();
+      setTimeout(() => {
+        document.querySelector('.add-card-input')?.focus();
+      }, 0);
+    });
+
+    // Add card buttons
+    document.querySelectorAll('.add-card-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        addingTo = (e.currentTarget as HTMLElement).dataset.column as keyof BoardState['columns'];
+        render();
+        setTimeout(() => {
+          document.querySelector('.add-card-input')?.focus();
+        }, 0);
+      });
+    });
+
+    // Cancel add
+    document.querySelectorAll('.add-card-cancel').forEach(btn => {
+      btn.addEventListener('click', () => {
+        addingTo = null;
+        render();
+      });
+    });
+
+    // Submit new card
+    document.querySelectorAll('.add-card-submit').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const column = (e.currentTarget as HTMLElement).dataset.column as keyof BoardState['columns'];
+        const input = document.querySelector('.add-card-input') as HTMLTextAreaElement;
+        const text = input.value.trim();
+        if (text) {
+          state.columns[column].push({
+            id: crypto.randomUUID(),
+            text,
+            createdAt: Date.now(),
+            objectiveId: state.activeObjectiveId || 'default'
+          });
+          saveBoard(state);
+        }
+        addingTo = null;
+        render();
+      });
+    });
+
+    // Enter to submit
+    document.querySelectorAll('.add-card-input').forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          document.querySelector('.add-card-submit')?.click();
+        }
+        if (e.key === 'Escape') {
+          addingTo = null;
+          render();
+        }
+      });
+    });
+
+    // Mobile move buttons
+    document.querySelectorAll('.move-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const el = e.currentTarget as HTMLElement;
+        if (el.hasAttribute('disabled')) return;
+
+        const id = el.dataset.id!;
+        const fromColumn = el.dataset.from as keyof BoardState['columns'];
+        const toColumn = el.dataset.to as keyof BoardState['columns'];
+
+        const cardIndex = state.columns[fromColumn].findIndex(c => c.id === id);
+        if (cardIndex === -1) return;
+
+        if (hasIncompleteSubtasks(id) && (toColumn === 'doing' || toColumn === 'done')) {
+          alert('Complete all subtasks first before moving this task.');
+          return;
+        }
+
+        const [card] = state.columns[fromColumn].splice(cardIndex, 1);
+
+        if (toColumn === 'doing') {
+          card.startedAt = Date.now();
+          state.columns[toColumn].push(card);
+          activeColumn = toColumn;
+          saveBoard(state);
+          render();
+          pulseCard(card.id);
+        } else if (toColumn === 'done') {
+          if (card.startedAt) {
+            card.timeInDoing = Date.now() - card.startedAt;
+          }
+          state.columns[toColumn].push(card);
+          activeColumn = toColumn;
+          saveBoard(state);
+          render();
+          celebrateCompletion(card.id);
+        } else {
+          state.columns[toColumn].push(card);
+          activeColumn = toColumn;
+          saveBoard(state);
+          render();
+        }
+      });
+    });
+
+    // Mobile pill navigation
+    document.querySelectorAll('.pill-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        activeColumn = (e.currentTarget as HTMLElement).dataset.column as keyof BoardState['columns'];
+        render();
+      });
+    });
+
+    // Theme toggle
+    document.getElementById('theme-toggle')?.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+    });
+
+    // Bulk paste button
+    document.querySelector('.bulk-paste-btn')?.addEventListener('click', () => {
+      showBulkPasteModal();
+    });
+
+    // Subtask buttons
+    document.querySelectorAll('.subtask-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = (e.currentTarget as HTMLElement).dataset.id!;
+        const column = (e.currentTarget as HTMLElement).dataset.column as keyof BoardState['columns'];
+        const card = state.columns[column].find(c => c.id === id);
+        if (card) {
+          showSubtaskModal(card, column);
+        }
+      });
+    });
+
+    // Click to edit cards
+    document.querySelectorAll('.card.editable').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('button')) return;
+
+        const id = (card as HTMLElement).dataset.id!;
+        const column = (card as HTMLElement).dataset.column as keyof BoardState['columns'];
+        editingCard = { id, column };
+        render();
+
+        setTimeout(() => {
+          const textarea = document.querySelector('.card-edit-input') as HTMLTextAreaElement;
+          if (textarea) {
+            textarea.focus();
+            textarea.selectionStart = textarea.value.length;
+          }
+        }, 0);
+      });
+    });
+
+    // Save edit
+    document.querySelectorAll('.card-edit-save').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = (e.currentTarget as HTMLElement).dataset.id!;
+        const column = (e.currentTarget as HTMLElement).dataset.column as keyof BoardState['columns'];
+        const textarea = document.querySelector('.card-edit-input') as HTMLTextAreaElement;
+        const newText = textarea.value.trim();
+
+        if (newText) {
+          const card = state.columns[column].find(c => c.id === id);
+          if (card) {
+            card.text = newText;
+            saveBoard(state);
+          }
+        }
+        editingCard = null;
+        render();
+      });
+    });
+
+    // Cancel edit
+    document.querySelectorAll('.card-edit-cancel').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        editingCard = null;
+        render();
+      });
+    });
+
+    // Keyboard shortcuts for editing
+    document.querySelectorAll('.card-edit-input').forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          document.querySelector('.card-edit-save')?.click();
+        }
+        if (e.key === 'Escape') {
+          editingCard = null;
+          render();
+        }
+      });
+      input.addEventListener('mousedown', (e) => e.stopPropagation());
+    });
+
+    // Drag and drop
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('dragstart', (e) => {
+        const el = e.currentTarget as HTMLElement;
+        el.classList.add('dragging');
+        const column = el.closest('.kanban-column')?.dataset.column as keyof BoardState['columns'];
+        draggedCard = { id: el.dataset.id!, fromColumn: column };
+      });
+
+      card.addEventListener('dragend', (e) => {
+        (e.currentTarget as HTMLElement).classList.remove('dragging');
+        draggedCard = null;
+        document.querySelectorAll('.kanban-column').forEach(col => col.classList.remove('drag-over'));
+      });
+    });
+
+    document.querySelectorAll('.kanban-column').forEach(column => {
+      column.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        column.classList.add('drag-over');
+      });
+
+      column.addEventListener('dragleave', () => {
+        column.classList.remove('drag-over');
+      });
+
+      column.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        column.classList.remove('drag-over');
+
+        if (!draggedCard) return;
+
+        const toColumn = (column as HTMLElement).dataset.column as keyof BoardState['columns'];
+
+        const dropY = e.clientY;
+        const cards = column.querySelectorAll('.card:not(.dragging)');
+        let insertIndex = state.columns[toColumn].length;
+
+        cards.forEach((card, i) => {
+          const rect = card.getBoundingClientRect();
+          const cardMiddle = rect.top + rect.height / 2;
+          if (dropY < cardMiddle && insertIndex === state.columns[toColumn].length) {
+            insertIndex = i;
+          }
+        });
+
+        const cardIndex = state.columns[draggedCard.fromColumn].findIndex(c => c.id === draggedCard!.id);
+        if (cardIndex === -1) return;
+
+        if (toColumn === draggedCard.fromColumn) {
+          const [card] = state.columns[toColumn].splice(cardIndex, 1);
+          const adjustedIndex = cardIndex < insertIndex ? insertIndex - 1 : insertIndex;
+          state.columns[toColumn].splice(adjustedIndex, 0, card);
+          saveBoard(state);
+          render();
+          pulseCard(card.id);
+          return;
+        }
+
+        const [card] = state.columns[draggedCard.fromColumn].splice(cardIndex, 1);
+
+        if (hasIncompleteSubtasks(card.id) && (toColumn === 'doing' || toColumn === 'done')) {
+          state.columns[draggedCard.fromColumn].splice(cardIndex, 0, card);
+          alert('Complete all subtasks first before moving this task.');
+          render();
+          return;
+        }
+
+        if (toColumn === 'doing') {
+          card.startedAt = Date.now();
+          state.columns[toColumn].splice(insertIndex, 0, card);
+          saveBoard(state);
+          render();
+          pulseCard(card.id);
+        } else if (toColumn === 'done') {
+          if (card.startedAt) {
+            card.timeInDoing = Date.now() - card.startedAt;
+          }
+          state.columns[toColumn].splice(insertIndex, 0, card);
+          saveBoard(state);
+          render();
+          celebrateCompletion(card.id);
+        } else {
+          state.columns[toColumn].splice(insertIndex, 0, card);
+          saveBoard(state);
+          render();
+        }
+      });
+    });
+
+    // Objective handlers
+    document.querySelectorAll('.objective-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        state.activeObjectiveId = (pill as HTMLElement).dataset.id!;
+        saveBoard(state);
+        render();
+      });
+    });
+
+    document.getElementById('obj-prev')?.addEventListener('click', () => {
+      const idx = state.objectives.findIndex(o => o.id === state.activeObjectiveId);
+      const newIdx = idx <= 0 ? state.objectives.length - 1 : idx - 1;
+      state.activeObjectiveId = state.objectives[newIdx].id;
+      saveBoard(state);
+      render();
+    });
+
+    document.getElementById('obj-next')?.addEventListener('click', () => {
+      const idx = state.objectives.findIndex(o => o.id === state.activeObjectiveId);
+      const newIdx = idx >= state.objectives.length - 1 ? 0 : idx + 1;
+      state.activeObjectiveId = state.objectives[newIdx].id;
+      saveBoard(state);
+      render();
+    });
+
+    document.getElementById('add-objective-inline')?.addEventListener('click', () => {
+      const name = prompt('Objective name:');
+      if (name?.trim()) {
+        const newObj: Objective = {
+          id: crypto.randomUUID(),
+          name: name.trim(),
+          color: OBJECTIVE_COLORS[state.objectives.length % OBJECTIVE_COLORS.length]
+        };
+        state.objectives.push(newObj);
+        state.activeObjectiveId = newObj.id;
+        saveBoard(state);
+        render();
+      }
+    });
+
+    // Dashboard
+    document.getElementById('open-dashboard')?.addEventListener('click', () => {
+      document.getElementById('dashboard-panel')?.classList.add('open');
+      document.getElementById('dashboard-overlay')?.classList.add('open');
+    });
+
+    document.getElementById('dashboard-close')?.addEventListener('click', closeDashboard);
+    document.getElementById('dashboard-overlay')?.addEventListener('click', closeDashboard);
+
+    function closeDashboard() {
+      document.getElementById('dashboard-panel')?.classList.remove('open');
+      document.getElementById('dashboard-overlay')?.classList.remove('open');
+    }
+
+    document.querySelectorAll('.objective-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('.objective-card-btn')) return;
+        state.activeObjectiveId = (card as HTMLElement).dataset.id!;
+        saveBoard(state);
+        closeDashboard();
+        render();
+      });
+    });
+
+    document.querySelectorAll('.obj-edit').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = (btn as HTMLElement).dataset.id!;
+        const obj = state.objectives.find(o => o.id === id);
+        if (!obj) return;
+        const newName = prompt('Objective name:', obj.name);
+        if (newName?.trim()) {
+          obj.name = newName.trim();
+          saveBoard(state);
+          render();
+        }
+      });
+    });
+
+    document.getElementById('add-objective-dash')?.addEventListener('click', () => {
+      const name = prompt('Objective name:');
+      if (name?.trim()) {
+        const newObj: Objective = {
+          id: crypto.randomUUID(),
+          name: name.trim(),
+          color: OBJECTIVE_COLORS[state.objectives.length % OBJECTIVE_COLORS.length]
+        };
+        state.objectives.push(newObj);
+        state.activeObjectiveId = newObj.id;
+        saveBoard(state);
+        render();
+      }
+    });
+  }
+
+  // Initial render
+  render();
+
+  // Update power hour every second
+  setInterval(() => {
+    if (powerHour.running && powerHour.startedAt) {
+      const elapsed = Math.floor((Date.now() - powerHour.startedAt) / 1000);
+      powerHour.remaining = Math.max(0, powerHour.duration - elapsed);
+
+      const timerEl = document.querySelector('.power-hour-time');
+      const barFill = document.querySelector('.power-hour-bar-fill') as HTMLElement;
+
+      if (timerEl) {
+        timerEl.textContent = formatPowerTime(powerHour.remaining);
+        timerEl.classList.toggle('urgent', powerHour.remaining < 300);
+      }
+
+      if (barFill) {
+        barFill.style.width = `${(powerHour.remaining / powerHour.duration) * 100}%`;
+      }
+
+      if (powerHour.remaining === 0) {
+        powerHour.running = false;
+        savePowerHour(powerHour);
+        // Optional: celebration for completing power hour
+        createConfetti();
+        render();
+      }
+    }
+  }, 1000);
+</script>
+
+</body>
+</html>
