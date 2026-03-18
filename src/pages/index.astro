@@ -1372,6 +1372,517 @@
     }
   }
 
+  // ============================================
+  // EPIC POWER HOUR CELEBRATION SYSTEM
+  // ============================================
+
+  interface Particle {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    life: number;
+    maxLife: number;
+    color: string;
+    size: number;
+    gravity?: number;
+    friction?: number;
+    glow?: boolean;
+    trail?: boolean;
+    text?: string;
+    rotation?: number;
+    rotationSpeed?: number;
+  }
+
+  const CELEBRATION_COLORS = [
+    '#ff0080', '#ff00ff', '#8000ff', '#0080ff', '#00ffff',
+    '#00ff80', '#80ff00', '#ffff00', '#ff8000', '#ff0040',
+    '#fff', '#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1'
+  ];
+
+  const CELEBRATION_MESSAGES = {
+    legendary: [
+      "ABSOLUTELY LEGENDARY",
+      "UNSTOPPABLE FORCE",
+      "PURE DOMINATION",
+      "YOU ARE THE STORM",
+      "TRANSCENDENT"
+    ],
+    epic: [
+      "EPIC PERFORMANCE",
+      "CRUSHING IT",
+      "ON FIRE TODAY",
+      "MOMENTUM MASTER",
+      "BEAST MODE"
+    ],
+    nice: [
+      "SOLID EFFORT",
+      "GETTING IT DONE",
+      "PROGRESS MADE",
+      "KEEP BUILDING",
+      "NICE WORK"
+    ]
+  };
+
+  function launchPowerHourCelebration() {
+    const tasksCompleted = state.columns.done.length;
+    const totalTime = getTotalTimeInDoing();
+
+    // Create fullscreen canvas overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'celebration-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      background: rgba(0, 0, 0, 0);
+      transition: background 0.5s;
+    `;
+    document.body.appendChild(overlay);
+
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = `
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    `;
+    overlay.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d')!;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Fade in overlay
+    setTimeout(() => {
+      overlay.style.background = 'rgba(0, 0, 0, 0.9)';
+    }, 50);
+
+    // Determine celebration tier
+    const tier = tasksCompleted >= 8 ? 'legendary' : tasksCompleted >= 4 ? 'epic' : 'nice';
+    const intensity = tier === 'legendary' ? 3 : tier === 'epic' ? 2 : 1;
+
+    // Pick random celebration type
+    const celebrationTypes = ['fireworks', 'supernova', 'aurora', 'meteors', 'vortex', 'lightning', 'rainbow', 'cosmic'];
+    const celebrationType = celebrationTypes[Math.floor(Math.random() * celebrationTypes.length)];
+
+    let particles: Particle[] = [];
+    let animationId: number;
+    let startTime = Date.now();
+    const duration = 8000 + (intensity * 2000); // 8-14 seconds based on tier
+
+    // Stats display
+    const statsEl = document.createElement('div');
+    statsEl.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 10001;
+      opacity: 0;
+      transition: opacity 1s;
+      pointer-events: none;
+    `;
+    statsEl.innerHTML = `
+      <div style="font-size: 4rem; font-weight: 900; background: linear-gradient(135deg, ${CELEBRATION_COLORS.slice(0, 5).join(', ')}); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 1rem; text-shadow: 0 0 60px rgba(255,255,255,0.5);">
+        ${tasksCompleted}
+      </div>
+      <div style="font-size: 1.5rem; color: #fff; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.2em;">
+        Tasks Destroyed
+      </div>
+      <div style="font-size: 1rem; color: rgba(255,255,255,0.7); margin-bottom: 2rem;">
+        ${formatDuration(totalTime)} of focused work
+      </div>
+      <div style="font-size: 2rem; font-weight: 700; color: ${tier === 'legendary' ? '#ffd700' : tier === 'epic' ? '#ff00ff' : '#00ffff'}; text-transform: uppercase; letter-spacing: 0.3em; animation: pulse-text 0.5s ease-in-out infinite alternate;">
+        ${CELEBRATION_MESSAGES[tier][Math.floor(Math.random() * CELEBRATION_MESSAGES[tier].length)]}
+      </div>
+    `;
+    overlay.appendChild(statsEl);
+
+    // Show stats after initial effect
+    setTimeout(() => {
+      statsEl.style.opacity = '1';
+    }, 1500);
+
+    // Add pulse animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes pulse-text {
+        from { transform: scale(1); opacity: 1; }
+        to { transform: scale(1.05); opacity: 0.8; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Celebration-specific particle spawners
+    function spawnFirework(x: number, y: number) {
+      const color = CELEBRATION_COLORS[Math.floor(Math.random() * CELEBRATION_COLORS.length)];
+      const count = 50 + intensity * 30;
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count + Math.random() * 0.2;
+        const speed = 3 + Math.random() * 5 * intensity;
+        particles.push({
+          x, y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1,
+          maxLife: 1,
+          color,
+          size: 2 + Math.random() * 3,
+          gravity: 0.05,
+          friction: 0.98,
+          glow: true,
+          trail: true
+        });
+      }
+    }
+
+    function spawnSupernova() {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const count = 200 * intensity;
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2 + Math.random() * 10 * intensity;
+        const color = CELEBRATION_COLORS[Math.floor(Math.random() * CELEBRATION_COLORS.length)];
+        particles.push({
+          x: cx, y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 1,
+          maxLife: 1,
+          color,
+          size: 1 + Math.random() * 4,
+          friction: 0.99,
+          glow: true
+        });
+      }
+    }
+
+    function spawnAurora() {
+      const colors = ['#00ff88', '#00ffcc', '#00ccff', '#0088ff', '#8800ff', '#ff00ff'];
+      for (let i = 0; i < 5 * intensity; i++) {
+        const x = Math.random() * canvas.width;
+        particles.push({
+          x,
+          y: canvas.height + 50,
+          vx: (Math.random() - 0.5) * 2,
+          vy: -1 - Math.random() * 2,
+          life: 1,
+          maxLife: 1,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          size: 30 + Math.random() * 50,
+          glow: true
+        });
+      }
+    }
+
+    function spawnMeteor() {
+      const startX = Math.random() * canvas.width * 1.5;
+      const color = CELEBRATION_COLORS[Math.floor(Math.random() * CELEBRATION_COLORS.length)];
+      particles.push({
+        x: startX,
+        y: -50,
+        vx: -3 - Math.random() * 4,
+        vy: 5 + Math.random() * 5,
+        life: 1,
+        maxLife: 1,
+        color,
+        size: 4 + Math.random() * 6 * intensity,
+        trail: true,
+        glow: true
+      });
+    }
+
+    function spawnVortexParticle() {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 200 + Math.random() * 300;
+      particles.push({
+        x: cx + Math.cos(angle) * distance,
+        y: cy + Math.sin(angle) * distance,
+        vx: 0,
+        vy: 0,
+        life: 1,
+        maxLife: 1,
+        color: CELEBRATION_COLORS[Math.floor(Math.random() * CELEBRATION_COLORS.length)],
+        size: 2 + Math.random() * 3,
+        rotation: angle,
+        rotationSpeed: 0.02 + Math.random() * 0.03,
+        glow: true
+      });
+    }
+
+    function spawnLightning() {
+      const startX = Math.random() * canvas.width;
+      let x = startX;
+      let y = 0;
+      const segments: {x1: number, y1: number, x2: number, y2: number}[] = [];
+
+      while (y < canvas.height) {
+        const newX = x + (Math.random() - 0.5) * 100;
+        const newY = y + 20 + Math.random() * 40;
+        segments.push({x1: x, y1: y, x2: newX, y2: newY});
+        x = newX;
+        y = newY;
+      }
+
+      // Draw lightning
+      ctx.save();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#00ffff';
+      ctx.shadowBlur = 30;
+      ctx.beginPath();
+      segments.forEach((seg, i) => {
+        if (i === 0) ctx.moveTo(seg.x1, seg.y1);
+        ctx.lineTo(seg.x2, seg.y2);
+      });
+      ctx.stroke();
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+
+      // Spawn particles along lightning
+      segments.forEach(seg => {
+        if (Math.random() > 0.7) {
+          particles.push({
+            x: seg.x2,
+            y: seg.y2,
+            vx: (Math.random() - 0.5) * 5,
+            vy: (Math.random() - 0.5) * 5,
+            life: 1,
+            maxLife: 1,
+            color: '#00ffff',
+            size: 2 + Math.random() * 2,
+            glow: true
+          });
+        }
+      });
+    }
+
+    function spawnRainbowWave() {
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const elapsed = Date.now() - startTime;
+      const waveRadius = (elapsed / 20) % (Math.max(canvas.width, canvas.height));
+
+      for (let i = 0; i < 20 * intensity; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const hue = (angle / (Math.PI * 2)) * 360;
+        particles.push({
+          x: cx + Math.cos(angle) * waveRadius,
+          y: cy + Math.sin(angle) * waveRadius,
+          vx: Math.cos(angle) * 2,
+          vy: Math.sin(angle) * 2,
+          life: 1,
+          maxLife: 1,
+          color: `hsl(${hue}, 100%, 60%)`,
+          size: 3 + Math.random() * 3,
+          glow: true
+        });
+      }
+    }
+
+    function spawnCosmicDust() {
+      for (let i = 0; i < 3 * intensity; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: (Math.random() - 0.5) * 0.5,
+          life: 1,
+          maxLife: 1,
+          color: CELEBRATION_COLORS[Math.floor(Math.random() * CELEBRATION_COLORS.length)],
+          size: 1 + Math.random() * 2,
+          glow: true
+        });
+      }
+    }
+
+    // Spawn completed task names as floating text
+    function spawnTaskText() {
+      const tasks = state.columns.done.slice(-10); // Last 10 tasks
+      tasks.forEach((task, i) => {
+        setTimeout(() => {
+          const x = canvas.width * 0.2 + Math.random() * canvas.width * 0.6;
+          const y = canvas.height * 0.6 + Math.random() * canvas.height * 0.3;
+          particles.push({
+            x,
+            y,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: -1 - Math.random(),
+            life: 1,
+            maxLife: 1,
+            color: '#fff',
+            size: 16,
+            text: task.text.slice(0, 30) + (task.text.length > 30 ? '...' : ''),
+            glow: true
+          });
+        }, 2000 + i * 300);
+      });
+    }
+
+    // Animation loop
+    function animate() {
+      const elapsed = Date.now() - startTime;
+
+      // Clear with trail effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Spawn new particles based on celebration type
+      if (elapsed < duration - 2000) {
+        switch (celebrationType) {
+          case 'fireworks':
+            if (Math.random() < 0.05 * intensity) {
+              spawnFirework(
+                100 + Math.random() * (canvas.width - 200),
+                100 + Math.random() * (canvas.height * 0.5)
+              );
+            }
+            break;
+          case 'supernova':
+            if (elapsed < 500) spawnSupernova();
+            break;
+          case 'aurora':
+            if (Math.random() < 0.3) spawnAurora();
+            break;
+          case 'meteors':
+            if (Math.random() < 0.1 * intensity) spawnMeteor();
+            break;
+          case 'vortex':
+            if (Math.random() < 0.3) spawnVortexParticle();
+            break;
+          case 'lightning':
+            if (Math.random() < 0.03 * intensity) spawnLightning();
+            spawnCosmicDust();
+            break;
+          case 'rainbow':
+            spawnRainbowWave();
+            break;
+          case 'cosmic':
+            spawnCosmicDust();
+            if (Math.random() < 0.02) {
+              spawnFirework(Math.random() * canvas.width, Math.random() * canvas.height);
+            }
+            break;
+        }
+      }
+
+      // Update and draw particles
+      particles = particles.filter(p => {
+        // Update position
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Apply gravity
+        if (p.gravity) p.vy += p.gravity;
+
+        // Apply friction
+        if (p.friction) {
+          p.vx *= p.friction;
+          p.vy *= p.friction;
+        }
+
+        // Vortex rotation
+        if (p.rotation !== undefined && p.rotationSpeed) {
+          p.rotation += p.rotationSpeed;
+          const cx = canvas.width / 2;
+          const cy = canvas.height / 2;
+          const dx = p.x - cx;
+          const dy = p.y - cy;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const newDist = Math.max(10, dist - 1);
+          p.x = cx + Math.cos(p.rotation) * newDist;
+          p.y = cy + Math.sin(p.rotation) * newDist;
+        }
+
+        // Decay life
+        p.life -= 0.005 + (1 / p.maxLife) * 0.01;
+
+        // Draw particle
+        ctx.save();
+        const alpha = Math.max(0, p.life);
+
+        if (p.text) {
+          // Draw floating text
+          ctx.font = `${p.size}px -apple-system, BlinkMacSystemFont, sans-serif`;
+          ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 20;
+          ctx.textAlign = 'center';
+          ctx.fillText(p.text, p.x, p.y);
+        } else if (p.trail) {
+          // Draw with trail
+          const gradient = ctx.createLinearGradient(p.x, p.y, p.x - p.vx * 5, p.y - p.vy * 5);
+          gradient.addColorStop(0, p.color);
+          gradient.addColorStop(1, 'transparent');
+          ctx.strokeStyle = gradient;
+          ctx.lineWidth = p.size;
+          ctx.lineCap = 'round';
+          ctx.globalAlpha = alpha;
+          if (p.glow) {
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = 15;
+          }
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p.x - p.vx * 5, p.y - p.vy * 5);
+          ctx.stroke();
+        } else {
+          // Draw normal particle
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = p.color;
+          if (p.glow) {
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = p.size * 3;
+          }
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+
+        return p.life > 0;
+      });
+
+      // Continue or end
+      if (elapsed < duration) {
+        animationId = requestAnimationFrame(animate);
+      } else {
+        // Fade out and cleanup
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 1s';
+        setTimeout(() => {
+          cancelAnimationFrame(animationId);
+          overlay.remove();
+          style.remove();
+        }, 1000);
+      }
+    }
+
+    // Start spawning task texts
+    spawnTaskText();
+
+    // Start animation
+    animate();
+
+    // Click to dismiss early
+    overlay.addEventListener('click', () => {
+      overlay.style.opacity = '0';
+      overlay.style.transition = 'opacity 0.5s';
+      setTimeout(() => {
+        cancelAnimationFrame(animationId);
+        overlay.remove();
+        style.remove();
+      }, 500);
+    });
+  }
+
   function celebrateCompletion(cardId: string) {
     createConfetti();
     setTimeout(() => {
@@ -1854,6 +2365,11 @@
       render();
     });
 
+    // Double-click timer to preview celebration
+    document.querySelector('.power-hour-time')?.addEventListener('dblclick', () => {
+      launchPowerHourCelebration();
+    });
+
     document.getElementById('power-reset')?.addEventListener('click', () => {
       powerHour = createFreshPowerHour();
       savePowerHour(powerHour);
@@ -2305,8 +2821,8 @@
       if (powerHour.remaining === 0) {
         powerHour.running = false;
         savePowerHour(powerHour);
-        // Optional: celebration for completing power hour
-        createConfetti();
+        // EPIC celebration for completing power hour!
+        launchPowerHourCelebration();
         render();
       }
     }
