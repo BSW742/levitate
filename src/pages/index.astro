@@ -701,6 +701,25 @@
     color: var(--text);
   }
 
+  .card-delete {
+    opacity: 0;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    font-size: 1rem;
+    transition: all 0.2s;
+  }
+
+  .card:hover .card-delete {
+    opacity: 1;
+  }
+
+  .card-delete:hover {
+    color: #ef4444;
+  }
+
   /* Editing */
   .card-edit-input {
     width: 100%;
@@ -1734,6 +1753,7 @@
                         <span class="card-time">🕐 ${formatCardTime(card.createdAt)}${col.key === 'done' && card.timeInDoing ? ` · ⏱ ${formatDuration(card.timeInDoing)}` : ''}</span>
                         <span style="display: flex; align-items: center; gap: 0.25rem;">
                           ${!isSubtask && (col.key === 'todo' || col.key === 'doing') ? `<button class="subtask-btn" data-id="${card.id}" data-column="${col.key}" title="Add subtasks">+</button>` : ''}
+                          <button class="card-delete" data-id="${card.id}" data-column="${col.key}" title="Delete task">×</button>
                         </span>
                       </div>
                       ${progress && progress.total > 0 ? `
@@ -1984,6 +2004,30 @@
         if (card) {
           showSubtaskModal(card, column);
         }
+      });
+    });
+
+    // Delete cards
+    document.querySelectorAll('.card-delete').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = (e.currentTarget as HTMLElement).dataset.id!;
+        const column = (e.currentTarget as HTMLElement).dataset.column as keyof BoardState['columns'];
+
+        // Also delete any subtasks of this card
+        const subtasks = getSubtasks(id);
+        if (subtasks.length > 0) {
+          subtasks.forEach(subtask => {
+            ['todo', 'doing', 'done'].forEach(col => {
+              state.columns[col as keyof BoardState['columns']] =
+                state.columns[col as keyof BoardState['columns']].filter(c => c.id !== subtask.id);
+            });
+          });
+        }
+
+        state.columns[column] = state.columns[column].filter(c => c.id !== id);
+        saveBoard(state);
+        render();
       });
     });
 
