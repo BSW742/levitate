@@ -225,7 +225,31 @@
 
   .power-hour-duration {
     display: flex;
+    align-items: center;
     gap: 0.25rem;
+  }
+
+  .duration-input {
+    width: 3rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.25rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .duration-input:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+  }
+
+  .duration-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
   }
 
   .duration-btn {
@@ -1190,6 +1214,11 @@
 
     .power-hour-duration {
       order: -1;
+    }
+
+    .duration-input {
+      width: 2.5rem;
+      font-size: 0.7rem;
     }
 
     .duration-btn {
@@ -2247,8 +2276,8 @@
 
           <div class="power-hour-container">
             <div class="power-hour-duration">
-              <button class="duration-btn ${powerHour.duration === 1200 ? 'active' : ''}" data-duration="1200">20m</button>
-              <button class="duration-btn ${powerHour.duration === 1800 ? 'active' : ''}" data-duration="1800">30m</button>
+              <input type="number" class="duration-input" id="duration-input" value="${Math.round(powerHour.duration / 60)}" min="1" max="120">
+              <span class="duration-label">min</span>
               <button class="duration-btn ${powerHour.duration === 3600 ? 'active' : ''}" data-duration="3600">60m</button>
             </div>
             <div class="power-hour-bar">
@@ -2478,7 +2507,21 @@
       render();
     });
 
-    // Duration selector
+    // Duration input
+    const durationInput = document.getElementById('duration-input') as HTMLInputElement;
+    durationInput?.addEventListener('change', () => {
+      const minutes = Math.max(1, Math.min(120, parseInt(durationInput.value) || 60));
+      const duration = minutes * 60;
+      powerHour.duration = duration;
+      powerHour.remaining = duration;
+      powerHour.running = false;
+      powerHour.startedAt = null;
+      powerHour.showClearDone = false;
+      savePowerHour(powerHour);
+      render();
+    });
+
+    // 60m quick button
     document.querySelectorAll('.duration-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const duration = parseInt((btn as HTMLElement).dataset.duration || '3600');
