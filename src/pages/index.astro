@@ -324,42 +324,128 @@
     font-size: 0.85rem;
   }
 
-  .replay-btn {
-    background: linear-gradient(135deg, #f97316, #ec4899);
+  .celebrate-btn {
+    background: linear-gradient(135deg, #8b5cf6, #ec4899);
     border: none;
     color: white;
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .celebrate-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+  }
+
+  .archive-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .archive-btn:hover {
+    background: var(--border);
+    color: var(--text);
+  }
+
+  .view-archive-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text-muted);
     padding: 0.3rem 0.6rem;
     border-radius: 6px;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     cursor: pointer;
     transition: all 0.2s;
+  }
+
+  .view-archive-btn:hover {
+    border-color: var(--text-muted);
+    color: var(--text);
+  }
+
+  .archive-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    justify-content: center;
+    z-index: 9000;
+    animation: fadeIn 0.2s ease;
+    padding: 1rem;
   }
 
-  .replay-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 15px rgba(249, 115, 22, 0.5);
+  .archive-modal-content {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
   }
 
-  .clear-done-btn {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
+  .archive-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .archive-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text);
+  }
+
+  .archive-close {
+    background: none;
     border: none;
-    color: white;
-    padding: 0.4rem 0.75rem;
-    border-radius: 6px;
-    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-size: 1.25rem;
     cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
+    padding: 0.25rem;
+    line-height: 1;
   }
 
-  .clear-done-btn:hover {
-    transform: scale(1.02);
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+  .archive-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.75rem;
+  }
+
+  .archive-item {
+    padding: 0.75rem;
+    background: var(--bg);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+
+  .archive-item-meta {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  .archive-empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 2rem;
+    font-size: 0.9rem;
   }
 
   .theme-toggle {
@@ -1267,9 +1353,9 @@
       font-size: 0.65rem;
     }
 
-    .replay-btn {
+    .celebrate-btn, .archive-btn, .view-archive-btn {
       padding: 0.25rem 0.5rem;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
     }
 
     .mobile-move-btns {
@@ -1341,6 +1427,7 @@
       doing: Card[];
       done: Card[];
     };
+    archive?: Card[];
   }
 
   interface PowerHourState {
@@ -2391,8 +2478,9 @@
                 <span class="column-title">${col.icon} ${col.title}</span>
                 <div class="column-header-right">
                   ${col.key === 'todo' ? `<button class="bulk-paste-btn" title="Bulk paste tasks"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg></button>` : ''}
-                  ${col.key === 'done' && powerHour.remaining === 0 && state.columns.done.filter(c => c.objectiveId === state.activeObjectiveId).length > 0 ? `<button class="replay-btn" id="replay-celebration">Replay</button>` : ''}
-                  ${col.key === 'done' && powerHour.showClearDone && state.columns.done.filter(c => c.objectiveId === state.activeObjectiveId).length > 0 ? `<button class="clear-done-btn" id="clear-done-tasks">Clear All</button>` : ''}
+                  ${col.key === 'done' && powerHour.remaining === 0 && state.columns.done.filter(c => c.objectiveId === state.activeObjectiveId).length > 0 ? `<button class="celebrate-btn" id="launch-celebration">Celebrate!</button>` : ''}
+                  ${col.key === 'done' && powerHour.showClearDone && state.columns.done.filter(c => c.objectiveId === state.activeObjectiveId).length > 0 ? `<button class="archive-btn" id="archive-done-tasks">Archive</button>` : ''}
+                  ${col.key === 'done' && (state.archive?.length || 0) > 0 ? `<button class="view-archive-btn" id="view-archive">${state.archive?.length} archived</button>` : ''}
                   ${col.key === 'done' && getTotalTimeInDoing() > 0 ? `<span class="total-time-done">${formatDuration(getTotalTimeInDoing())}</span>` : ''}
                   <span class="column-count">${state.columns[col.key].filter(c => c.objectiveId === state.activeObjectiveId).length}</span>
                 </div>
@@ -2591,19 +2679,53 @@
       });
     });
 
-    // Replay celebration
-    document.getElementById('replay-celebration')?.addEventListener('click', () => {
+    // Launch celebration
+    document.getElementById('launch-celebration')?.addEventListener('click', () => {
       launchPowerHourCelebration();
     });
 
-    // Clear all done tasks
-    document.getElementById('clear-done-tasks')?.addEventListener('click', () => {
+    // Archive done tasks
+    document.getElementById('archive-done-tasks')?.addEventListener('click', () => {
       const activeId = state.activeObjectiveId;
+      const toArchive = state.columns.done.filter(c => c.objectiveId === activeId);
+      if (!state.archive) state.archive = [];
+      state.archive.push(...toArchive);
       state.columns.done = state.columns.done.filter(c => c.objectiveId !== activeId);
       powerHour.showClearDone = false;
       savePowerHour(powerHour);
       saveBoard(state);
       render();
+    });
+
+    // View archive
+    document.getElementById('view-archive')?.addEventListener('click', () => {
+      const modal = document.createElement('div');
+      modal.className = 'archive-modal';
+      const archivedTasks = state.archive || [];
+      modal.innerHTML = `
+        <div class="archive-modal-content">
+          <div class="archive-header">
+            <h3>Archived Tasks (${archivedTasks.length})</h3>
+            <button class="archive-close">&times;</button>
+          </div>
+          <div class="archive-list">
+            ${archivedTasks.length === 0 ? '<div class="archive-empty">No archived tasks yet</div>' :
+              archivedTasks.slice().reverse().map(task => `
+                <div class="archive-item">
+                  ${escapeHtml(task.text)}
+                  ${task.timeInDoing ? `<div class="archive-item-meta">${formatDuration(task.timeInDoing)} spent</div>` : ''}
+                </div>
+              `).join('')
+            }
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      modal.querySelector('.archive-close')?.addEventListener('click', () => modal.remove());
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.remove();
+      });
     });
 
     // Click anywhere in todo column-cards to add task
