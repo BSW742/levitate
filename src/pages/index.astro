@@ -223,6 +223,71 @@
     color: white;
   }
 
+  .power-hour-duration {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  .duration-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .duration-btn:hover {
+    background: var(--border);
+    color: var(--text);
+  }
+
+  .duration-btn.active {
+    background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+    border-color: transparent;
+    color: white;
+  }
+
+  .replay-btn {
+    background: linear-gradient(135deg, #f97316, #ec4899);
+    border: none;
+    color: white;
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .replay-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(249, 115, 22, 0.5);
+  }
+
+  .clear-done-btn {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border: none;
+    color: white;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .clear-done-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+  }
+
   .theme-toggle {
     background: none;
     border: none;
@@ -1120,6 +1185,21 @@
       order: 3;
       width: 100%;
       justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .power-hour-duration {
+      order: -1;
+    }
+
+    .duration-btn {
+      padding: 0.2rem 0.4rem;
+      font-size: 0.65rem;
+    }
+
+    .replay-btn {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.7rem;
     }
 
     .mobile-move-btns {
@@ -1198,6 +1278,7 @@
     remaining: number; // seconds remaining
     running: boolean;
     startedAt: number | null;
+    showClearDone?: boolean; // show clear done button after celebration
   }
 
   const OBJECTIVE_COLORS = ['#8b5cf6', '#ec4899', '#f97316', '#22c55e', '#3b82f6', '#eab308'];
@@ -1861,6 +1942,10 @@
           cancelAnimationFrame(animationId);
           overlay.remove();
           style.remove();
+          // Show clear done button after celebration
+          powerHour.showClearDone = true;
+          savePowerHour(powerHour);
+          render();
         }, 1000);
       }
     }
@@ -1879,6 +1964,10 @@
         cancelAnimationFrame(animationId);
         overlay.remove();
         style.remove();
+        // Show clear done button after celebration
+        powerHour.showClearDone = true;
+        savePowerHour(powerHour);
+        render();
       }, 500);
     });
   }
@@ -2157,6 +2246,11 @@
           </div>
 
           <div class="power-hour-container">
+            <div class="power-hour-duration">
+              <button class="duration-btn ${powerHour.duration === 1200 ? 'active' : ''}" data-duration="1200">20m</button>
+              <button class="duration-btn ${powerHour.duration === 1800 ? 'active' : ''}" data-duration="1800">30m</button>
+              <button class="duration-btn ${powerHour.duration === 3600 ? 'active' : ''}" data-duration="3600">60m</button>
+            </div>
             <div class="power-hour-bar">
               <div class="power-hour-bar-fill" style="width: ${percentage}%"></div>
             </div>
@@ -2166,6 +2260,9 @@
                 ${powerHour.running ? 'Pause' : 'Start'}
               </button>
               <button class="power-hour-btn" id="power-reset">Reset</button>
+              <button class="replay-btn" id="replay-celebration" title="Replay celebration">
+                <span>Replay</span>
+              </button>
             </div>
           </div>
 
@@ -2231,6 +2328,7 @@
                 <span class="column-title">${col.icon} ${col.title}</span>
                 <div class="column-header-right">
                   ${col.key === 'todo' ? `<button class="bulk-paste-btn" title="Bulk paste tasks"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg></button>` : ''}
+                  ${col.key === 'done' && powerHour.showClearDone && state.columns.done.filter(c => c.objectiveId === state.activeObjectiveId).length > 0 ? `<button class="clear-done-btn" id="clear-done-tasks">Clear All</button>` : ''}
                   ${col.key === 'done' && getTotalTimeInDoing() > 0 ? `<span class="total-time-done">${formatDuration(getTotalTimeInDoing())}</span>` : ''}
                   <span class="column-count">${state.columns[col.key].filter(c => c.objectiveId === state.activeObjectiveId).length}</span>
                 </div>
@@ -2371,8 +2469,41 @@
     });
 
     document.getElementById('power-reset')?.addEventListener('click', () => {
+      const currentDuration = powerHour.duration;
       powerHour = createFreshPowerHour();
+      powerHour.duration = currentDuration;
+      powerHour.remaining = currentDuration;
+      powerHour.showClearDone = false;
       savePowerHour(powerHour);
+      render();
+    });
+
+    // Duration selector
+    document.querySelectorAll('.duration-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const duration = parseInt((btn as HTMLElement).dataset.duration || '3600');
+        powerHour.duration = duration;
+        powerHour.remaining = duration;
+        powerHour.running = false;
+        powerHour.startedAt = null;
+        powerHour.showClearDone = false;
+        savePowerHour(powerHour);
+        render();
+      });
+    });
+
+    // Replay celebration
+    document.getElementById('replay-celebration')?.addEventListener('click', () => {
+      launchPowerHourCelebration();
+    });
+
+    // Clear all done tasks
+    document.getElementById('clear-done-tasks')?.addEventListener('click', () => {
+      const activeId = state.activeObjectiveId;
+      state.columns.done = state.columns.done.filter(c => c.objectiveId !== activeId);
+      powerHour.showClearDone = false;
+      savePowerHour(powerHour);
+      saveBoard(state);
       render();
     });
 
