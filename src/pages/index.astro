@@ -1031,6 +1031,15 @@
     word-break: break-word;
   }
 
+  .card-link {
+    color: #3b82f6;
+    text-decoration: none;
+    word-break: break-all;
+  }
+  .card-link:hover {
+    text-decoration: underline;
+  }
+
   .card-meta {
     display: flex;
     align-items: center;
@@ -1779,6 +1788,12 @@
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  function linkify(text: string): string {
+    const escaped = escapeHtml(text);
+    const urlRegex = /(https?:\/\/[^\s<]+)/g;
+    return escaped.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="card-link">$1</a>');
   }
 
   function createConfetti() {
@@ -2700,7 +2715,7 @@
                         <button class="card-edit-cancel">Cancel</button>
                       </div>
                     ` : `
-                      <div class="card-text">${card.icon ? `<span class="card-icon">${card.icon}</span>` : ''}${escapeHtml(card.text)}</div>
+                      <div class="card-text">${card.icon ? `<span class="card-icon">${card.icon}</span>` : ''}${linkify(card.text)}</div>
                       <div class="card-meta">
                         <span class="card-time">🕐 ${formatCardTime(card.createdAt)}${col.key === 'done' && card.timeInDoing ? ` · ⏱ ${formatDuration(card.timeInDoing)}` : ''}</span>
                         <span style="display: flex; align-items: center; gap: 0.25rem;">
