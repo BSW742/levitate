@@ -760,6 +760,49 @@
     overflow-y: auto;
   }
 
+  .dashboard-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .dashboard-footer-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .toggle-switch.active {
+    background: #8b5cf6;
+  }
+
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+
+  .toggle-switch.active::after {
+    transform: translateX(20px);
+  }
+
   .objective-card {
     background: var(--card-bg);
     border: 1px solid var(--border);
@@ -2738,6 +2781,10 @@
             }).join('')}
             <div class="add-objective-card" id="add-objective-dash">+ Add Objective</div>
           </div>
+          <div class="dashboard-footer">
+            <span class="dashboard-footer-label">Auto-scroll objectives</span>
+            <div class="toggle-switch ${localStorage.getItem('levitate-autoscroll') !== 'off' ? 'active' : ''}" id="autoscroll-toggle"></div>
+          </div>
         </div>
       </div>
     `;
@@ -3326,14 +3373,20 @@
       activePill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
 
-    // Auto-scroll carousel for 8+ objectives (subtle, pauses on hover)
+    // Auto-scroll carousel for 8+ objectives (respects toggle setting)
     if (state.objectives.length >= 8 && pillsContainer) {
       let autoScrollInterval: number | null = null;
       let scrollDirection = 1;
 
+      const isAutoScrollEnabled = () => localStorage.getItem('levitate-autoscroll') !== 'off';
+      const isDashboardOpen = () => document.getElementById('dashboard-panel')?.classList.contains('open');
+
       const startAutoScroll = () => {
         if (autoScrollInterval) return;
         autoScrollInterval = window.setInterval(() => {
+          // Pause while dashboard open or auto-scroll disabled
+          if (isDashboardOpen() || !isAutoScrollEnabled()) return;
+
           const maxScroll = pillsContainer.scrollWidth - pillsContainer.clientWidth;
           if (pillsContainer.scrollLeft >= maxScroll - 5) {
             scrollDirection = -1;
@@ -3385,6 +3438,13 @@
       document.getElementById('dashboard-panel')?.classList.remove('open');
       document.getElementById('dashboard-overlay')?.classList.remove('open');
     }
+
+    // Auto-scroll toggle
+    document.getElementById('autoscroll-toggle')?.addEventListener('click', (e) => {
+      const toggle = e.currentTarget as HTMLElement;
+      const isActive = toggle.classList.toggle('active');
+      localStorage.setItem('levitate-autoscroll', isActive ? 'on' : 'off');
+    });
 
     document.querySelectorAll('.objective-card').forEach(card => {
       card.addEventListener('click', (e) => {
