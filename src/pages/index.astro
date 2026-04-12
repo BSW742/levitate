@@ -1719,13 +1719,36 @@
     return null;
   }
 
+  // Count total content in a board to prevent data loss
+  function countBoardContent(board: BoardState): number {
+    const taskCount = (board.columns?.todo?.length || 0) +
+                      (board.columns?.doing?.length || 0) +
+                      (board.columns?.done?.length || 0) +
+                      (board.archive?.length || 0);
+    const objectiveCount = board.objectives?.length || 0;
+    return taskCount + objectiveCount;
+  }
+
   async function loadBoard(): Promise<BoardState> {
+    const localBoard = loadBoardFromLocal();
+    const localCount = countBoardContent(localBoard);
+
     const r2Board = await loadBoardFromR2();
     if (r2Board) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(r2Board));
-      return migrateBoard(r2Board);
+      const r2Count = countBoardContent(r2Board);
+
+      // SAFETY: Never let cloud data overwrite richer local data
+      if (r2Count >= localCount) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(r2Board));
+        return migrateBoard(r2Board);
+      } else {
+        console.log(`Kept local data (${localCount} items) over cloud data (${r2Count} items)`);
+        // Sync local to cloud since local is richer
+        syncToR2(localBoard);
+        return localBoard;
+      }
     }
-    return loadBoardFromLocal();
+    return localBoard;
   }
 
   function saveBoard(boardState: BoardState): void {
@@ -1739,6 +1762,13 @@
 
   let syncTimeout: number | null = null;
   function syncToR2(boardState: BoardState): void {
+    // SAFETY: Never sync empty or near-empty state to cloud
+    const contentCount = countBoardContent(boardState);
+    if (contentCount === 0) {
+      console.log('Blocked sync: refusing to sync empty board to cloud');
+      return;
+    }
+
     if (syncTimeout) clearTimeout(syncTimeout);
     syncTimeout = window.setTimeout(async () => {
       if (syncInProgress) return;
