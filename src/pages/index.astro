@@ -487,6 +487,47 @@
     background: var(--card-bg);
   }
 
+  .sync-indicator {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+    border-radius: 8px;
+  }
+
+  .sync-indicator:hover {
+    background: var(--card-bg);
+  }
+
+  .sync-indicator.success {
+    color: #22c55e;
+  }
+
+  .sync-indicator.error {
+    color: #ef4444;
+  }
+
+  .sync-indicator.syncing {
+    color: #3b82f6;
+  }
+
+  .sync-indicator.syncing svg {
+    animation: spin 1s linear infinite;
+  }
+
+  .sync-indicator.no-password {
+    color: #f59e0b;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
   .topbar-actions {
     display: flex;
     align-items: center;
@@ -1599,8 +1640,8 @@
 </style>
 
 <script>
-  const WORKER_URL = 'https://loom-upload.ben-6a6.workers.dev';
-  const R2_BASE = 'https://pub-17ea8d32c4a94a5fbc8eb9a70e6047a8.r2.dev';
+  const WORKER_URL = 'https://levitate-sync.ben-6a6.workers.dev';
+  const SYNC_PASSWORD_KEY = 'levitate-sync-password';
 
   interface Card {
     id: string;
@@ -1643,6 +1684,50 @@
   const STORAGE_KEY = 'levitate-board';
   const POWER_HOUR_KEY = 'levitate-power-hour';
   let syncInProgress = false;
+  let lastSyncStatus: 'none' | 'success' | 'error' | 'syncing' | 'no-password' = 'none';
+
+  function getSyncPassword(): string | null {
+    return localStorage.getItem(SYNC_PASSWORD_KEY);
+  }
+
+  function setSyncPassword(password: string): void {
+    localStorage.setItem(SYNC_PASSWORD_KEY, password);
+  }
+
+  function updateSyncIndicator(): void {
+    const indicator = document.getElementById('sync-indicator');
+    if (!indicator) return;
+
+    const password = getSyncPassword();
+    if (!password) {
+      indicator.className = 'sync-indicator no-password';
+      indicator.title = 'Cloud sync disabled - set password in settings';
+      indicator.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>`;
+      return;
+    }
+
+    switch (lastSyncStatus) {
+      case 'syncing':
+        indicator.className = 'sync-indicator syncing';
+        indicator.title = 'Syncing...';
+        indicator.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9"></path></svg>`;
+        break;
+      case 'success':
+        indicator.className = 'sync-indicator success';
+        indicator.title = 'Synced to cloud';
+        indicator.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path><polyline points="8 14 11 17 16 12"></polyline></svg>`;
+        break;
+      case 'error':
+        indicator.className = 'sync-indicator error';
+        indicator.title = 'Sync failed - click to retry';
+        indicator.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+        break;
+      default:
+        indicator.className = 'sync-indicator';
+        indicator.title = 'Cloud sync ready';
+        indicator.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>`;
+    }
+  }
 
   const WELCOME_TASK: Card = {
     id: 'welcome-task',
@@ -1713,14 +1798,35 @@
   }
 
   async function loadBoardFromR2(): Promise<BoardState | null> {
+    const password = getSyncPassword();
+    if (!password) {
+      lastSyncStatus = 'no-password';
+      return null;
+    }
+
     try {
-      const response = await fetch(`${R2_BASE}/levitate-board.json?t=${Date.now()}`);
+      const response = await fetch(WORKER_URL, {
+        method: 'GET',
+        headers: { 'X-Sync-Password': password }
+      });
       if (response.ok) {
         const data = await response.json();
+        lastSyncStatus = 'success';
+        updateSyncIndicator();
         return data;
       }
+      if (response.status === 404) {
+        // No data yet - that's fine for new users
+        lastSyncStatus = 'success';
+        updateSyncIndicator();
+        return null;
+      }
+      lastSyncStatus = 'error';
+      updateSyncIndicator();
     } catch (e) {
-      console.log('Failed to load from R2');
+      console.log('Failed to load from cloud');
+      lastSyncStatus = 'error';
+      updateSyncIndicator();
     }
     return null;
   }
@@ -1768,6 +1874,13 @@
 
   let syncTimeout: number | null = null;
   function syncToR2(boardState: BoardState): void {
+    const password = getSyncPassword();
+    if (!password) {
+      lastSyncStatus = 'no-password';
+      updateSyncIndicator();
+      return;
+    }
+
     // SAFETY: Never sync empty or near-empty state to cloud
     const contentCount = countBoardContent(boardState);
     if (contentCount === 0) {
@@ -1779,15 +1892,32 @@
     syncTimeout = window.setTimeout(async () => {
       if (syncInProgress) return;
       syncInProgress = true;
+      lastSyncStatus = 'syncing';
+      updateSyncIndicator();
+
       try {
-        const formData = new FormData();
-        formData.append('json', new Blob([JSON.stringify(boardState)], { type: 'application/json' }), 'levitate-board.json');
-        formData.append('type', 'levitate-data');
-        await fetch(WORKER_URL, { method: 'POST', body: formData });
+        const response = await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Sync-Password': password
+          },
+          body: JSON.stringify(boardState)
+        });
+
+        if (response.ok) {
+          lastSyncStatus = 'success';
+          console.log('Synced to cloud successfully');
+        } else {
+          lastSyncStatus = 'error';
+          console.log('Cloud sync failed:', response.status);
+        }
       } catch (e) {
-        console.log('Failed to sync to R2');
+        lastSyncStatus = 'error';
+        console.log('Failed to sync to cloud');
       }
       syncInProgress = false;
+      updateSyncIndicator();
     }, 500);
   }
 
@@ -2613,11 +2743,96 @@
   let editingCard: { id: string; column: keyof BoardState['columns'] } | null = null;
   let activeColumn: keyof BoardState['columns'] = 'todo';
 
-  // Load from R2 in background
-  loadBoard().then(board => {
-    state = board;
-    render();
-  });
+  // Initialize sync indicator
+  if (!getSyncPassword()) {
+    lastSyncStatus = 'no-password';
+  }
+
+  // Show sync prompt if no local data and no password
+  function showSyncPrompt(): Promise<void> {
+    return new Promise((resolve) => {
+      const modal = document.createElement('div');
+      modal.className = 'settings-modal';
+      modal.innerHTML = `
+        <div class="settings-modal-content" style="max-width: 400px;">
+          <div class="settings-header">
+            <h3>Welcome to Levitate</h3>
+          </div>
+          <div style="padding: 1rem;">
+            <p style="margin: 0 0 1rem; color: var(--text-muted); font-size: 0.875rem;">Already have data on another device? Enter your sync password to load it.</p>
+            <input type="password" id="sync-prompt-password" placeholder="Sync password" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font-size: 1rem; box-sizing: border-box;">
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+              <button id="sync-prompt-skip" style="flex: 1; padding: 0.75rem; background: var(--card-bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; cursor: pointer;">Start Fresh</button>
+              <button id="sync-prompt-load" style="flex: 1; padding: 0.75rem; background: #8b5cf6; border: none; color: white; border-radius: 6px; cursor: pointer;">Load Data</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      modal.querySelector('#sync-prompt-skip')?.addEventListener('click', () => {
+        modal.remove();
+        resolve();
+      });
+
+      modal.querySelector('#sync-prompt-load')?.addEventListener('click', async () => {
+        const input = modal.querySelector('#sync-prompt-password') as HTMLInputElement;
+        const password = input?.value?.trim();
+
+        if (!password || password.length < 4) {
+          alert('Password must be at least 4 characters');
+          return;
+        }
+
+        setSyncPassword(password);
+        lastSyncStatus = 'syncing';
+
+        const cloudBoard = await loadBoardFromR2();
+        if (cloudBoard && countBoardContent(cloudBoard) > 0) {
+          state = migrateBoard(cloudBoard);
+          saveBoard(state);
+          lastSyncStatus = 'success';
+          modal.remove();
+          render();
+          resolve();
+        } else {
+          alert('No data found for this password. Check your password or start fresh.');
+          lastSyncStatus = 'error';
+          localStorage.removeItem(SYNC_PASSWORD_KEY);
+        }
+      });
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.remove();
+          resolve();
+        }
+      });
+    });
+  }
+
+  // Check if we should show sync prompt (no local data, no password)
+  const localBoard = loadBoardFromLocal();
+  const hasLocalData = countBoardContent(localBoard) > 1; // More than just welcome task
+  const hasPassword = !!getSyncPassword();
+
+  if (!hasLocalData && !hasPassword) {
+    // Show prompt first, then continue
+    showSyncPrompt().then(() => {
+      loadBoard().then(board => {
+        state = board;
+        render();
+        updateSyncIndicator();
+      });
+    });
+  } else {
+    // Load from cloud in background
+    loadBoard().then(board => {
+      state = board;
+      render();
+      updateSyncIndicator();
+    });
+  }
 
   function render() {
     const app = document.getElementById('app')!;
@@ -2653,6 +2868,9 @@
           </div>
 
           <div class="topbar-actions">
+            <button class="sync-indicator no-password" id="sync-indicator" aria-label="Cloud sync status" title="Cloud sync disabled - set password in settings">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+            </button>
             <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
               <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="5"></circle>
@@ -3097,6 +3315,21 @@
       });
     });
 
+    // Sync indicator click - retry sync or open settings
+    document.getElementById('sync-indicator')?.addEventListener('click', () => {
+      const password = getSyncPassword();
+      if (!password) {
+        // Open settings if no password
+        document.getElementById('settings-btn')?.click();
+      } else if (lastSyncStatus === 'error') {
+        // Retry sync
+        syncToR2(state);
+      } else {
+        // Manual sync
+        syncToR2(state);
+      }
+    });
+
     // Theme toggle
     document.getElementById('theme-toggle')?.addEventListener('click', () => {
       const current = document.documentElement.getAttribute('data-theme');
@@ -3112,12 +3345,33 @@
 
       const renderSettingsContent = () => {
         const objectives = state.objectives;
+        const currentPassword = getSyncPassword() || '';
         return `
           <div class="settings-modal-content">
             <div class="settings-header">
               <h3>Settings</h3>
               <button class="settings-close">&times;</button>
             </div>
+
+            <div class="settings-section">
+              <div style="padding: 0 0.75rem 0.5rem; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Import Data</div>
+              <div style="padding: 0.5rem 0.75rem;">
+                <input type="file" id="import-file" accept=".json" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font-size: 0.875rem; box-sizing: border-box;">
+              </div>
+            </div>
+
+            <div class="settings-section">
+              <div style="padding: 0 0.75rem 0.5rem; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Cloud Sync</div>
+              <div style="padding: 0.5rem 0.75rem;">
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <input type="password" id="sync-password-input" placeholder="Enter sync password" value="${currentPassword}"
+                    style="flex: 1; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font-size: 0.875rem;">
+                  <button id="sync-password-save" style="padding: 0.5rem 1rem; background: #8b5cf6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem;">Save</button>
+                </div>
+                <p style="margin: 0.5rem 0 0; font-size: 0.75rem; color: var(--text-muted);">Use the same password on all devices to sync your data. Min 4 characters.</p>
+              </div>
+            </div>
+
             <div class="settings-list">
               ${objectives.length === 0 ? '<div class="settings-empty">No objectives to manage</div>' :
                 `<div style="padding: 0 0.75rem 0.5rem; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Delete Objectives</div>` +
@@ -3153,6 +3407,80 @@
 
       const attachModalListeners = () => {
         modal.querySelector('.settings-close')?.addEventListener('click', () => modal.remove());
+
+        // Import data from file
+        modal.querySelector('#import-file')?.addEventListener('change', (e) => {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const text = event.target?.result as string;
+              const parsed = JSON.parse(text);
+              if (!parsed.columns) {
+                alert('Invalid data format');
+                return;
+              }
+
+              const importCount = countBoardContent(parsed);
+              state = migrateBoard(parsed);
+              saveBoard(state);
+              render();
+              modal.remove();
+              alert(`Imported ${importCount} items!`);
+            } catch (err) {
+              alert('Failed to parse file');
+            }
+          };
+          reader.readAsText(file);
+        });
+
+        // Sync password save
+        modal.querySelector('#sync-password-save')?.addEventListener('click', async () => {
+          const input = modal.querySelector('#sync-password-input') as HTMLInputElement;
+          const password = input?.value || '';
+
+          if (password.length > 0 && password.length < 4) {
+            alert('Password must be at least 4 characters');
+            return;
+          }
+
+          if (password) {
+            setSyncPassword(password);
+            lastSyncStatus = 'syncing';
+            updateSyncIndicator();
+
+            // Try to load from cloud first
+            const cloudBoard = await loadBoardFromR2();
+            if (cloudBoard) {
+              const cloudCount = countBoardContent(cloudBoard);
+              const localCount = countBoardContent(state);
+
+              if (cloudCount > localCount) {
+                if (confirm(`Found ${cloudCount} items in cloud vs ${localCount} locally. Load cloud data?`)) {
+                  state = cloudBoard;
+                  saveBoard(state);
+                  render();
+                }
+              } else if (localCount > 0) {
+                // Sync local to cloud
+                syncToR2(state);
+              }
+            } else if (countBoardContent(state) > 0) {
+              // No cloud data, sync local up
+              syncToR2(state);
+            }
+
+            updateSyncIndicator();
+            alert('Sync password saved! Your data will sync across devices using this password.');
+          } else {
+            localStorage.removeItem(SYNC_PASSWORD_KEY);
+            lastSyncStatus = 'no-password';
+            updateSyncIndicator();
+          }
+          modal.remove();
+        });
 
         modal.querySelectorAll('.settings-delete-btn').forEach(btn => {
           btn.addEventListener('click', (e) => {
