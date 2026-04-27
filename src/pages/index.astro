@@ -46,9 +46,76 @@
   </style>
 </head>
 <body>
+  <!-- Password Gate -->
+  <div id="login-gate" style="display: none;">
+    <div class="login-box">
+      <h1 class="login-title">Levitate</h1>
+      <input type="password" id="password-input" placeholder="Enter password" autocomplete="off" />
+      <button id="login-btn">Enter</button>
+      <p id="login-error" style="display: none;">Incorrect password</p>
+    </div>
+  </div>
   <div id="app"></div>
 
 <style is:global>
+  /* Login Gate */
+  #login-gate {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-box {
+    text-align: center;
+    padding: 2rem;
+  }
+  .login-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #22c55e, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 2rem;
+  }
+  #password-input {
+    display: block;
+    width: 200px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--text);
+    margin: 0 auto 1rem;
+    text-align: center;
+  }
+  #password-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+  #login-btn {
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #22c55e, #3b82f6);
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  #login-btn:hover {
+    opacity: 0.9;
+  }
+  #login-error {
+    color: #ef4444;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+  }
+
   body:has(.levitate) header,
   body:has(.levitate) footer {
     display: none;
@@ -1640,6 +1707,46 @@
 </style>
 
 <script>
+  // Password protection
+  const APP_PASSWORD = 'Ben123';
+  const AUTH_KEY = 'levitate-auth';
+
+  function checkAuth() {
+    const isAuthed = localStorage.getItem(AUTH_KEY) === 'true';
+    const loginGate = document.getElementById('login-gate');
+    const app = document.getElementById('app');
+
+    if (!isAuthed) {
+      loginGate!.style.display = 'flex';
+      app!.style.display = 'none';
+      document.getElementById('password-input')?.focus();
+    } else {
+      loginGate!.style.display = 'none';
+      app!.style.display = 'block';
+    }
+  }
+
+  function handleLogin() {
+    const input = document.getElementById('password-input') as HTMLInputElement;
+    const error = document.getElementById('login-error');
+
+    if (input.value === APP_PASSWORD) {
+      localStorage.setItem(AUTH_KEY, 'true');
+      checkAuth();
+    } else {
+      error!.style.display = 'block';
+      input.value = '';
+      input.focus();
+    }
+  }
+
+  document.getElementById('login-btn')?.addEventListener('click', handleLogin);
+  document.getElementById('password-input')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleLogin();
+  });
+
+  checkAuth();
+
   const WORKER_URL = 'https://levitate-sync.ben-6a6.workers.dev';
   const SYNC_PASSWORD_KEY = 'levitate-sync-password';
 
