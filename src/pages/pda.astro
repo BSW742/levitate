@@ -1,0 +1,3047 @@
+---
+// PDA - Lead sourcing tool
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PDA - Lead Sourcing</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
+  <meta name="theme-color" content="#1f2937">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PDA">
+</head>
+<body>
+  <!-- Password Gate -->
+  <div id="login-gate">
+    <div class="login-box">
+      <h1 class="login-title">PDA</h1>
+      <p class="login-subtitle">Use your Stiki sync password</p>
+      <input type="password" id="password-input" placeholder="Sync password" autocomplete="off">
+      <button id="login-btn">Enter</button>
+      <p id="login-error">Password required (min 4 chars)</p>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="app">
+    <!-- Header -->
+    <header id="header">
+      <div id="header-top">
+        <h1 id="header-project-name">No project</h1>
+        <div id="header-actions">
+          <div id="mode-toggle">
+            <button class="mode-btn active" data-mode="scan">Scan</button>
+            <button class="mode-btn" data-mode="web">Web</button>
+          </div>
+          <button id="settings-btn" title="Settings">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          </button>
+        </div>
+      </div>
+      <div id="board-bar">
+        <button class="board-dot" data-board="0" style="background: #fed7aa" title="Orange"></button>
+        <button class="board-dot" data-board="1" style="background: #fef08a" title="Yellow"></button>
+        <button class="board-dot" data-board="2" style="background: #bbf7d0" title="Green"></button>
+        <button class="board-dot" data-board="3" style="background: #93c5fd" title="Blue"></button>
+        <button class="board-dot" data-board="4" style="background: #c7d2fe" title="Indigo"></button>
+        <button class="board-dot" data-board="5" style="background: #ddd6fe" title="Violet"></button>
+      </div>
+    </header>
+
+    <!-- Mode 1: LinkedIn Scanner -->
+    <div id="scan-mode" class="mode-content active">
+      <!-- Criteria Form -->
+      <div id="criteria-form">
+        <div class="form-row">
+          <input type="text" id="criteria-location" placeholder="Location (e.g., Sydney, Australia)">
+        </div>
+        <div class="form-row">
+          <input type="text" id="criteria-industry" placeholder="Industry (e.g., Real Estate)">
+        </div>
+        <div class="form-row">
+          <input type="text" id="criteria-role" placeholder="Role (e.g., CEO, Director)">
+        </div>
+        <button id="gimme-btn" class="primary-btn">
+          <span class="btn-text">Gimme 10</span>
+          <span class="btn-loading">Searching...</span>
+        </button>
+      </div>
+
+      <!-- Queue -->
+      <div id="queue-section" class="hidden">
+        <div id="queue-header">
+          <span id="queue-count">0 profiles</span>
+          <button id="clear-queue" class="text-btn">Clear</button>
+        </div>
+        <div id="queue-list"></div>
+      </div>
+
+      <!-- Current Profile -->
+      <div id="current-profile" class="hidden">
+        <div class="profile-card">
+          <div class="profile-avatar">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M12 14c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
+          </div>
+          <div class="profile-info">
+            <h2 id="profile-name">Name</h2>
+            <p id="profile-role">Role</p>
+            <p id="profile-company">Company</p>
+          </div>
+          <div class="profile-actions">
+            <button id="view-linkedin" class="action-btn linkedin">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+              Search LI
+            </button>
+            <button id="add-lead" class="action-btn primary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              Add Lead
+            </button>
+            <button id="skip-profile" class="action-btn secondary">Skip</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Photo Capture -->
+      <div id="photo-capture" class="hidden">
+        <div class="capture-header">
+          <h3>Take Screenshot</h3>
+          <p>Screenshot the LinkedIn profile, then select the image</p>
+        </div>
+        <div class="capture-actions">
+          <button id="select-photo" class="action-btn primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            Select Photo
+          </button>
+          <button id="cancel-capture" class="action-btn secondary">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Lead Preview -->
+      <div id="lead-preview" class="hidden">
+        <div class="preview-card">
+          <div class="preview-avatar" id="preview-avatar">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M12 14c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
+          </div>
+          <div class="preview-fields">
+            <div class="field-group">
+              <label>Name</label>
+              <input type="text" id="preview-name">
+            </div>
+            <div class="field-group">
+              <label>Role</label>
+              <input type="text" id="preview-role">
+            </div>
+            <div class="field-group">
+              <label>Company</label>
+              <input type="text" id="preview-company">
+            </div>
+            <div class="field-row">
+              <div class="field-group">
+                <label>Phone</label>
+                <input type="tel" id="preview-phone">
+              </div>
+              <div class="field-group">
+                <label>Email</label>
+                <input type="email" id="preview-email">
+              </div>
+            </div>
+            <div class="field-group">
+              <label>Website</label>
+              <input type="url" id="preview-website">
+            </div>
+            <div class="field-group">
+              <label>LinkedIn URL</label>
+              <input type="url" id="preview-linkedin" placeholder="linkedin.com/in/...">
+            </div>
+          </div>
+          <div class="board-select">
+            <label>Add to board:</label>
+            <div class="board-options">
+              <button class="board-btn active" data-board="0" style="background: #fed7aa" title="Orange"></button>
+              <button class="board-btn" data-board="1" style="background: #fef9c3" title="Yellow"></button>
+              <button class="board-btn" data-board="2" style="background: #dcfce7" title="Green"></button>
+              <button class="board-btn" data-board="3" style="background: #93c5fd" title="Blue"></button>
+              <button class="board-btn" data-board="4" style="background: #e0e7ff" title="Indigo"></button>
+              <button class="board-btn" data-board="5" style="background: #ede9fe" title="Violet"></button>
+            </div>
+          </div>
+          <div class="preview-actions">
+            <button id="cancel-preview" class="action-btn secondary">Cancel</button>
+            <button id="save-lead" class="action-btn primary">Save Lead</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mode 2: Website/Webhook -->
+    <div id="web-mode" class="mode-content">
+      <div id="url-form">
+        <div class="form-row">
+          <input type="url" id="company-url" placeholder="Enter company URL (e.g., acme.com)">
+        </div>
+        <button id="enrich-btn" class="primary-btn">
+          <span class="btn-text">Enrich</span>
+          <span class="btn-loading">Enriching...</span>
+        </button>
+      </div>
+
+      <!-- Web Profile Card (after enrich) -->
+      <div id="web-profile" class="hidden">
+        <div class="profile-card">
+          <div class="profile-avatar">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M12 14c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
+          </div>
+          <div class="profile-info">
+            <h2 id="web-profile-name">Name</h2>
+            <p id="web-profile-role">Role</p>
+            <p id="web-profile-company">Company</p>
+          </div>
+          <div class="profile-actions">
+            <button id="web-view-linkedin" class="action-btn linkedin">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+              Search LI
+            </button>
+            <button id="web-add-lead" class="action-btn primary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              Add LI Photo
+            </button>
+            <button id="web-skip" class="action-btn secondary">Save Without Photo</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Web Photo Capture -->
+      <div id="web-photo-capture" class="hidden">
+        <div class="capture-header">
+          <h3>Take Screenshot</h3>
+          <p>Screenshot the LinkedIn profile, then select the image</p>
+        </div>
+        <div class="capture-actions">
+          <button id="web-select-photo" class="action-btn primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            Select Photo
+          </button>
+          <button id="web-cancel-capture" class="action-btn secondary">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Web Lead Preview (final step) -->
+      <div id="web-preview" class="hidden">
+        <div class="preview-card">
+          <div class="preview-avatar" id="web-preview-avatar">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M12 14c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
+          </div>
+          <div class="preview-fields">
+            <div class="field-group">
+              <label>Name</label>
+              <input type="text" id="web-name" placeholder="Contact name">
+            </div>
+            <div class="field-group">
+              <label>Company</label>
+              <input type="text" id="web-company">
+            </div>
+            <div class="field-group">
+              <label>Role</label>
+              <input type="text" id="web-role" placeholder="Job title">
+            </div>
+            <div class="field-row">
+              <div class="field-group">
+                <label>Phone</label>
+                <input type="tel" id="web-phone">
+              </div>
+              <div class="field-group">
+                <label>Email</label>
+                <input type="email" id="web-email">
+              </div>
+            </div>
+            <div class="field-group">
+              <label>Website</label>
+              <input type="url" id="web-website">
+            </div>
+          </div>
+          <div class="board-select">
+            <label>Add to board:</label>
+            <div class="board-options">
+              <button class="board-btn web active" data-board="0" style="background: #fed7aa" title="Orange"></button>
+              <button class="board-btn web" data-board="1" style="background: #fef9c3" title="Yellow"></button>
+              <button class="board-btn web" data-board="2" style="background: #dcfce7" title="Green"></button>
+              <button class="board-btn web" data-board="3" style="background: #93c5fd" title="Blue"></button>
+              <button class="board-btn web" data-board="4" style="background: #e0e7ff" title="Indigo"></button>
+              <button class="board-btn web" data-board="5" style="background: #ede9fe" title="Violet"></button>
+            </div>
+          </div>
+          <div class="preview-actions">
+            <button id="cancel-web" class="action-btn secondary">Cancel</button>
+            <button id="save-web-lead" class="action-btn primary">Save Lead</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Board View -->
+    <div id="board-view" class="hidden">
+      <div id="board-title-bar">
+        <input type="text" id="board-title" placeholder="Untitled">
+      </div>
+      <div id="board-cards"></div>
+      <div id="board-empty" class="hidden">
+        <p>No leads on this board yet</p>
+      </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Settings</h2>
+          <button class="modal-close" id="close-settings">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="setting-group">
+            <label>Current Project</label>
+            <div class="current-project">
+              <span id="current-project-name">No project</span>
+            </div>
+          </div>
+          <div class="setting-divider"></div>
+          <div class="setting-group">
+            <label>Switch Project</label>
+            <p class="setting-hint">Enter a project name to switch or create a new project</p>
+            <input type="text" id="switch-project-input" placeholder="e.g. litebooks-sales">
+            <div class="setting-actions">
+              <button id="switch-project-btn">Switch Project</button>
+            </div>
+          </div>
+          <div class="setting-divider"></div>
+          <div class="setting-group">
+            <label>Data</label>
+            <div class="setting-actions">
+              <button id="export-data">Export</button>
+              <button id="import-data" class="secondary">Import</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display: none">
+
+    <!-- Project Switch Success Overlay -->
+    <div id="switch-success" class="switch-success hidden">
+      <div class="switch-success-content">
+        <div class="switch-success-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+        <div class="switch-success-text">Switched to</div>
+        <div class="switch-success-project" id="switch-success-name"></div>
+      </div>
+    </div>
+
+    <!-- Card Detail Modal -->
+    <div id="card-detail-modal" class="modal hidden">
+      <div class="modal-content detail-content">
+        <div class="modal-header">
+          <h2>Edit Lead</h2>
+          <button class="modal-close" id="close-detail">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="detail-avatar-section">
+            <div class="detail-avatar" id="detail-avatar">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M12 14c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
+            </div>
+          </div>
+          <div class="detail-fields">
+            <div class="field-group">
+              <label>Name</label>
+              <input type="text" id="detail-name">
+            </div>
+            <div class="field-group">
+              <label>Role</label>
+              <input type="text" id="detail-role">
+            </div>
+            <div class="field-group">
+              <label>Company</label>
+              <input type="text" id="detail-company">
+            </div>
+            <div class="field-row">
+              <div class="field-group">
+                <label>Phone</label>
+                <input type="tel" id="detail-phone">
+              </div>
+              <div class="field-group">
+                <label>Email</label>
+                <input type="email" id="detail-email">
+              </div>
+            </div>
+            <div class="field-group">
+              <label>Website</label>
+              <input type="url" id="detail-website">
+            </div>
+            <div class="field-group">
+              <label>Notes</label>
+              <textarea id="detail-notes" rows="3"></textarea>
+            </div>
+            <div class="field-group">
+              <label>Board: <span id="selected-board-name"></span></label>
+              <div class="detail-board-picker" id="detail-board-picker">
+                <button class="board-opt" data-board="0" style="background: #fed7aa"></button>
+                <button class="board-opt" data-board="1" style="background: #fef08a"></button>
+                <button class="board-opt" data-board="2" style="background: #bbf7d0"></button>
+                <button class="board-opt" data-board="3" style="background: #93c5fd"></button>
+                <button class="board-opt" data-board="4" style="background: #c7d2fe"></button>
+                <button class="board-opt" data-board="5" style="background: #ddd6fe"></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Activity Log -->
+          <div class="activity-section">
+            <div class="activity-header">
+              <label>Activity</label>
+              <div class="activity-type-btns">
+                <button class="activity-type-btn" data-type="call" title="Log call">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                </button>
+                <button class="activity-type-btn" data-type="email" title="Log email">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7"/></svg>
+                </button>
+                <button class="activity-type-btn" data-type="meeting" title="Log meeting">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                </button>
+              </div>
+            </div>
+            <div id="activity-input" class="activity-input hidden">
+              <input type="text" id="activity-text" placeholder="Add a note...">
+              <button id="activity-add" class="action-btn primary small">Add</button>
+              <button id="activity-cancel" class="action-btn secondary small">✕</button>
+            </div>
+            <div id="activity-list" class="activity-list"></div>
+          </div>
+
+          <div class="detail-actions">
+            <button id="detail-delete" class="action-btn danger">Delete</button>
+            <button id="detail-save" class="action-btn primary">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cropper Modal (shared between scan and web modes) -->
+    <div id="cropper-modal" class="hidden">
+      <div class="cropper-header">
+        <span>Drag circle over face</span>
+      </div>
+      <div class="cropper-container">
+        <img id="cropper-image" src="" alt="Screenshot">
+        <div id="crop-circle"></div>
+      </div>
+      <div class="cropper-controls">
+        <label>
+          Size
+          <input type="range" id="crop-size" min="60" max="200" value="100">
+        </label>
+      </div>
+      <div class="cropper-actions">
+        <button id="cancel-crop" class="action-btn secondary">Cancel</button>
+        <button id="confirm-crop" class="action-btn primary">Crop</button>
+      </div>
+    </div>
+
+    <!-- Status Messages -->
+    <div id="toast" class="hidden"></div>
+    <div id="loading-overlay" class="hidden">
+      <div class="loading-spinner"></div>
+      <div id="loading-text">Loading...</div>
+    </div>
+  </div>
+
+  <input type="file" id="photo-input" accept="image/*" style="display: none">
+  <input type="file" id="web-photo-input" accept="image/*" style="display: none">
+
+<style is:global>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #111827;
+  color: #f9fafb;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Login */
+#login-gate {
+  position: fixed;
+  inset: 0;
+  background: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+#login-gate.hidden { display: none; }
+.login-box { text-align: center; padding: 20px; }
+.login-title { font-size: 3rem; margin-bottom: 0.5rem; font-weight: 700; }
+.login-subtitle { color: #9ca3af; margin-bottom: 2rem; }
+.login-box input {
+  display: block;
+  width: 260px;
+  padding: 14px 18px;
+  margin: 0 auto 1rem;
+  border: 2px solid #374151;
+  border-radius: 12px;
+  font-size: 1rem;
+  text-align: center;
+  background: #1f2937;
+  color: #f9fafb;
+}
+.login-box input:focus { outline: none; border-color: #6366f1; }
+.login-box button {
+  padding: 14px 40px;
+  background: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.login-box button:hover { background: #4f46e5; }
+#login-error { color: #f87171; margin-top: 1rem; font-size: 0.9rem; display: none; }
+
+/* App */
+#app { display: none; min-height: 100vh; padding-bottom: 40px; }
+#app.visible { display: block; }
+
+/* Header */
+#header {
+  background: #1f2937;
+  border-bottom: 1px solid #374151;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+#header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+}
+#header-project-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+/* Project Switch Success Overlay */
+.switch-success {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: success-fade-in 0.2s ease;
+}
+.switch-success.hidden { display: none; }
+.switch-success.fade-out {
+  animation: success-fade-out 0.3s ease forwards;
+}
+@keyframes success-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes success-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+.switch-success-content {
+  text-align: center;
+  animation: success-pop 0.3s ease;
+}
+@keyframes success-pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.switch-success-icon {
+  width: 80px;
+  height: 80px;
+  background: #22c55e;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: white;
+}
+.switch-success-text {
+  font-size: 1rem;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+.switch-success-project {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #f9fafb;
+}
+#header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+#settings-btn {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+#settings-btn:hover {
+  background: #374151;
+  color: #f9fafb;
+}
+
+/* Board Bar */
+#board-bar {
+  display: flex;
+  gap: 12px;
+  padding: 0 20px 16px;
+  justify-content: center;
+}
+.board-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.board-dot:hover {
+  transform: scale(1.1);
+}
+.board-dot.active {
+  border-color: #fff;
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px #6366f1;
+}
+
+#mode-toggle {
+  display: flex;
+  background: #374151;
+  border-radius: 10px;
+  padding: 4px;
+}
+.mode-btn {
+  padding: 8px 20px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+.mode-btn.active {
+  background: #6366f1;
+  color: white;
+}
+
+/* Mode Content */
+.mode-content {
+  display: none;
+  padding: 20px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+.mode-content.active { display: block; }
+
+/* Forms */
+.form-row {
+  margin-bottom: 12px;
+}
+.form-row input {
+  width: 100%;
+  padding: 14px 16px;
+  background: #1f2937;
+  border: 2px solid #374151;
+  border-radius: 12px;
+  color: #f9fafb;
+  font-size: 1rem;
+}
+.form-row input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+.form-row input::placeholder { color: #6b7280; }
+
+.primary-btn {
+  width: 100%;
+  padding: 16px;
+  background: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s;
+}
+.primary-btn:hover { background: #4f46e5; transform: scale(1.02); }
+.primary-btn:disabled { background: #4b5563; cursor: not-allowed; transform: none; }
+.primary-btn.loading .btn-text { display: none; }
+.primary-btn .btn-loading { display: none; }
+.primary-btn.loading .btn-loading { display: inline; }
+
+.text-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.text-btn:hover { color: #f87171; }
+
+/* Queue */
+#queue-section {
+  margin-top: 24px;
+  background: #1f2937;
+  border-radius: 16px;
+  padding: 16px;
+}
+#queue-section.hidden { display: none; }
+#queue-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+#queue-count {
+  font-weight: 600;
+  color: #9ca3af;
+}
+#queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.queue-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #374151;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.queue-item:hover { background: #4b5563; }
+.queue-item.active { background: #6366f1; }
+.queue-item-info { flex: 1; min-width: 0; }
+.queue-item-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.queue-item-company {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.queue-item.active .queue-item-company { color: #c7d2fe; }
+
+/* Profile Card */
+#current-profile.hidden, #web-profile.hidden { display: none; }
+.profile-card {
+  background: #1f2937;
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+  margin-top: 24px;
+}
+.profile-avatar {
+  width: 100px;
+  height: 100px;
+  background: #374151;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.profile-avatar svg { width: 50px; height: 50px; color: #6b7280; }
+.profile-info h2 { font-size: 1.5rem; margin-bottom: 4px; }
+.profile-info p { color: #9ca3af; }
+#profile-company { font-weight: 500; color: #6366f1; }
+
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.action-btn.primary {
+  background: #6366f1;
+  color: white;
+}
+.action-btn.primary:hover { background: #4f46e5; }
+.action-btn.secondary {
+  background: #374151;
+  color: #f9fafb;
+}
+.action-btn.secondary:hover { background: #4b5563; }
+.action-btn.linkedin {
+  background: #0077b5;
+  color: white;
+}
+.action-btn.linkedin:hover { background: #005885; }
+
+/* Photo Capture */
+#photo-capture.hidden, #web-photo-capture.hidden { display: none; }
+#photo-capture, #web-photo-capture {
+  background: #1f2937;
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+  margin-top: 24px;
+}
+.capture-header h3 { margin-bottom: 8px; }
+.capture-header p { color: #9ca3af; margin-bottom: 24px; }
+.capture-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Lead Preview */
+#lead-preview.hidden, #web-preview.hidden { display: none; }
+.preview-card {
+  background: #1f2937;
+  border-radius: 20px;
+  padding: 24px;
+  margin-top: 24px;
+}
+.preview-avatar {
+  width: 80px;
+  height: 80px;
+  background: #374151;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.preview-avatar svg { width: 40px; height: 40px; color: #6b7280; }
+.preview-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.preview-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.field-group label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.field-group input {
+  width: 100%;
+  padding: 12px 14px;
+  background: #374151;
+  border: 1px solid #4b5563;
+  border-radius: 10px;
+  color: #f9fafb;
+  font-size: 1rem;
+}
+.field-group input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.board-select {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #374151;
+}
+.board-select label {
+  display: block;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  margin-bottom: 12px;
+}
+.board-options {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.board-btn {
+  width: 48px;
+  height: 48px;
+  border: 3px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.board-btn:hover { transform: scale(1.1); }
+.board-btn.active { border-color: #6366f1; transform: scale(1.15); }
+
+.preview-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+.preview-actions .action-btn { flex: 1; }
+
+/* Board View */
+#board-view {
+  padding: 20px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+#board-view.hidden { display: none; }
+
+#board-title-bar {
+  margin-bottom: 20px;
+}
+#board-title {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid #374151;
+  color: #f9fafb;
+  font-size: 1.5rem;
+  font-weight: 700;
+  padding: 8px 0;
+  text-align: center;
+}
+#board-title:focus {
+  outline: none;
+  border-bottom-color: #6366f1;
+}
+#board-title::placeholder {
+  color: #6b7280;
+  font-weight: 400;
+}
+
+#board-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #1f2937;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.card-item:hover {
+  background: #374151;
+  transform: translateX(4px);
+}
+.card-item:active {
+  transform: scale(0.98);
+}
+
+.card-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.card-avatar svg {
+  width: 26px;
+  height: 26px;
+  color: #6b7280;
+}
+.card-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-info {
+  flex: 1;
+  min-width: 0;
+}
+.card-name {
+  font-weight: 600;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.card-meta {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#board-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+#board-empty.hidden { display: none; }
+
+/* Card Detail Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  padding: 20px;
+}
+.modal.hidden { display: none; }
+
+.modal-content {
+  background: #1f2937;
+  border-radius: 20px;
+  max-width: 400px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #374151;
+}
+.modal-header h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+.modal-close:hover { color: #f9fafb; }
+
+.modal-body {
+  padding: 20px;
+}
+
+/* Settings Modal */
+.setting-group { margin-bottom: 20px; }
+.setting-group:last-child { margin-bottom: 0; }
+.setting-group label { display: block; font-weight: 600; color: #f9fafb; margin-bottom: 4px; }
+.setting-hint { font-size: 13px; color: #9ca3af; margin-bottom: 12px; }
+.setting-group input {
+  width: 100%;
+  padding: 10px 14px;
+  background: #374151;
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  color: #f9fafb;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+.setting-group input:focus { outline: none; border-color: #6366f1; }
+.setting-actions { display: flex; gap: 8px; }
+.setting-actions button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.setting-actions button:not(.secondary):not(.danger) { background: #6366f1; color: white; }
+.setting-actions button:not(.secondary):not(.danger):hover { background: #4f46e5; }
+.setting-actions button.secondary { background: #374151; color: #f9fafb; }
+.setting-actions button.secondary:hover { background: #4b5563; }
+.setting-divider { height: 1px; background: #374151; margin: 20px 0; }
+.current-project {
+  padding: 12px 16px;
+  background: #374151;
+  border-radius: 8px;
+  border: 1px solid #4b5563;
+}
+.current-project span {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f9fafb;
+}
+.current-project span.no-project {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.detail-avatar-section {
+  text-align: center;
+  margin-bottom: 20px;
+}
+.detail-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #374151;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.detail-avatar svg {
+  width: 40px;
+  height: 40px;
+  color: #6b7280;
+}
+.detail-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.detail-fields .field-group label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.detail-fields .field-group input,
+.detail-fields .field-group textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: #374151;
+  border: 1px solid #4b5563;
+  border-radius: 10px;
+  color: #f9fafb;
+  font-size: 1rem;
+  font-family: inherit;
+}
+.detail-fields .field-group input:focus,
+.detail-fields .field-group textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+#selected-board-name {
+  color: #f9fafb;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.detail-board-picker {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.board-opt {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.board-opt:hover { transform: scale(1.1); }
+.board-opt.active {
+  border-color: #6366f1;
+  transform: scale(1.15);
+}
+
+/* Activity Section */
+.activity-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #374151;
+}
+.activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.activity-header label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.activity-type-btns {
+  display: flex;
+  gap: 8px;
+}
+.activity-type-btn {
+  width: 40px;
+  height: 40px;
+  border: 1.5px solid #374151;
+  background: #1f2937;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+}
+.activity-type-btn svg {
+  width: 18px;
+  height: 18px;
+  transition: all 0.2s ease;
+}
+.activity-type-btn:hover {
+  background: #374151;
+  border-color: #4b5563;
+  color: #e5e7eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.activity-type-btn.active {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+}
+
+.activity-input {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.activity-input.hidden { display: none; }
+.activity-input input {
+  flex: 1;
+  padding: 10px 12px;
+  background: #374151;
+  border: 1px solid #4b5563;
+  border-radius: 8px;
+  color: #f9fafb;
+  font-size: 0.95rem;
+}
+.activity-input input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+.action-btn.small {
+  padding: 10px 14px;
+  font-size: 0.9rem;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.activity-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #374151;
+  border-radius: 10px;
+  position: relative;
+}
+.activity-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #4b5563;
+  border-radius: 6px;
+  color: #9ca3af;
+}
+.activity-item[data-type="call"] .activity-icon { color: #22c55e; background: rgba(34,197,94,0.15); }
+.activity-item[data-type="email"] .activity-icon { color: #3b82f6; background: rgba(59,130,246,0.15); }
+.activity-item[data-type="meeting"] .activity-icon { color: #f59e0b; background: rgba(245,158,11,0.15); }
+.activity-content {
+  flex: 1;
+  min-width: 0;
+}
+.activity-text {
+  font-size: 0.95rem;
+  color: #f9fafb;
+  word-break: break-word;
+}
+.activity-time {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+.activity-delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 2px 6px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.activity-item:hover .activity-delete {
+  opacity: 1;
+}
+.activity-delete:hover {
+  color: #f87171;
+}
+.activity-empty {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.9rem;
+  padding: 20px;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #374151;
+}
+.detail-actions .action-btn {
+  flex: 1;
+}
+.action-btn.danger {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+.action-btn.danger:hover {
+  background: #991b1b;
+}
+
+/* Toast */
+#toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #22c55e;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 500;
+  z-index: 1000;
+  animation: slideUp 0.3s ease;
+}
+#toast.hidden { display: none; }
+#toast.error { background: #ef4444; }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Cropper Modal */
+#cropper-modal {
+  position: fixed;
+  inset: 0;
+  background: #1f2937;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+}
+#cropper-modal.hidden { display: none; }
+.cropper-header {
+  padding: 16px 20px;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 1px solid #374151;
+}
+.cropper-container {
+  flex: 1;
+  position: relative;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+#cropper-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+#crop-circle {
+  position: absolute;
+  left: 50px;
+  top: 120px;
+  width: 100px;
+  height: 100px;
+  border: 3px solid #fef08a;
+  border-radius: 50%;
+  cursor: move;
+  touch-action: none;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+}
+.cropper-controls {
+  padding: 16px 20px;
+  border-top: 1px solid #374151;
+}
+.cropper-controls label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+.cropper-controls input[type="range"] {
+  flex: 1;
+  height: 4px;
+  -webkit-appearance: none;
+  background: #374151;
+  border-radius: 2px;
+}
+.cropper-controls input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  background: #fef08a;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.cropper-actions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0));
+}
+
+/* Mobile adjustments */
+/* Loading Overlay */
+#loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 500;
+}
+#loading-overlay.hidden { display: none; }
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #374151;
+  border-top-color: #fef08a;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+#loading-text {
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+@media (max-width: 480px) {
+  .field-row { grid-template-columns: 1fr; }
+  .profile-actions { gap: 8px; }
+  .action-btn { padding: 12px 16px; }
+}
+</style>
+
+<script>
+  const SYNC_PASSWORD_KEY = 'stiki-sync-password';
+  const STORAGE_KEY = 'stiki-notes-v2';
+  const PDA_QUEUE_KEY = 'pda-queue';
+  const WORKER_URL = 'https://levitate-sync.ben-6a6.workers.dev';
+
+  interface Profile {
+    name: string;
+    role: string;
+    company: string;
+    linkedin: string;
+  }
+
+  interface Activity {
+    id: string;
+    timestamp: number;
+    type: 'call' | 'email' | 'meeting' | 'note';
+    text: string;
+  }
+
+  interface Note {
+    id: string;
+    text: string;
+    color: string;
+    x: number;
+    y: number;
+    rotation: number;
+    createdAt: number;
+    updatedAt: number;
+    zIndex: number;
+    isLead: boolean;
+    quadrant: number;
+    avatar?: string;
+    name?: string;
+    role?: string;
+    company?: string;
+    phone?: string;
+    email?: string;
+    website?: string;
+    linkedin?: string;
+    notes?: string;
+    activity?: Activity[];
+  }
+
+  interface State {
+    notes: Note[];
+    nextZIndex: number;
+    boardTitles?: string[];
+  }
+
+  let syncPassword: string | null = null;
+  let queue: Profile[] = [];
+  let currentIndex = 0;
+  let currentMode: 'scan' | 'web' = 'scan';
+  let selectedBoard = 0;
+  let selectedWebBoard = 0;
+  let capturedImage: string | null = null;
+  let webCapturedImage: string | null = null;
+  let webEnrichedData: { name: string; role: string; company: string; phone: string; email: string; website: string } | null = null;
+
+  // Utility functions - defined early so they can be used anywhere
+  function showToast(message: string, isError = false) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.className = isError ? 'error' : '';
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.add('hidden'), 3000);
+  }
+
+  function showLoading(message: string) {
+    const overlay = document.getElementById('loading-overlay');
+    const text = document.getElementById('loading-text');
+    if (!overlay || !text) return;
+    text.textContent = message;
+    overlay.classList.remove('hidden');
+  }
+
+  function hideLoading() {
+    document.getElementById('loading-overlay')?.classList.add('hidden');
+  }
+
+  function escapeHtml(s: string): string {
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  // Auth
+  function getSyncPassword(): string | null {
+    return localStorage.getItem(SYNC_PASSWORD_KEY);
+  }
+
+  function checkAuth(): boolean {
+    syncPassword = getSyncPassword();
+    const loginGate = document.getElementById('login-gate')!;
+    const app = document.getElementById('app')!;
+    const headerName = document.getElementById('header-project-name');
+
+    if (syncPassword && syncPassword.length >= 4) {
+      loginGate.classList.add('hidden');
+      app.classList.add('visible');
+      loadQueue();
+      // Update header title
+      if (headerName) {
+        headerName.textContent = syncPassword;
+      }
+      return true;
+    } else {
+      loginGate.classList.remove('hidden');
+      app.classList.remove('visible');
+      if (headerName) {
+        headerName.textContent = 'No project';
+      }
+      (document.getElementById('password-input') as HTMLInputElement)?.focus();
+      return false;
+    }
+  }
+
+  function attemptLogin() {
+    const input = document.getElementById('password-input') as HTMLInputElement;
+    const error = document.getElementById('login-error')!;
+    const pw = input.value;
+
+    if (pw.length >= 4) {
+      localStorage.setItem(SYNC_PASSWORD_KEY, pw);
+      syncPassword = pw;
+      checkAuth();
+    } else {
+      error.style.display = 'block';
+      input.focus();
+    }
+  }
+
+  document.getElementById('login-btn')?.addEventListener('click', attemptLogin);
+  document.getElementById('password-input')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') attemptLogin();
+  });
+
+  // Queue persistence
+  function saveQueue() {
+    localStorage.setItem(PDA_QUEUE_KEY, JSON.stringify({ queue, currentIndex }));
+  }
+
+  function loadQueue() {
+    const data = localStorage.getItem(PDA_QUEUE_KEY);
+    if (data) {
+      try {
+        const parsed = JSON.parse(data);
+        queue = parsed.queue || [];
+        currentIndex = parsed.currentIndex || 0;
+        if (queue.length > 0) {
+          renderQueue();
+          showCurrentProfile();
+        }
+      } catch { /* ignore */ }
+    }
+  }
+
+  // Mode toggle
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = (btn as HTMLElement).dataset.mode as 'scan' | 'web';
+      currentMode = mode;
+
+      // Deselect board view
+      selectedBoardView = null;
+      document.querySelectorAll('.board-dot').forEach(d => d.classList.remove('active'));
+      document.getElementById('board-view')?.classList.add('hidden');
+
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
+      document.getElementById(`${mode}-mode`)?.classList.add('active');
+    });
+  });
+
+  // Gimme 10
+  document.getElementById('gimme-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('gimme-btn') as HTMLButtonElement;
+    const location = (document.getElementById('criteria-location') as HTMLInputElement).value;
+    const industry = (document.getElementById('criteria-industry') as HTMLInputElement).value;
+    const role = (document.getElementById('criteria-role') as HTMLInputElement).value;
+
+    console.log('Gimme10 clicked', { location, industry, role, syncPassword });
+    btn.classList.add('loading');
+    btn.disabled = true;
+    showLoading('Searching for leads...');
+
+    try {
+      const res = await fetch(`${WORKER_URL}/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Sync-Password': syncPassword!,
+        },
+        body: JSON.stringify({ location, industry, role }),
+      });
+
+      const data = await res.json();
+      console.log('Search response:', data);
+
+      hideLoading();
+      if (data.profiles && data.profiles.length > 0) {
+        queue = data.profiles;
+        currentIndex = -1; // No selection initially
+        saveQueue();
+        renderQueue();
+        // Don't show profile automatically - wait for user to tap one
+        document.getElementById('current-profile')?.classList.add('hidden');
+        showToast(`Found ${queue.length} profiles!`);
+      } else {
+        showToast('No profiles found', true);
+      }
+    } catch (e) {
+      hideLoading();
+      console.error('Search error:', e);
+      showToast('Search failed', true);
+    } finally {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  });
+
+  function renderQueue() {
+    const section = document.getElementById('queue-section')!;
+    const list = document.getElementById('queue-list')!;
+    const count = document.getElementById('queue-count')!;
+
+    if (queue.length === 0) {
+      section.classList.add('hidden');
+      return;
+    }
+
+    section.classList.remove('hidden');
+    count.textContent = `${queue.length} profiles`;
+    list.innerHTML = '';
+
+    queue.forEach((profile, i) => {
+      const item = document.createElement('div');
+      item.className = `queue-item ${i === currentIndex ? 'active' : ''}`;
+      item.innerHTML = `
+        <div class="queue-item-info">
+          <div class="queue-item-name">${escapeHtml(profile.name)}</div>
+          <div class="queue-item-company">${escapeHtml(profile.company)}</div>
+        </div>
+      `;
+      item.addEventListener('click', () => {
+        currentIndex = i;
+        saveQueue();
+        renderQueue();
+        showCurrentProfile();
+      });
+      list.appendChild(item);
+    });
+  }
+
+  function showCurrentProfile() {
+    const profileSection = document.getElementById('current-profile')!;
+    const captureSection = document.getElementById('photo-capture')!;
+    const previewSection = document.getElementById('lead-preview')!;
+
+    if (currentIndex < 0 || currentIndex >= queue.length) {
+      profileSection.classList.add('hidden');
+      captureSection.classList.add('hidden');
+      previewSection.classList.add('hidden');
+      return;
+    }
+
+    const profile = queue[currentIndex];
+    document.getElementById('profile-name')!.textContent = profile.name;
+    document.getElementById('profile-role')!.textContent = profile.role;
+    document.getElementById('profile-company')!.textContent = profile.company;
+
+    profileSection.classList.remove('hidden');
+    captureSection.classList.add('hidden');
+    previewSection.classList.add('hidden');
+  }
+
+  // Clear queue
+  document.getElementById('clear-queue')?.addEventListener('click', () => {
+    queue = [];
+    currentIndex = 0;
+    saveQueue();
+    renderQueue();
+    document.getElementById('current-profile')!.classList.add('hidden');
+    document.getElementById('photo-capture')!.classList.add('hidden');
+    document.getElementById('lead-preview')!.classList.add('hidden');
+  });
+
+  // View LinkedIn
+  document.getElementById('view-linkedin')?.addEventListener('click', async () => {
+    if (currentIndex >= queue.length) return;
+    const profile = queue[currentIndex];
+
+    // Copy name to clipboard for pasting in LinkedIn app
+    const searchText = `${profile.name} ${profile.company}`;
+    try {
+      await navigator.clipboard.writeText(searchText);
+      showToast('Copied! Paste in LinkedIn search');
+      // Open LinkedIn app
+      window.location.href = 'linkedin://search';
+    } catch {
+      // Fallback to Google search
+      const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchText + ' LinkedIn')}`;
+      window.open(googleUrl, '_blank');
+    }
+  });
+
+  // Add Lead
+  document.getElementById('add-lead')?.addEventListener('click', () => {
+    document.getElementById('current-profile')!.classList.add('hidden');
+    document.getElementById('photo-capture')!.classList.remove('hidden');
+    capturedImage = null;
+  });
+
+  // Skip - remove from queue and go back to list
+  document.getElementById('skip-profile')?.addEventListener('click', () => {
+    queue.splice(currentIndex, 1);
+    currentIndex = -1;
+    saveQueue();
+    renderQueue();
+    document.getElementById('current-profile')?.classList.add('hidden');
+    showToast('Skipped');
+  });
+
+  // Photo selection
+  document.getElementById('select-photo')?.addEventListener('click', () => {
+    document.getElementById('photo-input')?.click();
+  });
+
+  document.getElementById('cancel-capture')?.addEventListener('click', () => {
+    document.getElementById('photo-capture')!.classList.add('hidden');
+    showCurrentProfile();
+  });
+
+  // Cropper state
+  let rawImage: string | null = null;
+  let cropX = 50;
+  let cropY = 120;
+  let cropSize = 100;
+  let isDragging = false;
+  let dragStart = { x: 0, y: 0, cropX: 0, cropY: 0 };
+  let scannedData: { name?: string; role?: string; company?: string; phone?: string; email?: string; website?: string } = {};
+
+  const cropCircle = document.getElementById('crop-circle');
+  const cropSizeInput = document.getElementById('crop-size') as HTMLInputElement | null;
+  const cropperModal = document.getElementById('cropper-modal');
+  const cropperImage = document.getElementById('cropper-image') as HTMLImageElement | null;
+
+  function updateCropCircle() {
+    if (!cropCircle) return;
+    cropCircle.style.left = `${cropX}px`;
+    cropCircle.style.top = `${cropY}px`;
+    cropCircle.style.width = `${cropSize}px`;
+    cropCircle.style.height = `${cropSize}px`;
+  }
+
+  cropSizeInput?.addEventListener('input', () => {
+    cropSize = parseInt(cropSizeInput.value);
+    updateCropCircle();
+  });
+
+  cropCircle?.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    isDragging = true;
+    const touch = e.touches[0];
+    dragStart = { x: touch.clientX, y: touch.clientY, cropX, cropY };
+  });
+
+  cropCircle?.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    isDragging = true;
+    dragStart = { x: e.clientX, y: e.clientY, cropX, cropY };
+  });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    cropX = Math.max(0, dragStart.cropX + touch.clientX - dragStart.x);
+    cropY = Math.max(0, dragStart.cropY + touch.clientY - dragStart.y);
+    updateCropCircle();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    cropX = Math.max(0, dragStart.cropX + e.clientX - dragStart.x);
+    cropY = Math.max(0, dragStart.cropY + e.clientY - dragStart.y);
+    updateCropCircle();
+  });
+
+  document.addEventListener('touchend', () => isDragging = false);
+  document.addEventListener('mouseup', () => isDragging = false);
+
+  document.getElementById('cancel-crop')?.addEventListener('click', () => {
+    cropperModal?.classList.add('hidden');
+    rawImage = null;
+    // Return to the appropriate capture screen based on mode
+    if (currentMode === 'web') {
+      document.getElementById('web-photo-capture')?.classList.remove('hidden');
+    } else {
+      document.getElementById('photo-capture')?.classList.remove('hidden');
+    }
+  });
+
+  document.getElementById('confirm-crop')?.addEventListener('click', () => {
+    if (!rawImage || !cropperImage) return;
+
+    const canvas = document.createElement('canvas');
+    const size = 150;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d')!;
+
+    // Calculate scale from display to actual image
+    const displayWidth = cropperImage.clientWidth;
+    const naturalWidth = cropperImage.naturalWidth;
+    const scale = naturalWidth / displayWidth;
+
+    const srcX = cropX * scale;
+    const srcY = cropY * scale;
+    const srcSize = cropSize * scale;
+
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, srcX, srcY, srcSize, srcSize, 0, 0, size, size);
+      const croppedImage = canvas.toDataURL('image/jpeg', 0.8);
+
+      cropperModal?.classList.add('hidden');
+
+      // Check which mode we're in
+      if (currentMode === 'web') {
+        // Web mode - store image and show web preview
+        webCapturedImage = croppedImage;
+        showWebPreview();
+      } else {
+        // Scan mode - original behavior
+        capturedImage = croppedImage;
+
+        // Show preview
+        const avatarEl = document.getElementById('preview-avatar')!;
+        avatarEl.innerHTML = `<img src="${capturedImage}" alt="" />`;
+
+        // Populate preview fields
+        (document.getElementById('preview-name') as HTMLInputElement).value = scannedData.name || queue[currentIndex]?.name || '';
+        (document.getElementById('preview-role') as HTMLInputElement).value = scannedData.role || queue[currentIndex]?.role || '';
+        (document.getElementById('preview-company') as HTMLInputElement).value = scannedData.company || queue[currentIndex]?.company || '';
+        (document.getElementById('preview-phone') as HTMLInputElement).value = scannedData.phone || '';
+        (document.getElementById('preview-email') as HTMLInputElement).value = scannedData.email || '';
+        (document.getElementById('preview-website') as HTMLInputElement).value = scannedData.website || '';
+
+        document.getElementById('photo-capture')?.classList.add('hidden');
+        document.getElementById('lead-preview')?.classList.remove('hidden');
+      }
+    };
+    img.src = rawImage;
+  });
+
+  document.getElementById('photo-input')?.addEventListener('change', async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const dataUrl = ev.target?.result as string;
+      rawImage = dataUrl;
+
+      showLoading('Scanning LinkedIn profile...');
+
+      try {
+        const res = await fetch(`${WORKER_URL}/scan`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Sync-Password': syncPassword!,
+          },
+          body: JSON.stringify({ image: dataUrl }),
+        });
+
+        const data = await res.json();
+        scannedData = data;
+        hideLoading();
+
+        if (data.error) {
+          showToast('Scan failed: ' + data.error, true);
+          return;
+        }
+
+        // Show cropper
+        if (cropperImage) cropperImage.src = dataUrl;
+        cropX = 50;
+        cropY = 120;
+        cropSize = 100;
+        if (cropSizeInput) cropSizeInput.value = '100';
+        updateCropCircle();
+        document.getElementById('photo-capture')?.classList.add('hidden');
+        cropperModal?.classList.remove('hidden');
+        showToast('Drag circle over face');
+
+      } catch (e) {
+        hideLoading();
+        showToast('Scan failed', true);
+      }
+    };
+    reader.readAsDataURL(file);
+    (e.target as HTMLInputElement).value = '';
+  });
+
+  // Board selection
+  document.querySelectorAll('.board-btn:not(.web)').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.board-btn:not(.web)').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedBoard = parseInt((btn as HTMLElement).dataset.board || '0');
+    });
+  });
+
+  document.querySelectorAll('.board-btn.web').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.board-btn.web').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedWebBoard = parseInt((btn as HTMLElement).dataset.board || '0');
+    });
+  });
+
+  // Cancel preview
+  document.getElementById('cancel-preview')?.addEventListener('click', () => {
+    document.getElementById('lead-preview')!.classList.add('hidden');
+    showCurrentProfile();
+  });
+
+  // Save lead
+  document.getElementById('save-lead')?.addEventListener('click', async () => {
+    const nameInput = document.getElementById('preview-name') as HTMLInputElement;
+    const roleInput = document.getElementById('preview-role') as HTMLInputElement;
+    const companyInput = document.getElementById('preview-company') as HTMLInputElement;
+    const phoneInput = document.getElementById('preview-phone') as HTMLInputElement;
+    const emailInput = document.getElementById('preview-email') as HTMLInputElement;
+    const websiteInput = document.getElementById('preview-website') as HTMLInputElement;
+    const linkedinInput = document.getElementById('preview-linkedin') as HTMLInputElement;
+
+    const name = nameInput?.value || '';
+    const role = roleInput?.value || '';
+    const company = companyInput?.value || '';
+    const phone = phoneInput?.value || '';
+    const email = emailInput?.value || '';
+    const website = websiteInput?.value || '';
+    const linkedin = linkedinInput?.value || '';
+
+    if (!name.trim()) {
+      showToast('Name is required', true);
+      return;
+    }
+
+    showLoading('Saving lead...');
+
+    try {
+      await saveLead({
+        name, role, company, phone, email, website, linkedin,
+        avatar: capturedImage || undefined,
+        quadrant: selectedBoard,
+      });
+
+      // Success - remove from queue
+      const removedIndex = currentIndex;
+      if (currentIndex >= 0 && currentIndex < queue.length) {
+        queue.splice(currentIndex, 1);
+      }
+      currentIndex = -1;
+      capturedImage = null;
+      saveQueue();
+
+      hideLoading();
+      showToast(`Saved! Removed #${removedIndex + 1}, ${queue.length} left`);
+
+      document.getElementById('lead-preview')?.classList.add('hidden');
+      document.getElementById('current-profile')?.classList.add('hidden');
+      renderQueue();
+    } catch (e) {
+      hideLoading();
+      showToast('Error: ' + (e instanceof Error ? e.message : String(e)), true);
+    }
+  });
+
+  // Web mode - Enrich
+  document.getElementById('enrich-btn')?.addEventListener('click', async () => {
+    const btn = document.getElementById('enrich-btn') as HTMLButtonElement;
+    const urlInput = document.getElementById('company-url') as HTMLInputElement;
+    const url = urlInput.value.trim();
+
+    if (!url) {
+      showToast('Please enter a URL', true);
+      return;
+    }
+
+    btn.classList.add('loading');
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(`${WORKER_URL}/enrich-url`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Sync-Password': syncPassword!,
+        },
+        body: JSON.stringify({ url }),
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        showToast('Enrichment failed: ' + data.error, true);
+        return;
+      }
+
+      // Store enriched data
+      webEnrichedData = {
+        name: data.name || '',
+        role: data.role || data.industry || '',
+        company: data.company || '',
+        phone: data.phone || '',
+        email: data.email || '',
+        website: data.website || url,
+      };
+
+      // Show profile card
+      document.getElementById('web-profile-name')!.textContent = webEnrichedData.name || 'Unknown';
+      document.getElementById('web-profile-role')!.textContent = webEnrichedData.role || '';
+      document.getElementById('web-profile-company')!.textContent = webEnrichedData.company || '';
+      document.getElementById('web-profile')!.classList.remove('hidden');
+      webCapturedImage = null;
+
+    } catch (e) {
+      showToast('Enrichment failed', true);
+    } finally {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+    }
+  });
+
+  // Web mode - Search LinkedIn
+  document.getElementById('web-view-linkedin')?.addEventListener('click', async () => {
+    if (!webEnrichedData) return;
+    const searchText = `${webEnrichedData.name} ${webEnrichedData.company}`;
+    try {
+      await navigator.clipboard.writeText(searchText);
+      showToast('Copied! Paste in LinkedIn search');
+      window.location.href = 'linkedin://search';
+    } catch {
+      const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchText + ' LinkedIn')}`;
+      window.open(googleUrl, '_blank');
+    }
+  });
+
+  // Web mode - Add Photo
+  document.getElementById('web-add-lead')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Add LI Photo clicked');
+    const profile = document.getElementById('web-profile');
+    const capture = document.getElementById('web-photo-capture');
+    console.log('profile:', profile, 'capture:', capture);
+    if (profile) profile.classList.add('hidden');
+    if (capture) {
+      capture.classList.remove('hidden');
+      showToast('Select a screenshot of their LinkedIn profile');
+    } else {
+      showToast('Error: capture element not found', true);
+    }
+  });
+
+  // Web mode - Skip Photo (go straight to preview)
+  document.getElementById('web-skip')?.addEventListener('click', () => {
+    document.getElementById('web-profile')!.classList.add('hidden');
+    showWebPreview();
+  });
+
+  // Web mode - Select Photo
+  document.getElementById('web-select-photo')?.addEventListener('click', () => {
+    document.getElementById('web-photo-input')?.click();
+  });
+
+  // Web mode - Cancel capture
+  document.getElementById('web-cancel-capture')?.addEventListener('click', () => {
+    document.getElementById('web-photo-capture')!.classList.add('hidden');
+    document.getElementById('web-profile')!.classList.remove('hidden');
+  });
+
+  // Web mode - Photo input handler
+  document.getElementById('web-photo-input')?.addEventListener('change', (e) => {
+    console.log('Web photo input changed');
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) {
+      console.log('No file selected');
+      return;
+    }
+    console.log('File selected:', file.name);
+
+    const reader = new FileReader();
+    reader.onerror = () => {
+      console.error('FileReader error');
+      showToast('Error reading file', true);
+    };
+    reader.onload = (ev) => {
+      console.log('FileReader loaded');
+      const dataUrl = ev.target?.result as string;
+      rawImage = dataUrl;
+
+      // Show cropper (reuse existing cropper)
+      console.log('cropperImage:', cropperImage, 'cropperModal:', cropperModal);
+      if (cropperImage) {
+        cropperImage.src = dataUrl;
+      } else {
+        console.error('cropperImage is null');
+        showToast('Error: cropper not found', true);
+        return;
+      }
+      cropX = 50;
+      cropY = 120;
+      cropSize = 100;
+      if (cropSizeInput) cropSizeInput.value = '100';
+      updateCropCircle();
+      document.getElementById('web-photo-capture')?.classList.add('hidden');
+      if (cropperModal) {
+        cropperModal.classList.remove('hidden');
+        showToast('Drag circle over face');
+      } else {
+        console.error('cropperModal is null');
+        showToast('Error: cropper modal not found', true);
+      }
+    };
+    reader.readAsDataURL(file);
+    (e.target as HTMLInputElement).value = '';
+  });
+
+  // Helper to show web preview with data
+  function showWebPreview() {
+    if (!webEnrichedData) return;
+
+    // Populate preview fields
+    (document.getElementById('web-name') as HTMLInputElement).value = webEnrichedData.name;
+    (document.getElementById('web-company') as HTMLInputElement).value = webEnrichedData.company;
+    (document.getElementById('web-role') as HTMLInputElement).value = webEnrichedData.role;
+    (document.getElementById('web-phone') as HTMLInputElement).value = webEnrichedData.phone;
+    (document.getElementById('web-email') as HTMLInputElement).value = webEnrichedData.email;
+    (document.getElementById('web-website') as HTMLInputElement).value = webEnrichedData.website;
+
+    // Set avatar
+    const avatarEl = document.getElementById('web-preview-avatar')!;
+    if (webCapturedImage) {
+      avatarEl.innerHTML = `<img src="${webCapturedImage}" alt="" />`;
+    } else {
+      avatarEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M12 14c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>';
+    }
+
+    document.getElementById('web-preview')!.classList.remove('hidden');
+  }
+
+  // Cancel web preview
+  document.getElementById('cancel-web')?.addEventListener('click', () => {
+    document.getElementById('web-preview')!.classList.add('hidden');
+    document.getElementById('web-profile')!.classList.add('hidden');
+    webEnrichedData = null;
+    webCapturedImage = null;
+  });
+
+  // Save web lead
+  document.getElementById('save-web-lead')?.addEventListener('click', async () => {
+    const name = (document.getElementById('web-name') as HTMLInputElement).value;
+    const company = (document.getElementById('web-company') as HTMLInputElement).value;
+    const role = (document.getElementById('web-role') as HTMLInputElement).value;
+    const phone = (document.getElementById('web-phone') as HTMLInputElement).value;
+    const email = (document.getElementById('web-email') as HTMLInputElement).value;
+    const website = (document.getElementById('web-website') as HTMLInputElement).value;
+
+    if (!name.trim()) {
+      showToast('Name is required', true);
+      return;
+    }
+
+    showLoading('Saving lead...');
+
+    try {
+      await saveLead({
+        name,
+        company,
+        role,
+        phone, email, website,
+        avatar: webCapturedImage || undefined,
+        quadrant: selectedWebBoard,
+      });
+
+      hideLoading();
+      showToast('Lead saved!');
+      document.getElementById('web-preview')!.classList.add('hidden');
+      (document.getElementById('company-url') as HTMLInputElement).value = '';
+      webEnrichedData = null;
+      webCapturedImage = null;
+    } catch (e) {
+      hideLoading();
+      showToast('Error: ' + (e instanceof Error ? e.message : String(e)), true);
+    }
+  });
+
+  // Save lead to Stiki
+  async function saveLead(data: {
+    name: string;
+    role?: string;
+    company?: string;
+    phone?: string;
+    email?: string;
+    website?: string;
+    linkedin?: string;
+    avatar?: string;
+    quadrant: number;
+  }) {
+    // Load current state from cloud
+    let state: State = { notes: [], nextZIndex: 1 };
+
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: 'GET',
+        headers: { 'X-Sync-Password': syncPassword! },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        state = {
+          notes: Array.isArray(data.notes) ? data.notes : [],
+          nextZIndex: data.nextZIndex || 1,
+        };
+      }
+    } catch { /* use empty state */ }
+
+    // Create new note
+    const colors = ['#fed7aa', '#fef08a', '#bbf7d0', '#93c5fd', '#c7d2fe', '#ddd6fe'];
+    const color = colors[data.quadrant] || '#fed7aa';
+
+    let displayText = data.name;
+    if (data.role) displayText += `\n${data.role}`;
+    if (data.company && data.company !== data.name) displayText += `\n${data.company}`;
+
+    const note: Note = {
+      id: `note-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      text: displayText,
+      color,
+      x: 50 + Math.random() * 200,
+      y: 80 + Math.random() * 200,
+      rotation: (Math.random() - 0.5) * 6,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      zIndex: state.nextZIndex++,
+      isLead: true,
+      quadrant: data.quadrant,
+      avatar: data.avatar,
+      name: data.name,
+      role: data.role,
+      company: data.company,
+      phone: data.phone,
+      email: data.email,
+      website: data.website,
+      linkedin: data.linkedin,
+    };
+
+    state.notes.push(note);
+
+    // Save to cloud
+    try {
+      console.log('Saving state with', state.notes.length, 'notes');
+      const body = JSON.stringify(state);
+      console.log('Body size:', body.length, 'bytes');
+
+      const res = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Sync-Password': syncPassword!,
+        },
+        body,
+      });
+
+      const responseText = await res.text();
+      console.log('Save response:', res.status, responseText);
+
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${responseText}`);
+      }
+    } catch (e) {
+      console.error('Save error:', e);
+      throw e;
+    }
+  }
+
+  // Toast
+
+  // Board View State
+  const DEFAULT_TITLES = ['Orange', 'Yellow', 'Green', 'Blue', 'Indigo', 'Violet'];
+  const ACTIVITY_ICONS: Record<string, string> = {
+    call: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>',
+    email: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7"/></svg>',
+    meeting: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
+  };
+  let currentBoardNotes: Note[] = [];
+  let selectedBoardView: number | null = null;
+  let editingNote: Note | null = null;
+  let editingNoteBoard: number = 0;
+  let editingActivities: Activity[] = [];
+  let currentActivityType: 'call' | 'email' | 'meeting' | 'note' = 'note';
+  let boardTitles: string[] = [...DEFAULT_TITLES];
+
+  // Board title editing
+  document.getElementById('board-title')?.addEventListener('blur', async () => {
+    if (selectedBoardView === null) return;
+
+    const titleEl = document.getElementById('board-title') as HTMLInputElement;
+    const newTitle = titleEl.value.trim();
+
+    // Skip if unchanged
+    if (boardTitles[selectedBoardView] === newTitle) return;
+
+    boardTitles[selectedBoardView] = newTitle;
+
+    // Save to cloud
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: 'GET',
+        headers: { 'X-Sync-Password': syncPassword! },
+      });
+
+      if (!res.ok) return;
+
+      const data = await res.json();
+      const state: State = {
+        notes: Array.isArray(data.notes) ? data.notes : [],
+        nextZIndex: data.nextZIndex || 1,
+        boardTitles: boardTitles,
+      };
+
+      await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Sync-Password': syncPassword!,
+        },
+        body: JSON.stringify(state),
+      });
+    } catch (e) {
+      // Silent fail for title save
+    }
+  });
+
+  // Board dot clicks
+  document.querySelectorAll('.board-dot').forEach(dot => {
+    dot.addEventListener('click', async () => {
+      const board = parseInt((dot as HTMLElement).dataset.board || '0');
+
+      // Toggle off if same board clicked
+      if (selectedBoardView === board) {
+        deselectBoardView();
+        return;
+      }
+
+      // Select this board
+      selectedBoardView = board;
+      document.querySelectorAll('.board-dot').forEach(d => d.classList.remove('active'));
+      dot.classList.add('active');
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+
+      // Hide mode content, show board view
+      document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
+      document.getElementById('board-view')?.classList.remove('hidden');
+
+      // Load cards for this board
+      await loadBoardCards(board);
+    });
+  });
+
+  async function loadBoardCards(board: number) {
+    const cardsEl = document.getElementById('board-cards')!;
+    const emptyEl = document.getElementById('board-empty')!;
+    const titleEl = document.getElementById('board-title') as HTMLInputElement;
+
+    cardsEl.innerHTML = '<p style="text-align: center; color: #9ca3af;">Loading...</p>';
+    emptyEl.classList.add('hidden');
+
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: 'GET',
+        headers: { 'X-Sync-Password': syncPassword! },
+      });
+
+      if (!res.ok) {
+        cardsEl.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+        titleEl.value = '';
+        return;
+      }
+
+      const data = await res.json();
+      const notes: Note[] = Array.isArray(data.notes) ? data.notes : [];
+
+      // Load board titles from cloud
+      if (Array.isArray(data.boardTitles)) {
+        boardTitles = data.boardTitles.map((t: string, i: number) => t || DEFAULT_TITLES[i]);
+      }
+      titleEl.value = boardTitles[board] || DEFAULT_TITLES[board];
+
+      // Filter by board (quadrant) and sort by newest first
+      currentBoardNotes = notes
+        .filter(n => n.quadrant === board && n.isLead)
+        .sort((a, b) => b.createdAt - a.createdAt);
+
+      renderBoardCards();
+    } catch (e) {
+      cardsEl.innerHTML = '';
+      emptyEl.classList.remove('hidden');
+      titleEl.value = '';
+      showToast('Failed to load cards', true);
+    }
+  }
+
+  function renderBoardCards() {
+    const cardsEl = document.getElementById('board-cards')!;
+    const emptyEl = document.getElementById('board-empty')!;
+
+    if (currentBoardNotes.length === 0) {
+      cardsEl.innerHTML = '';
+      emptyEl.classList.remove('hidden');
+      return;
+    }
+
+    emptyEl.classList.add('hidden');
+    cardsEl.innerHTML = currentBoardNotes.map(note => `
+      <div class="card-item" data-id="${note.id}">
+        <div class="card-avatar">
+          ${note.avatar
+            ? `<img src="${note.avatar}" alt="" />`
+            : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M12 14c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>`
+          }
+        </div>
+        <div class="card-info">
+          <div class="card-name">${escapeHtml(note.name || note.text.split('\n')[0])}</div>
+          <div class="card-meta">${escapeHtml(note.role || '')}${note.role && note.company ? ' @ ' : ''}${escapeHtml(note.company || '')}</div>
+        </div>
+      </div>
+    `).join('');
+
+    // Add click handlers
+    cardsEl.querySelectorAll('.card-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const id = (item as HTMLElement).dataset.id;
+        const note = currentBoardNotes.find(n => n.id === id);
+        if (note) openCardDetail(note);
+      });
+    });
+  }
+
+  function openCardDetail(note: Note) {
+    editingNote = note;
+    editingNoteBoard = note.quadrant;
+    editingActivities = note.activity ? [...note.activity] : [];
+
+    // Populate fields
+    const avatarEl = document.getElementById('detail-avatar')!;
+    if (note.avatar) {
+      avatarEl.innerHTML = `<img src="${note.avatar}" alt="" />`;
+    } else {
+      avatarEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M12 14c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>';
+    }
+
+    (document.getElementById('detail-name') as HTMLInputElement).value = note.name || '';
+    (document.getElementById('detail-role') as HTMLInputElement).value = note.role || '';
+    (document.getElementById('detail-company') as HTMLInputElement).value = note.company || '';
+    (document.getElementById('detail-phone') as HTMLInputElement).value = note.phone || '';
+    (document.getElementById('detail-email') as HTMLInputElement).value = note.email || '';
+    (document.getElementById('detail-website') as HTMLInputElement).value = note.website || '';
+    (document.getElementById('detail-notes') as HTMLTextAreaElement).value = note.notes || '';
+
+    // Set board picker with custom titles
+    document.querySelectorAll('#detail-board-picker .board-opt').forEach(opt => {
+      const boardIdx = parseInt((opt as HTMLElement).dataset.board || '0');
+      opt.classList.remove('active');
+      (opt as HTMLElement).title = boardTitles[boardIdx] || DEFAULT_TITLES[boardIdx];
+      if (boardIdx === note.quadrant) {
+        opt.classList.add('active');
+      }
+    });
+    updateSelectedBoardName();
+
+    // Reset activity input
+    document.getElementById('activity-input')?.classList.add('hidden');
+    (document.getElementById('activity-text') as HTMLInputElement).value = '';
+    document.querySelectorAll('.activity-type-btn').forEach(b => b.classList.remove('active'));
+
+    // Render activities
+    renderActivities();
+
+    document.getElementById('card-detail-modal')?.classList.remove('hidden');
+  }
+
+  function renderActivities() {
+    const listEl = document.getElementById('activity-list')!;
+
+    if (editingActivities.length === 0) {
+      listEl.innerHTML = '<div class="activity-empty">No activity yet</div>';
+      return;
+    }
+
+    // Sort by newest first
+    const sorted = [...editingActivities].sort((a, b) => b.timestamp - a.timestamp);
+
+    listEl.innerHTML = sorted.map(act => `
+      <div class="activity-item" data-id="${act.id}" data-type="${act.type}">
+        <span class="activity-icon">${ACTIVITY_ICONS[act.type] || '📝'}</span>
+        <div class="activity-content">
+          <div class="activity-text">${escapeHtml(act.text)}</div>
+          <div class="activity-time">${formatActivityTime(act.timestamp)}</div>
+        </div>
+        <button class="activity-delete" data-id="${act.id}" title="Delete">✕</button>
+      </div>
+    `).join('');
+
+    // Add delete handlers
+    listEl.querySelectorAll('.activity-delete').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = (btn as HTMLElement).dataset.id;
+        editingActivities = editingActivities.filter(a => a.id !== id);
+        renderActivities();
+      });
+    });
+  }
+
+  function formatActivityTime(timestamp: number): string {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const mins = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  function updateSelectedBoardName() {
+    const nameEl = document.getElementById('selected-board-name');
+    if (nameEl) {
+      nameEl.textContent = boardTitles[editingNoteBoard] || DEFAULT_TITLES[editingNoteBoard];
+    }
+  }
+
+  // Activity type buttons
+  document.querySelectorAll('.activity-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = (btn as HTMLElement).dataset.type as 'call' | 'email' | 'meeting' | 'note';
+      currentActivityType = type;
+
+      // Highlight selected type
+      document.querySelectorAll('.activity-type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Show input
+      const inputEl = document.getElementById('activity-input')!;
+      const textEl = document.getElementById('activity-text') as HTMLInputElement;
+      inputEl.classList.remove('hidden');
+      textEl.placeholder = `Add ${type}...`;
+      textEl.focus();
+    });
+  });
+
+  // Add activity
+  document.getElementById('activity-add')?.addEventListener('click', () => {
+    const textEl = document.getElementById('activity-text') as HTMLInputElement;
+    const text = textEl.value.trim();
+
+    if (!text) {
+      showToast('Please enter a note', true);
+      return;
+    }
+
+    const activity: Activity = {
+      id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      type: currentActivityType,
+      text,
+    };
+
+    editingActivities.push(activity);
+    renderActivities();
+
+    // Reset input
+    textEl.value = '';
+    document.getElementById('activity-input')?.classList.add('hidden');
+    document.querySelectorAll('.activity-type-btn').forEach(b => b.classList.remove('active'));
+  });
+
+  // Cancel activity input
+  document.getElementById('activity-cancel')?.addEventListener('click', () => {
+    document.getElementById('activity-input')?.classList.add('hidden');
+    (document.getElementById('activity-text') as HTMLInputElement).value = '';
+    document.querySelectorAll('.activity-type-btn').forEach(b => b.classList.remove('active'));
+  });
+
+  // Enter key to add activity
+  document.getElementById('activity-text')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      document.getElementById('activity-add')?.click();
+    }
+  });
+
+  // Board picker in detail modal
+  document.querySelectorAll('#detail-board-picker .board-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      document.querySelectorAll('#detail-board-picker .board-opt').forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      editingNoteBoard = parseInt((opt as HTMLElement).dataset.board || '0');
+      updateSelectedBoardName();
+    });
+  });
+
+  // Close detail modal
+  document.getElementById('close-detail')?.addEventListener('click', () => {
+    document.getElementById('card-detail-modal')?.classList.add('hidden');
+    editingNote = null;
+  });
+
+  // Save detail
+  document.getElementById('detail-save')?.addEventListener('click', async () => {
+    if (!editingNote) return;
+
+    const name = (document.getElementById('detail-name') as HTMLInputElement).value;
+    const role = (document.getElementById('detail-role') as HTMLInputElement).value;
+    const company = (document.getElementById('detail-company') as HTMLInputElement).value;
+    const phone = (document.getElementById('detail-phone') as HTMLInputElement).value;
+    const email = (document.getElementById('detail-email') as HTMLInputElement).value;
+    const website = (document.getElementById('detail-website') as HTMLInputElement).value;
+    const notes = (document.getElementById('detail-notes') as HTMLTextAreaElement).value;
+
+    if (!name.trim()) {
+      showToast('Name is required', true);
+      return;
+    }
+
+    showLoading('Saving...');
+
+    try {
+      // Load current state
+      const res = await fetch(WORKER_URL, {
+        method: 'GET',
+        headers: { 'X-Sync-Password': syncPassword! },
+      });
+
+      if (!res.ok) throw new Error('Failed to load data');
+
+      const data = await res.json();
+      const state: State = {
+        notes: Array.isArray(data.notes) ? data.notes : [],
+        nextZIndex: data.nextZIndex || 1,
+        boardTitles: Array.isArray(data.boardTitles) ? data.boardTitles : boardTitles,
+      };
+
+      // Find and update the note
+      const noteIndex = state.notes.findIndex(n => n.id === editingNote!.id);
+      if (noteIndex === -1) throw new Error('Note not found');
+
+      // Update display text
+      let displayText = name;
+      if (role) displayText += `\n${role}`;
+      if (company && company !== name) displayText += `\n${company}`;
+
+      // Get new color based on board
+      const colors = ['#fed7aa', '#fef08a', '#bbf7d0', '#93c5fd', '#c7d2fe', '#ddd6fe'];
+
+      state.notes[noteIndex] = {
+        ...state.notes[noteIndex],
+        name,
+        role,
+        company,
+        phone,
+        email,
+        website,
+        notes,
+        activity: editingActivities,
+        text: displayText,
+        quadrant: editingNoteBoard,
+        color: colors[editingNoteBoard],
+        updatedAt: Date.now(),
+      };
+
+      // Save to cloud
+      const saveRes = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Sync-Password': syncPassword!,
+        },
+        body: JSON.stringify(state),
+      });
+
+      if (!saveRes.ok) throw new Error('Failed to save');
+
+      hideLoading();
+      showToast('Saved!');
+      document.getElementById('card-detail-modal')?.classList.add('hidden');
+      editingNote = null;
+
+      // Reload board view
+      if (selectedBoardView !== null) {
+        await loadBoardCards(selectedBoardView);
+      }
+    } catch (e) {
+      hideLoading();
+      showToast('Error: ' + (e instanceof Error ? e.message : String(e)), true);
+    }
+  });
+
+  // Delete card
+  document.getElementById('detail-delete')?.addEventListener('click', async () => {
+    if (!editingNote) return;
+
+    if (!confirm('Delete this lead?')) return;
+
+    showLoading('Deleting...');
+
+    try {
+      // Load current state
+      const res = await fetch(WORKER_URL, {
+        method: 'GET',
+        headers: { 'X-Sync-Password': syncPassword! },
+      });
+
+      if (!res.ok) throw new Error('Failed to load data');
+
+      const data = await res.json();
+      const state: State = {
+        notes: Array.isArray(data.notes) ? data.notes : [],
+        nextZIndex: data.nextZIndex || 1,
+        boardTitles: Array.isArray(data.boardTitles) ? data.boardTitles : boardTitles,
+      };
+
+      // Remove the note
+      state.notes = state.notes.filter(n => n.id !== editingNote!.id);
+
+      // Save to cloud
+      const saveRes = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Sync-Password': syncPassword!,
+        },
+        body: JSON.stringify(state),
+      });
+
+      if (!saveRes.ok) throw new Error('Failed to save');
+
+      hideLoading();
+      showToast('Deleted');
+      document.getElementById('card-detail-modal')?.classList.add('hidden');
+      editingNote = null;
+
+      // Reload board view
+      if (selectedBoardView !== null) {
+        await loadBoardCards(selectedBoardView);
+      }
+    } catch (e) {
+      hideLoading();
+      showToast('Error: ' + (e instanceof Error ? e.message : String(e)), true);
+    }
+  });
+
+  // Settings modal
+  const settingsModal = document.getElementById('settings-modal')!;
+
+  function updateCurrentProjectDisplay(flash = false) {
+    const projectName = getSyncPassword();
+    const nameEl = document.getElementById('current-project-name')!;
+    const headerName = document.getElementById('header-project-name')!;
+
+    if (projectName) {
+      nameEl.textContent = projectName;
+      nameEl.classList.remove('no-project');
+      headerName.textContent = projectName;
+    } else {
+      nameEl.textContent = 'No project (local only)';
+      nameEl.classList.add('no-project');
+      headerName.textContent = 'No project';
+    }
+
+    if (flash && projectName) {
+      headerName.classList.remove('flash');
+      void headerName.offsetWidth; // Force reflow
+      headerName.classList.add('flash');
+    }
+  }
+
+  document.getElementById('settings-btn')?.addEventListener('click', () => {
+    settingsModal.classList.remove('hidden');
+    updateCurrentProjectDisplay();
+    (document.getElementById('switch-project-input') as HTMLInputElement).value = '';
+  });
+  document.getElementById('close-settings')?.addEventListener('click', () => {
+    settingsModal.classList.add('hidden');
+  });
+  settingsModal.addEventListener('click', e => {
+    if (e.target === settingsModal) settingsModal.classList.add('hidden');
+  });
+
+  document.getElementById('switch-project-btn')?.addEventListener('click', () => {
+    const input = document.getElementById('switch-project-input') as HTMLInputElement;
+    const btn = document.getElementById('switch-project-btn') as HTMLButtonElement;
+    const newProject = input.value.trim();
+
+    if (!newProject || newProject.length < 4) {
+      showToast('Project name must be at least 4 characters', true);
+      return;
+    }
+
+    const currentProject = getSyncPassword();
+
+    // Don't switch if same project
+    if (newProject === currentProject) {
+      settingsModal.classList.add('hidden');
+      return;
+    }
+
+    try {
+      // Immediate button feedback
+      btn.textContent = 'Switching...';
+      btn.disabled = true;
+
+      // Set new project password
+      localStorage.setItem(SYNC_PASSWORD_KEY, newProject);
+      syncPassword = newProject;
+
+      // Clear local queue
+      localStorage.removeItem(PDA_QUEUE_KEY);
+      queue = [];
+
+      // Close modal
+      settingsModal.classList.add('hidden');
+
+      // Reset button
+      btn.textContent = 'Switch Project';
+      btn.disabled = false;
+
+      // Show success overlay
+      const successOverlay = document.getElementById('switch-success');
+      const successName = document.getElementById('switch-success-name');
+      if (successOverlay && successName) {
+        successName.textContent = newProject;
+        successOverlay.classList.remove('hidden', 'fade-out');
+
+        // Auto-hide
+        setTimeout(() => {
+          successOverlay.classList.add('fade-out');
+          setTimeout(() => successOverlay.classList.add('hidden'), 300);
+        }, 1200);
+      }
+
+      // Update header
+      const headerName = document.getElementById('header-project-name');
+      if (headerName) headerName.textContent = newProject;
+
+    } catch (e) {
+      console.error('Switch error:', e);
+      btn.textContent = 'Switch Project';
+      btn.disabled = false;
+      settingsModal.classList.add('hidden');
+      showToast('Switched to ' + newProject);
+    }
+  });
+
+  document.getElementById('export-data')?.addEventListener('click', async () => {
+    try {
+      const res = await fetch(WORKER_URL, {
+        method: 'GET',
+        headers: { 'X-Sync-Password': syncPassword! },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `stiki-${getSyncPassword()}-${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (e) {
+      showToast('Export failed', true);
+    }
+  });
+
+  document.getElementById('import-data')?.addEventListener('click', () => {
+    document.getElementById('import-file')?.click();
+  });
+
+  document.getElementById('import-file')?.addEventListener('change', async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      showLoading();
+      const res = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Sync-Password': syncPassword!,
+        },
+        body: JSON.stringify(data),
+      });
+
+      hideLoading();
+      if (res.ok) {
+        showToast('Data imported successfully');
+        if (selectedBoardView !== null) {
+          await loadBoardCards(selectedBoardView);
+        }
+      } else {
+        showToast('Import failed', true);
+      }
+    } catch (e) {
+      hideLoading();
+      showToast('Invalid file format', true);
+    }
+    (e.target as HTMLInputElement).value = '';
+  });
+
+  // Init
+  checkAuth();
+</script>
+</body>
+</html>

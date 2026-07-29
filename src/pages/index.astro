@@ -26,9 +26,11 @@
 
   <!-- Main App -->
   <div id="app">
+    <div id="multi-select-indicator" class="multi-select-indicator">SELECT MODE: Click cards, press 1-6 to move, ESC to cancel</div>
     <div id="whiteboard">
       <!-- Top-right toolbar -->
       <div id="toolbar">
+        <div id="project-badge" title="Current project">No project</div>
         <div id="sync-indicator" title="Cloud sync">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
         </div>
@@ -56,25 +58,29 @@
         </div>
       </div>
 
-      <!-- 4 Quadrant boards -->
+      <!-- 6 Color boards (2 rows x 3 cols) -->
       <div id="board-0" class="board active" data-q="0"></div>
       <div id="board-1" class="board" data-q="1"></div>
       <div id="board-2" class="board" data-q="2"></div>
       <div id="board-3" class="board" data-q="3"></div>
+      <div id="board-4" class="board" data-q="4"></div>
+      <div id="board-5" class="board" data-q="5"></div>
 
       <!-- Minimap -->
       <div id="minimap">
-        <button class="quadrant-btn" data-q="0"></button>
-        <button class="quadrant-btn" data-q="1"></button>
-        <button class="quadrant-btn" data-q="2"></button>
-        <button class="quadrant-btn" data-q="3"></button>
+        <button class="quadrant-btn" data-q="0" title="Orange (O)"></button>
+        <button class="quadrant-btn" data-q="1" title="Yellow (Y)"></button>
+        <button class="quadrant-btn" data-q="2" title="Green (G)"></button>
+        <button class="quadrant-btn" data-q="3" title="Blue (B)"></button>
+        <button class="quadrant-btn" data-q="4" title="Indigo (I)"></button>
+        <button class="quadrant-btn" data-q="5" title="Violet (V)"></button>
       </div>
 
       <!-- Keyboard hints -->
       <div id="hints">
+        <span><kbd>O</kbd><kbd>Y</kbd><kbd>G</kbd><kbd>B</kbd><kbd>I</kbd><kbd>V</kbd> boards</span>
         <span><kbd>N</kbd> new</span>
         <span><kbd>X</kbd> lead</span>
-        <span><kbd>U</kbd> undo</span>
       </div>
     </div>
 
@@ -87,13 +93,20 @@
         </div>
         <div class="modal-body">
           <div class="setting-group">
-            <label>Cloud Sync Password</label>
-            <p class="setting-hint">Set a password to sync your notes across devices</p>
-            <input type="password" id="sync-password-input" placeholder="Enter sync password">
-            <div class="setting-actions">
-              <button id="save-sync-password">Save</button>
-              <button id="clear-sync-password" class="secondary">Clear</button>
+            <label>Current Project</label>
+            <div class="current-project">
+              <span id="current-project-name">No project</span>
             </div>
+          </div>
+          <div class="setting-divider"></div>
+          <div class="setting-group">
+            <label>Switch Project</label>
+            <p class="setting-hint">Enter a project name or select from recent projects</p>
+            <input type="text" id="switch-project-input" placeholder="e.g. litebooks-sales">
+            <div class="setting-actions">
+              <button id="switch-project-btn">Switch Project</button>
+            </div>
+            <div id="saved-projects-list" class="saved-projects-list"></div>
           </div>
           <div class="setting-divider"></div>
           <div class="setting-group">
@@ -104,6 +117,90 @@
               <button id="clear-all-data" class="danger">Clear All</button>
             </div>
           </div>
+          <div class="setting-divider"></div>
+          <div class="setting-group">
+            <label>Email Templates</label>
+            <p class="setting-hint">Create up to 3 email templates for quick outreach</p>
+            <div id="email-templates-list" class="email-templates-list"></div>
+            <button id="add-email-template" class="add-template-btn">+ Add Template</button>
+          </div>
+          <div class="setting-divider"></div>
+          <div class="setting-group">
+            <label>Admin</label>
+            <div class="setting-actions">
+              <button id="open-admin-btn">Open Admin Panel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Email Template Editor Modal -->
+    <div id="template-modal" class="modal">
+      <div class="modal-content template-modal-content">
+        <div class="modal-header">
+          <h2 id="template-modal-title">New Email Template</h2>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="field-group">
+            <label>Template Name</label>
+            <input type="text" id="template-name" placeholder="e.g. Introduction">
+          </div>
+          <div class="field-group">
+            <label>Subject Line</label>
+            <input type="text" id="template-subject" placeholder="e.g. Quick introduction from [company]">
+          </div>
+          <div class="field-group">
+            <label>Email Body</label>
+            <textarea id="template-body" rows="8" placeholder="Hi [name],
+
+I noticed your work at [company] and wanted to reach out...
+
+Best regards"></textarea>
+          </div>
+          <p class="setting-hint">Use [name], [company], [role] as placeholders</p>
+          <div class="template-actions">
+            <button id="delete-template" class="danger">Delete</button>
+            <div class="template-actions-right">
+              <button id="cancel-template" class="secondary">Cancel</button>
+              <button id="save-template" class="primary">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Template Picker (when sending email to lead) -->
+    <div id="template-picker" class="template-picker">
+      <div class="template-picker-content">
+        <h3>Choose Template</h3>
+        <div id="template-picker-list" class="template-picker-list"></div>
+        <button id="template-picker-cancel" class="template-picker-cancel">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Admin Modal -->
+    <div id="admin-modal" class="modal">
+      <div class="modal-content admin-modal-content">
+        <div class="modal-header">
+          <h2>Admin Panel</h2>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="admin-login-view">
+            <p class="admin-prompt">Enter admin password to continue</p>
+            <div class="admin-login-form">
+              <input type="password" id="admin-password" placeholder="Password" autocomplete="off">
+              <button id="admin-unlock">Unlock</button>
+            </div>
+          </div>
+          <div id="admin-projects-view" class="hidden">
+            <div class="admin-summary">
+              <span id="admin-project-count">0 projects</span>
+            </div>
+            <div id="admin-projects-list" class="admin-projects-list"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -111,54 +208,144 @@
     <!-- Detail Modal -->
     <div id="detail-modal" class="modal">
       <div class="modal-content detail-content">
-        <div class="modal-header">
-          <h2>Card Details</h2>
-          <button class="modal-close">&times;</button>
+        <div class="modal-header detail-header">
+          <button id="detail-delete" class="header-btn danger" title="Delete">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          </button>
+          <div class="header-spacer"></div>
+          <div class="header-actions">
+            <div class="header-snooze">
+              <button id="snooze-trigger" class="snooze-trigger" title="Snooze with action">
+                <span class="snooze-icon">⏰</span>
+                <span id="snooze-display" class="snooze-display">Snooze</span>
+              </button>
+              <div id="snooze-popover" class="snooze-popover">
+                <div class="snooze-popover-header">
+                  <span>Snooze until</span>
+                  <button id="snooze-clear" class="snooze-clear-btn">&times;</button>
+                </div>
+                <input type="date" id="detail-snooze" class="snooze-date-input">
+                <div class="snooze-actions-label">Next action:</div>
+                <div class="snooze-action-icons">
+                  <button class="snooze-action-btn" data-action="call" title="Call">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                  </button>
+                  <button class="snooze-action-btn" data-action="email" title="Email">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7"/></svg>
+                  </button>
+                  <button class="snooze-action-btn" data-action="meeting" title="Meeting">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                  </button>
+                  <button class="snooze-action-btn" data-action="linkedin" title="LinkedIn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                  </button>
+                  <button class="snooze-action-btn" data-action="web" title="Research">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="header-board-picker" id="detail-board-picker">
+              <button class="board-opt" data-q="0" style="background: #fed7aa" title="Orange"></button>
+              <button class="board-opt" data-q="1" style="background: #fef08a" title="Yellow"></button>
+              <button class="board-opt" data-q="2" style="background: #bbf7d0" title="Green"></button>
+              <button class="board-opt" data-q="3" style="background: #93c5fd" title="Blue"></button>
+              <button class="board-opt" data-q="4" style="background: #c7d2fe" title="Indigo"></button>
+              <button class="board-opt" data-q="5" style="background: #ddd6fe" title="Violet"></button>
+            </div>
+            <button id="detail-save" class="header-btn primary" title="Save">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+            </button>
+            <button class="modal-close">&times;</button>
+          </div>
         </div>
         <div class="modal-body">
-          <div class="detail-layout">
-            <div class="detail-avatar-section">
-              <div class="detail-avatar" id="detail-avatar">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M12 14c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
-              </div>
-              <button id="detail-avatar-btn" class="secondary">Change Photo</button>
-            </div>
-            <div class="detail-fields">
-              <div class="detail-field">
-                <label>Name</label>
-                <input type="text" id="detail-name" placeholder="Full name">
-              </div>
-              <div class="detail-field">
-                <label>Role</label>
-                <input type="text" id="detail-role" placeholder="Job title">
-              </div>
-              <div class="detail-field">
-                <label>Company</label>
-                <input type="text" id="detail-company" placeholder="Company name">
-              </div>
-              <div class="detail-row">
-                <div class="detail-field">
-                  <label>Phone</label>
-                  <input type="tel" id="detail-phone" placeholder="+1 234 567 8900">
+          <div class="detail-two-col">
+            <!-- Left Column: Profile Card -->
+            <div class="detail-left-col">
+              <!-- Profile Card - Centered -->
+              <div class="profile-card-centered">
+                <div class="profile-avatar-wrapper-centered">
+                  <div class="profile-avatar-ring"></div>
+                  <div class="profile-avatar" id="detail-avatar">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M12 14c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
+                  </div>
+                  <button id="detail-avatar-btn" class="avatar-edit-btn" title="Change photo">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  </button>
+
+                  <!-- Contact Popover (appears on hover) -->
+                  <div class="contact-popover" id="contact-popover">
+                    <div class="popover-arrow"></div>
+                    <div class="popover-content">
+                      <div class="popover-row">
+                        <button class="popover-action-icon phone" id="action-phone" title="Call">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                        </button>
+                        <input type="tel" id="detail-phone" placeholder="Phone" class="popover-input">
+                      </div>
+                      <div class="popover-row">
+                        <button class="popover-action-icon email" id="action-email" title="Send email">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        </button>
+                        <input type="email" id="detail-email" placeholder="Email" class="popover-input">
+                      </div>
+                      <div class="popover-row">
+                        <button class="popover-action-icon linkedin" id="action-linkedin" title="Open LinkedIn">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                        </button>
+                        <input type="url" id="detail-linkedin" placeholder="LinkedIn URL" class="popover-input">
+                      </div>
+                      <div class="popover-row">
+                        <button class="popover-action-icon website" id="action-website" title="Open website">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                        </button>
+                        <input type="url" id="detail-website" placeholder="Website" class="popover-input">
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div class="detail-field">
-                  <label>Email</label>
-                  <input type="email" id="detail-email" placeholder="email@example.com">
+
+                <div class="profile-info-stack">
+                  <input type="text" id="detail-name" class="profile-name-centered" placeholder="Name">
+                  <input type="text" id="detail-role" class="profile-role-centered" placeholder="Role">
+                  <input type="text" id="detail-company" class="profile-company-centered" placeholder="Company">
                 </div>
-              </div>
-              <div class="detail-field">
-                <label>Website</label>
-                <input type="url" id="detail-website" placeholder="https://...">
-              </div>
-              <div class="detail-field">
-                <label>Notes</label>
-                <textarea id="detail-notes" rows="4" placeholder="Additional notes about this contact..."></textarea>
+
+                <div class="profile-hint">Hover avatar for contact details</div>
               </div>
             </div>
-          </div>
-          <div class="detail-actions">
-            <button id="detail-delete" class="danger">Delete Card</button>
-            <button id="detail-save" class="primary">Save Changes</button>
+
+            <!-- Right Column: History + Add Activity -->
+            <div class="detail-right-col">
+              <label>History</label>
+              <div id="activity-list" class="activity-thread"></div>
+
+              <!-- Add Activity (trails after history) -->
+              <div class="activity-input-section">
+                <div class="activity-type-btns">
+                  <button class="activity-type-btn" data-type="call" title="Log call">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                  </button>
+                  <button class="activity-type-btn" data-type="email" title="Log email">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7"/></svg>
+                  </button>
+                  <button class="activity-type-btn" data-type="meeting" title="Log meeting">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                  </button>
+                  <button class="activity-type-btn" data-type="linkedin" title="Log LinkedIn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                  </button>
+                  <button class="activity-type-btn" data-type="web" title="Log web research">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                  </button>
+                </div>
+                <div id="activity-input" class="activity-input">
+                  <input type="text" id="activity-text" placeholder="Add activity...">
+                  <button id="activity-add" class="btn-small primary">Add</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -173,6 +360,18 @@
       <button class="color-btn" data-color="#e9d5ff" style="background: #e9d5ff" title="Purple"></button>
       <button class="color-btn" data-color="#fed7aa" style="background: #fed7aa" title="Orange"></button>
       <button class="color-btn" data-color="#ffffff" style="background: #ffffff; border: 1px solid #e5e7eb" title="White"></button>
+    </div>
+  </div>
+
+  <!-- Avatar Lightbox -->
+  <div id="avatar-lightbox" class="avatar-lightbox">
+    <div class="lightbox-backdrop"></div>
+    <div class="lightbox-content">
+      <div class="lightbox-avatar-ring"></div>
+      <div class="lightbox-avatar" id="lightbox-avatar-img">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M12 14c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
+      </div>
+      <button class="lightbox-close" title="Close">&times;</button>
     </div>
   </div>
 
@@ -263,6 +462,19 @@ body {
 #sync-indicator.success { color: #22c55e; }
 #sync-indicator.error { color: #ef4444; cursor: pointer; }
 @keyframes spin { to { transform: rotate(360deg); } }
+#project-badge {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
 
 /* FAB */
 #new-note-fab {
@@ -336,25 +548,68 @@ body {
 .board::-webkit-scrollbar { display: none; }
 .board.active { display: block; }
 
+/* Orange */
 #board-0 {
+  background-color: #fff7ed;
+  background-image: linear-gradient(90deg, #e5dcd4 1px, transparent 1px), linear-gradient(#e5dcd4 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+/* Yellow */
+#board-1 {
   background-color: #fefce8;
   background-image: linear-gradient(90deg, #e5e5dc 1px, transparent 1px), linear-gradient(#e5e5dc 1px, transparent 1px);
   background-size: 40px 40px;
 }
-#board-1 {
-  background-color: #eff6ff;
-  background-image: linear-gradient(90deg, #c4cad4 1px, transparent 1px), linear-gradient(#c4cad4 1px, transparent 1px);
-  background-size: 40px 40px;
-}
+/* Green */
 #board-2 {
   background-color: #f0fdf4;
   background-image: linear-gradient(90deg, #c4d4c4 1px, transparent 1px), linear-gradient(#c4d4c4 1px, transparent 1px);
   background-size: 40px 40px;
 }
+/* Blue */
 #board-3 {
-  background-color: #faf5ff;
-  background-image: linear-gradient(90deg, #d4c4d4 1px, transparent 1px), linear-gradient(#d4c4d4 1px, transparent 1px);
+  background-color: #dbeafe;
+  background-image: linear-gradient(90deg, #a8b8d4 1px, transparent 1px), linear-gradient(#a8b8d4 1px, transparent 1px);
   background-size: 40px 40px;
+}
+/* Indigo */
+#board-4 {
+  background-color: #eef2ff;
+  background-image: linear-gradient(90deg, #c4c8e4 1px, transparent 1px), linear-gradient(#c4c8e4 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+/* Violet */
+#board-5 {
+  background-color: #f5f3ff;
+  background-image: linear-gradient(90deg, #d4c4e4 1px, transparent 1px), linear-gradient(#d4c4e4 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* Board tape labels */
+.board-tape {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  width: fit-content;
+  max-width: 280px;
+  padding: 8px 24px;
+  background: rgba(255, 248, 220, 0.95);
+  border-top: 1px solid rgba(200, 180, 140, 0.3);
+  border-bottom: 1px solid rgba(200, 180, 140, 0.3);
+  font-family: 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
+  font-size: 18px;
+  font-weight: 500;
+  color: #5a4a3a;
+  transform: rotate(-1deg);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  z-index: 50;
+  cursor: text;
+  outline: none;
+  min-width: 100px;
+}
+.board-tape:focus {
+  background: rgba(255, 252, 235, 0.98);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 
 /* Minimap */
@@ -362,18 +617,19 @@ body {
   position: fixed;
   bottom: 90px;
   left: 20px;
-  width: 100px;
+  width: 138px;
   height: 66px;
   background: white;
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.08);
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr;
   gap: 3px;
   padding: 4px;
   z-index: 100;
 }
+#minimap.ui-hidden, #hints.ui-hidden, #new-note-fab.ui-hidden { display: none; }
 .quadrant-btn {
   border: none;
   border-radius: 4px;
@@ -383,10 +639,12 @@ body {
 }
 .quadrant-btn:hover { filter: brightness(0.95); }
 .quadrant-btn.active { box-shadow: inset 0 0 0 2px rgba(0,0,0,0.2); }
-.quadrant-btn[data-q="0"] { background: #fef9c3; }
-.quadrant-btn[data-q="1"] { background: #dbeafe; }
-.quadrant-btn[data-q="2"] { background: #dcfce7; }
-.quadrant-btn[data-q="3"] { background: #f3e8ff; }
+.quadrant-btn[data-q="0"] { background: #fed7aa; } /* Orange */
+.quadrant-btn[data-q="1"] { background: #fef9c3; } /* Yellow */
+.quadrant-btn[data-q="2"] { background: #dcfce7; } /* Green */
+.quadrant-btn[data-q="3"] { background: #93c5fd; } /* Blue */
+.quadrant-btn[data-q="4"] { background: #e0e7ff; } /* Indigo */
+.quadrant-btn[data-q="5"] { background: #ede9fe; } /* Violet */
 .minimap-note {
   position: absolute;
   background: rgba(0,0,0,0.3);
@@ -435,6 +693,99 @@ body {
 .sticky-note.dragging { cursor: grabbing; box-shadow: 6px 10px 24px rgba(0,0,0,0.18); z-index: 9999 !important; }
 .sticky-note.editing { cursor: text; }
 .sticky-note.selected { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5), 3px 5px 16px rgba(0,0,0,0.12); }
+.sticky-note.multi-selected {
+  box-shadow: 0 0 0 3px #22c55e, 0 0 12px rgba(34, 197, 94, 0.4), 3px 5px 16px rgba(0,0,0,0.12);
+}
+body.multi-select-mode { cursor: crosshair; }
+body.multi-select-mode .sticky-note { cursor: crosshair; }
+body.multi-select-mode .sticky-note:hover {
+  box-shadow: 0 0 0 2px #22c55e, 3px 5px 16px rgba(0,0,0,0.12);
+}
+.multi-select-indicator {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #22c55e;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+  display: none;
+}
+.multi-select-indicator.visible { display: block; }
+
+/* Snoozed cards */
+.sticky-note.snoozed {
+  opacity: 0.4;
+  filter: grayscale(30%);
+}
+.sticky-note.snoozed:hover {
+  opacity: 0.7;
+}
+.snooze-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #6b7280;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+/* Awakened from snooze - ready for follow-up */
+.awakened-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 28px;
+  height: 28px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  z-index: 10;
+}
+
+.sticky-note.awakened {
+  animation: awakenedPulse 2s ease-in-out infinite;
+}
+
+@keyframes awakenedPulse {
+  0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  50% { box-shadow: 0 0 20px 4px var(--awaken-color, rgba(59, 130, 246, 0.5)); }
+}
+
+/* Action-specific colors */
+.sticky-note.awakened-call {
+  --awaken-color: rgba(34, 197, 94, 0.5);
+  border: 2px solid #22c55e;
+}
+.sticky-note.awakened-email {
+  --awaken-color: rgba(245, 158, 11, 0.5);
+  border: 2px solid #f59e0b;
+}
+.sticky-note.awakened-meeting {
+  --awaken-color: rgba(139, 92, 246, 0.5);
+  border: 2px solid #8b5cf6;
+}
+.sticky-note.awakened-linkedin {
+  --awaken-color: rgba(0, 119, 181, 0.5);
+  border: 2px solid #0077b5;
+}
+.sticky-note.awakened-web {
+  --awaken-color: rgba(6, 182, 212, 0.5);
+  border: 2px solid #06b6d4;
+}
 
 .sticky-note.lead { padding-top: 50px; }
 .lead-avatar {
@@ -570,6 +921,202 @@ body {
 .modal-close:hover { background: #e5e7eb; }
 .modal-body { padding: 24px; }
 
+/* Detail Modal Header */
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.header-spacer { flex: 1; }
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.header-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.header-btn.primary {
+  background: #3b82f6;
+  color: white;
+}
+.header-btn.primary:hover {
+  background: #2563eb;
+}
+.header-btn.danger {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.header-btn.danger:hover {
+  background: #fee2e2;
+}
+.header-snooze {
+  position: relative;
+  margin-right: 12px;
+  padding-right: 12px;
+  border-right: 1px solid #e5e7eb;
+}
+.snooze-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #6b7280;
+  transition: all 0.15s;
+}
+.snooze-trigger:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+.snooze-trigger.has-snooze {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+.snooze-icon { font-size: 14px; }
+.snooze-display { font-weight: 500; }
+.snooze-action-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: #3b82f6;
+  border-radius: 4px;
+  color: white;
+}
+.snooze-action-indicator svg { width: 12px; height: 12px; }
+
+.snooze-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  z-index: 1000;
+  min-width: 220px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition: all 0.2s;
+}
+.snooze-popover.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.snooze-popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+.snooze-clear-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: #fee2e2;
+  border-radius: 6px;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.snooze-clear-btn:hover { background: #fecaca; }
+.snooze-date-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #374151;
+  margin-bottom: 12px;
+}
+.snooze-date-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+.snooze-actions-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+.snooze-action-icons {
+  display: flex;
+  gap: 6px;
+}
+.snooze-action-btn {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #e5e7eb;
+  background: white;
+  border-radius: 8px;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.snooze-action-btn:hover {
+  border-color: #d1d5db;
+  color: #374151;
+  background: #f9fafb;
+}
+.snooze-action-btn.active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #2563eb;
+}
+.snooze-action-btn[data-action="call"].active { border-color: #22c55e; background: #f0fdf4; color: #16a34a; }
+.snooze-action-btn[data-action="email"].active { border-color: #f59e0b; background: #fffbeb; color: #d97706; }
+.snooze-action-btn[data-action="meeting"].active { border-color: #8b5cf6; background: #f5f3ff; color: #7c3aed; }
+.snooze-action-btn[data-action="linkedin"].active { border-color: #0077b5; background: #f0f9ff; color: #0077b5; }
+.snooze-action-btn[data-action="web"].active { border-color: #06b6d4; background: #ecfeff; color: #0891b2; }
+.header-board-picker {
+  display: flex;
+  gap: 4px;
+  margin-right: 8px;
+}
+.header-board-picker .board-opt {
+  width: 24px;
+  height: 24px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.1s;
+}
+.header-board-picker .board-opt:hover {
+  transform: scale(1.15);
+}
+.header-board-picker .board-opt.active {
+  border-color: #374151;
+}
+
 .setting-group { margin-bottom: 20px; }
 .setting-group:last-child { margin-bottom: 0; }
 .setting-group label { display: block; font-weight: 600; color: #374151; margin-bottom: 4px; }
@@ -600,62 +1147,948 @@ body {
 .setting-actions button.danger:hover { background: #fee2e2; }
 .setting-divider { height: 1px; background: #e5e7eb; margin: 20px 0; }
 
-/* Detail Modal */
-.detail-content { max-width: 560px; }
-.detail-layout { display: flex; gap: 24px; }
-.detail-avatar-section {
+/* Saved Projects List */
+.saved-projects-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.saved-projects-list:empty { display: none; }
+.saved-project-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.saved-project-chip:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+.saved-project-chip.active {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+.saved-project-chip .remove-project {
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 14px;
+  line-height: 1;
+}
+.saved-project-chip .remove-project:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Email Templates */
+.email-templates-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.email-template-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.email-template-item:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+.email-template-name {
+  font-weight: 500;
+  color: #374151;
+}
+.email-template-subject {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+.add-template-btn {
+  padding: 10px 16px;
+  background: #f3f4f6;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+}
+.add-template-btn:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+.add-template-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Template Editor Modal */
+.template-modal-content {
+  max-width: 500px;
+}
+.template-modal-content .field-group {
+  margin-bottom: 16px;
+}
+.template-modal-content label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+}
+.template-modal-content input,
+.template-modal-content textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+}
+.template-modal-content input:focus,
+.template-modal-content textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+.template-modal-content textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+.template-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+.template-actions-right {
+  display: flex;
+  gap: 8px;
+}
+.template-actions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.template-actions button.primary {
+  background: #4f46e5;
+  color: white;
+}
+.template-actions button.primary:hover { background: #4338ca; }
+.template-actions button.secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+.template-actions button.secondary:hover { background: #e5e7eb; }
+.template-actions button.danger {
+  background: transparent;
+  color: #dc2626;
+}
+.template-actions button.danger:hover { background: #fef2f2; }
+
+/* Template Picker (when clicking email on lead) */
+.template-picker {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+}
+.template-picker.visible {
+  opacity: 1;
+  visibility: visible;
+}
+.template-picker-content {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  width: 90%;
+  max-width: 320px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+.template-picker h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 16px;
+}
+.template-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.template-picker-item {
+  padding: 12px 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.template-picker-item:hover {
+  background: #eff6ff;
+  border-color: #6366f1;
+}
+.template-picker-item .name {
+  font-weight: 500;
+  color: #374151;
+}
+.template-picker-cancel {
+  width: 100%;
+  padding: 10px;
+  margin-top: 12px;
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+}
+.template-picker-cancel:hover { color: #374151; }
+
+/* Admin Modal */
+.admin-modal-content {
+  max-width: 600px;
+}
+.admin-prompt {
+  text-align: center;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+.admin-login-form {
+  display: flex;
+  gap: 10px;
+  max-width: 300px;
+  margin: 0 auto;
+}
+.admin-login-form input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+}
+.admin-login-form input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+.admin-login-form button {
+  padding: 12px 24px;
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.admin-login-form button:hover { background: #4338ca; }
+.admin-summary {
+  padding: 12px 16px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+}
+.admin-projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.admin-project-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.admin-project-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+.admin-project-info {
+  flex: 1;
+  min-width: 0;
+}
+.admin-project-key {
+  font-size: 13px;
+  font-family: ui-monospace, monospace;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+.admin-project-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+}
+.admin-project-stats span {
+  color: #374151;
+  font-weight: 500;
+}
+.admin-project-stats .cards {
+  color: #4f46e5;
+}
+.admin-project-actions {
+  display: flex;
+  gap: 8px;
   flex-shrink: 0;
+}
+.admin-btn {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.admin-btn.view {
+  background: #eff6ff;
+  color: #2563eb;
+}
+.admin-btn.view:hover { background: #dbeafe; }
+.admin-btn.delete {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.admin-btn.delete:hover { background: #fee2e2; }
+.admin-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #9ca3af;
+}
+
+.current-project {
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+.current-project span {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+.current-project span.no-project {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+/* Detail Modal - Two Column Layout */
+.detail-content { max-width: 900px; }
+.detail-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+.detail-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.detail-right-col {
+  display: flex;
+  flex-direction: column;
+}
+.detail-right-col > label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+.detail-layout { display: flex; gap: 16px; flex-wrap: wrap; }
+/* Profile Card */
+/* Profile Card - Centered Design */
+.profile-card-centered {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  text-align: center;
+  padding: 20px;
+  height: 100%;
 }
-.detail-avatar {
+.profile-avatar-wrapper-centered {
+  position: relative;
+  margin-bottom: 24px;
+}
+.profile-avatar-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: var(--board-color, #c7d2fe);
+  opacity: 0.5;
+  animation: ring-pulse 3s ease-in-out infinite;
+  filter: blur(1px);
+}
+@keyframes ring-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.03); }
+}
+.profile-avatar {
+  position: relative;
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: #f3f4f6;
+  background: linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   border: 4px solid white;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-.detail-avatar svg { width: 60px; height: 60px; color: #9ca3af; }
-.detail-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.detail-fields { flex: 1; display: flex; flex-direction: column; gap: 16px; }
-.detail-field label { display: block; font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-.detail-field input, .detail-field textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: inherit;
-  resize: none;
-}
-.detail-field input:focus, .detail-field textarea:focus { outline: none; border-color: #3b82f6; }
-.detail-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.detail-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
-}
-.detail-actions button {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
+  box-shadow:
+    0 10px 40px rgba(0,0,0,0.12),
+    0 4px 12px rgba(0,0,0,0.08),
+    inset 0 -2px 6px rgba(0,0,0,0.04);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
 }
-.detail-actions .primary { background: #3b82f6; color: white; }
-.detail-actions .primary:hover { background: #2563eb; }
-.detail-actions .danger { background: #fef2f2; color: #dc2626; }
-.detail-actions .danger:hover { background: #fee2e2; }
+.profile-avatar:hover {
+  transform: scale(1.05);
+  box-shadow:
+    0 14px 48px rgba(0,0,0,0.18),
+    0 6px 16px rgba(0,0,0,0.12),
+    inset 0 -2px 6px rgba(0,0,0,0.04);
+}
+.profile-avatar svg {
+  width: 56px;
+  height: 56px;
+  color: #cbd5e1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.profile-avatar:hover img {
+  transform: scale(1.08);
+}
+.avatar-edit-btn {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 32px;
+  height: 32px;
+  background: white;
+  border: 2px solid #f3f4f6;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: all 0.2s;
+  z-index: 5;
+}
+.avatar-edit-btn:hover {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Contact Popover */
+.contact-popover {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 16px);
+  transform: translateY(-50%);
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow:
+    0 20px 50px rgba(0,0,0,0.15),
+    0 10px 20px rgba(0,0,0,0.1),
+    0 0 0 1px rgba(0,0,0,0.05);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+  min-width: 220px;
+}
+.profile-avatar-wrapper-centered:hover .contact-popover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(-50%) translateX(0);
+}
+.contact-popover:hover {
+  opacity: 1;
+  visibility: visible;
+}
+.popover-arrow {
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 3px;
+  transform: translateY(-50%) rotate(45deg);
+  box-shadow: -2px 2px 4px rgba(0,0,0,0.05);
+}
+.popover-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.popover-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.popover-action-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.popover-action-icon:hover {
+  transform: scale(1.1);
+  filter: brightness(0.95);
+}
+.popover-action-icon:active {
+  transform: scale(0.95);
+}
+.popover-action-icon.phone {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #16a34a;
+}
+.popover-action-icon.email {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #d97706;
+}
+.popover-action-icon.linkedin {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #0077b5;
+}
+.popover-action-icon.website {
+  background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+  color: #9333ea;
+}
+.popover-input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #374151;
+  background: #fafafa;
+  transition: all 0.2s;
+  min-width: 0;
+}
+.popover-input:hover {
+  border-color: #d1d5db;
+  background: white;
+}
+.popover-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+.popover-input::placeholder {
+  color: #9ca3af;
+}
+/* Profile Info Stack */
+.profile-info-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+.profile-name-centered {
+  width: 100%;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1f2937;
+  text-align: center;
+  border: none;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 8px;
+  letter-spacing: -0.02em;
+}
+.profile-name-centered:hover { background: #f9fafb; }
+.profile-name-centered:focus { outline: none; background: #f3f4f6; }
+.profile-name-centered::placeholder { color: #d1d5db; font-weight: 400; }
+
+.profile-role-centered {
+  width: 100%;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #4b5563;
+  text-align: center;
+  border: none;
+  background: transparent;
+  padding: 4px 12px;
+  border-radius: 6px;
+}
+.profile-role-centered:hover { background: #f9fafb; }
+.profile-role-centered:focus { outline: none; background: #f3f4f6; }
+.profile-role-centered::placeholder { color: #d1d5db; }
+
+.profile-company-centered {
+  width: 100%;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: #6b7280;
+  text-align: center;
+  border: none;
+  background: transparent;
+  padding: 4px 12px;
+  border-radius: 6px;
+}
+.profile-company-centered:hover { background: #f9fafb; }
+.profile-company-centered:focus { outline: none; background: #f3f4f6; }
+.profile-company-centered::placeholder { color: #d1d5db; }
+
+.profile-hint {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: auto;
+  padding-top: 16px;
+  font-style: italic;
+}
+
+/* Avatar Lightbox */
+.avatar-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.avatar-lightbox.visible {
+  display: flex;
+}
+.lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  animation: lightbox-fade-in 0.3s ease;
+}
+@keyframes lightbox-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.lightbox-content {
+  position: relative;
+  animation: lightbox-zoom-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes lightbox-zoom-in {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+.lightbox-avatar-ring {
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  background: var(--board-color, #c7d2fe);
+  opacity: 0.4;
+  animation: lightbox-ring-pulse 2s ease-in-out infinite;
+  filter: blur(2px);
+}
+@keyframes lightbox-ring-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.02); }
+}
+.lightbox-avatar {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 6px solid rgba(255,255,255,0.2);
+  box-shadow:
+    0 0 80px rgba(0,0,0,0.5),
+    0 0 120px var(--board-color, #c7d2fe),
+    inset 0 0 40px rgba(0,0,0,0.3);
+}
+.lightbox-avatar svg {
+  width: 140px;
+  height: 140px;
+  color: #475569;
+}
+.lightbox-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.lightbox-close {
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 44px;
+  height: 44px;
+  background: rgba(255,255,255,0.1);
+  border: 2px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.lightbox-close:hover {
+  background: rgba(255,255,255,0.2);
+  transform: scale(1.1);
+}
+
+/* Activity Input Section */
+/* Activity Input - trails after history */
+.activity-input-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+}
+.activity-type-btns {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.activity-type-btn {
+  width: 40px;
+  height: 40px;
+  border: 1.5px solid #e5e7eb;
+  background: #fff;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+}
+.activity-type-btn svg {
+  width: 18px;
+  height: 18px;
+  transition: all 0.2s ease;
+}
+.activity-type-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #374151;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.activity-type-btn.active {
+  background: #1f2937;
+  border-color: #1f2937;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.activity-input {
+  display: flex;
+  gap: 6px;
+}
+.activity-input input {
+  flex: 1;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  color: #374151;
+  font-size: 14px;
+  min-width: 0;
+}
+.activity-input input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+.btn-small {
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-small.primary { background: #3b82f6; color: white; }
+.btn-small.primary:hover { background: #2563eb; }
+
+/* Activity Thread */
+.activity-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.activity-thread::-webkit-scrollbar {
+  width: 4px;
+}
+.activity-thread::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 2px;
+}
+.activity-thread::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 2px;
+}
+.activity-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border-left: 3px solid #e5e7eb;
+  position: relative;
+  transition: border-color 0.2s;
+}
+.activity-item:hover {
+  border-left-color: #3b82f6;
+}
+.activity-item[data-type="call"] { border-left-color: #22c55e; }
+.activity-item[data-type="email"] { border-left-color: #3b82f6; }
+.activity-item[data-type="meeting"] { border-left-color: #f59e0b; }
+.activity-item[data-type="linkedin"] { border-left-color: #0077b5; }
+.activity-item[data-type="web"] { border-left-color: #9333ea; }
+.activity-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: #f3f4f6;
+  border-radius: 6px;
+  color: #6b7280;
+}
+.activity-item[data-type="call"] .activity-icon { color: #22c55e; background: #f0fdf4; }
+.activity-item[data-type="email"] .activity-icon { color: #3b82f6; background: #eff6ff; }
+.activity-item[data-type="meeting"] .activity-icon { color: #f59e0b; background: #fffbeb; }
+.activity-item[data-type="linkedin"] .activity-icon { color: #0077b5; background: #e8f4fc; }
+.activity-item[data-type="web"] .activity-icon { color: #9333ea; background: #faf5ff; }
+.activity-content {
+  flex: 1;
+  min-width: 0;
+}
+.activity-text {
+  font-size: 13px;
+  color: #374151;
+  word-break: break-word;
+  line-height: 1.4;
+}
+.activity-time {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-top: 3px;
+}
+.activity-delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: none;
+  border: none;
+  color: #d1d5db;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 5px;
+  opacity: 0;
+  transition: all 0.2s;
+  border-radius: 4px;
+}
+.activity-item:hover .activity-delete {
+  opacity: 1;
+}
+.activity-delete:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
+.activity-empty {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 12px;
+  padding: 30px 10px;
+  background: #f9fafb;
+  border-radius: 12px;
+}
+
+/* Mobile: stack columns */
+@media (max-width: 700px) {
+  .detail-two-col {
+    grid-template-columns: 1fr;
+  }
+  .detail-right-col {
+    order: -1;
+  }
+  .activity-thread {
+    max-height: 200px;
+  }
+}
 
 /* Confetti */
 .confetti { position: fixed; pointer-events: none; z-index: 9999; }
@@ -678,7 +2111,7 @@ body {
   #new-note-fab { bottom: 80px; right: 12px; }
   #fab-add-btn { width: 48px; height: 48px; }
   .detail-layout { flex-direction: column; align-items: center; }
-  .detail-fields { width: 100%; }
+  .detail-fields-compact { width: 100%; }
   .detail-row { grid-template-columns: 1fr; }
 }
 </style>
@@ -688,7 +2121,78 @@ body {
   const AUTH_KEY = 'stiki-auth';
   const STORAGE_KEY = 'stiki-notes-v2';
   const SYNC_PASSWORD_KEY = 'stiki-sync-password';
+  const SAVED_PROJECTS_KEY = 'stiki-saved-projects';
   const WORKER_URL = 'https://levitate-sync.ben-6a6.workers.dev';
+
+  function getSavedProjects(): string[] {
+    try {
+      const saved = localStorage.getItem(SAVED_PROJECTS_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  }
+
+  function saveProjectToList(projectName: string) {
+    const projects = getSavedProjects().filter(p => p !== projectName);
+    projects.unshift(projectName); // Add to front
+    if (projects.length > 10) projects.pop(); // Keep max 10
+    localStorage.setItem(SAVED_PROJECTS_KEY, JSON.stringify(projects));
+  }
+
+  function removeProjectFromList(projectName: string) {
+    const projects = getSavedProjects().filter(p => p !== projectName);
+    localStorage.setItem(SAVED_PROJECTS_KEY, JSON.stringify(projects));
+  }
+
+  function renderSavedProjects() {
+    const container = document.getElementById('saved-projects-list');
+    if (!container) return;
+
+    const projects = getSavedProjects();
+    const currentProject = getSyncPassword();
+
+    if (projects.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = projects.map(p => `
+      <div class="saved-project-chip ${p === currentProject ? 'active' : ''}" data-project="${p}">
+        <span class="project-name">${p}</span>
+        <button class="remove-project" data-project="${p}" title="Remove">&times;</button>
+      </div>
+    `).join('');
+
+    // Click on chip to switch
+    container.querySelectorAll('.saved-project-chip').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).classList.contains('remove-project')) return;
+        const project = (chip as HTMLElement).dataset.project;
+        if (project) {
+          (document.getElementById('switch-project-input') as HTMLInputElement).value = project;
+          document.getElementById('switch-project-btn')?.click();
+        }
+      });
+    });
+
+    // Remove button
+    container.querySelectorAll('.remove-project').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const project = (btn as HTMLElement).dataset.project;
+        if (project && confirm(`Remove "${project}" from the list?`)) {
+          removeProjectFromList(project);
+          renderSavedProjects();
+        }
+      });
+    });
+  }
+
+  interface Activity {
+    id: string;
+    timestamp: number;
+    type: 'call' | 'email' | 'meeting' | 'note' | 'linkedin' | 'web';
+    text: string;
+  }
 
   interface Note {
     id: string;
@@ -709,16 +2213,37 @@ body {
     company?: string;
     phone?: string;
     email?: string;
+    linkedin?: string;
     website?: string;
     notes?: string;
+    activity?: Activity[];
+    snoozeUntil?: number;
+    snoozeAction?: 'call' | 'email' | 'meeting' | 'linkedin' | 'web';
+  }
+
+  interface EmailTemplate {
+    name: string;
+    subject: string;
+    body: string;
   }
 
   interface State {
     notes: Note[];
     nextZIndex: number;
+    boardTitles?: string[];
+    emailTemplates?: EmailTemplate[];
   }
 
-  let state: State = { notes: [], nextZIndex: 1 };
+  const DEFAULT_TITLES = ['Orange', 'Yellow', 'Green', 'Blue', 'Indigo', 'Violet'];
+  const BOARD_COLORS = ['#fed7aa', '#fef08a', '#bbf7d0', '#93c5fd', '#c7d2fe', '#ddd6fe'];
+  const ACTIVITY_ICONS: Record<string, string> = {
+    call: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>',
+    email: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7"/></svg>',
+    meeting: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
+    linkedin: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>',
+    web: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>',
+  };
+  let state: State = { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES] };
   let selectedId: string | null = null;
   let isDragging = false;
   let dragTarget: HTMLElement | null = null;
@@ -726,11 +2251,17 @@ body {
   let dragStartY = 0;
   let dragOffset = { x: 0, y: 0 };
   let syncStatus: 'none' | 'syncing' | 'success' | 'error' = 'none';
-  let currentColor = '#fef08a';
+  let currentColor = '#fed7aa';
   let lastDeleted: Note | null = null;
   let avatarTargetId: string | null = null;
+  let editingActivities: Activity[] = [];
+  let currentActivityType: 'call' | 'email' | 'meeting' | 'note' | 'linkedin' | 'web' = 'note';
+  let editingNoteQuadrant: number = 0;
   let activeQuadrant = 0;
   let detailNoteId: string | null = null;
+  let selectedSnoozeAction: 'call' | 'email' | 'meeting' | 'linkedin' | 'web' | null = null;
+  let multiSelectMode = false;
+  let multiSelected: Set<string> = new Set();
 
   // Auth
   function checkAuth(): boolean {
@@ -776,13 +2307,22 @@ body {
     syncToCloud();
   }
 
+  function saveBoardTitle(q: number, title: string) {
+    if (!state.boardTitles) state.boardTitles = [...DEFAULT_TITLES];
+    state.boardTitles[q] = title || DEFAULT_TITLES[q];
+    save();
+  }
+
   function load(): State {
     const data = localStorage.getItem(STORAGE_KEY);
     if (data) {
-      try { return JSON.parse(data); }
-      catch { return { notes: [], nextZIndex: 1 }; }
+      try {
+        const parsed = JSON.parse(data);
+        return { ...parsed, boardTitles: parsed.boardTitles || [...DEFAULT_TITLES] };
+      }
+      catch { return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES] }; }
     }
-    return { notes: [], nextZIndex: 1 };
+    return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES] };
   }
 
   // Sync
@@ -973,15 +2513,38 @@ body {
 
   // Render
   function render() {
-    document.querySelectorAll('.board').forEach(b => { b.innerHTML = ''; });
+    // Create tape labels for each board
+    document.querySelectorAll('.board').forEach(b => {
+      const q = (b as HTMLElement).dataset.q || '0';
+      const titles = state.boardTitles || DEFAULT_TITLES;
+      const title = titles[parseInt(q)] || DEFAULT_TITLES[parseInt(q)];
+      b.innerHTML = `<div class="board-tape" contenteditable="true" data-q="${q}">${escapeHtml(title)}</div>`;
+    });
+
+    // Attach tape event listeners
+    document.querySelectorAll('.board-tape').forEach((el) => {
+      el.addEventListener('blur', () => {
+        const q = parseInt((el as HTMLElement).dataset.q || '0');
+        const title = (el.textContent || '').trim();
+        saveBoardTitle(q, title);
+      });
+      el.addEventListener('keydown', (e) => {
+        if ((e as KeyboardEvent).key === 'Enter') {
+          e.preventDefault();
+          (el as HTMLElement).blur();
+        }
+      });
+    });
 
     state.notes.forEach(note => {
       const quadrant = note.quadrant ?? 0;
       const board = document.getElementById(`board-${quadrant}`);
       if (!board) return;
 
+      const isSnoozed = note.snoozeUntil && note.snoozeUntil > Date.now();
+      const isAwakened = note.snoozeUntil && note.snoozeUntil <= Date.now() && note.snoozeAction;
       const el = document.createElement('div');
-      el.className = `sticky-note ${selectedId === note.id ? 'selected' : ''} ${note.isLead ? 'lead' : ''}`;
+      el.className = `sticky-note ${selectedId === note.id ? 'selected' : ''} ${note.isLead ? 'lead' : ''} ${multiSelected.has(note.id) ? 'multi-selected' : ''} ${isSnoozed ? 'snoozed' : ''} ${isAwakened ? `awakened awakened-${note.snoozeAction}` : ''}`;
       el.dataset.id = note.id;
       el.dataset.color = note.color;
       el.style.cssText = `
@@ -998,8 +2561,21 @@ body {
         </div>
       ` : '';
 
+      const snoozeBadgeHtml = isSnoozed ? `<div class="snooze-badge">${new Date(note.snoozeUntil!).toLocaleDateString('default', { month: 'short', day: 'numeric' })}</div>` : '';
+
+      const actionIcons: Record<string, string> = {
+        call: '📞',
+        email: '✉️',
+        meeting: '🗓️',
+        linkedin: '💼',
+        web: '🔍'
+      };
+      const awakenedBadgeHtml = isAwakened ? `<div class="awakened-badge">${actionIcons[note.snoozeAction!]}</div>` : '';
+
       el.innerHTML = `
         ${avatarHtml}
+        ${snoozeBadgeHtml}
+        ${awakenedBadgeHtml}
         <div class="sticky-note-content" contenteditable="true">${escapeHtml(note.text)}</div>
         <div class="sticky-note-meta">
           <span class="sticky-note-date">${formatDate(note.createdAt)}</span>
@@ -1038,11 +2614,29 @@ body {
         if (e.key === 'Escape') content.blur();
       });
 
-      // Drag
+      // Drag / Multi-select
       el.addEventListener('mousedown', e => {
         if ((e.target as HTMLElement).closest('.lead-avatar') ||
             (e.target as HTMLElement).closest('button') ||
             el.classList.contains('editing')) return;
+
+        // Handle multi-select mode
+        if (multiSelectMode) {
+          e.preventDefault();
+          if (multiSelected.has(note.id)) {
+            multiSelected.delete(note.id);
+            el.classList.remove('multi-selected');
+          } else {
+            multiSelected.add(note.id);
+            el.classList.add('multi-selected');
+          }
+          // Update indicator with count
+          const indicator = document.getElementById('multi-select-indicator');
+          if (indicator) {
+            indicator.textContent = `SELECT MODE: ${multiSelected.size} card${multiSelected.size !== 1 ? 's' : ''} selected. Press 1-6 to move, ESC to cancel`;
+          }
+          return;
+        }
 
         selectedId = note.id;
         dragStartX = e.clientX;
@@ -1079,10 +2673,10 @@ body {
         setTimeout(() => deleteNote(note.id), 300);
       });
 
+      // Click avatar opens detail modal
       el.querySelector('.lead-avatar')?.addEventListener('click', e => {
         e.stopPropagation();
-        avatarTargetId = note.id;
-        document.getElementById('avatar-upload')?.click();
+        openDetailModal(note.id);
       });
 
       el.addEventListener('dblclick', e => {
@@ -1119,6 +2713,36 @@ body {
     delete picker.dataset.noteId;
   }
 
+  // Snooze display helper
+  const SNOOZE_ACTION_ICONS: Record<string, string> = {
+    call: '📞',
+    email: '✉️',
+    meeting: '🗓️',
+    linkedin: '💼',
+    web: '🔍'
+  };
+
+  function updateSnoozeDisplay() {
+    const trigger = document.getElementById('snooze-trigger');
+    const display = document.getElementById('snooze-display');
+    const snoozeInput = document.getElementById('detail-snooze') as HTMLInputElement;
+
+    if (!trigger || !display) return;
+
+    const dateValue = snoozeInput?.value;
+
+    if (dateValue) {
+      const date = new Date(dateValue + 'T00:00:00');
+      const formatted = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const icon = selectedSnoozeAction ? SNOOZE_ACTION_ICONS[selectedSnoozeAction] : '';
+      display.textContent = icon ? `${formatted} ${icon}` : formatted;
+      trigger.classList.add('has-snooze');
+    } else {
+      display.textContent = 'Snooze';
+      trigger.classList.remove('has-snooze');
+    }
+  }
+
   // Detail modal
   function openDetailModal(noteId: string) {
     const note = state.notes.find(n => n.id === noteId);
@@ -1135,15 +2759,139 @@ body {
       avatar.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M12 14c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>';
     }
 
-    (document.getElementById('detail-name') as HTMLInputElement).value = note.name || note.text.split('\n')[0] || '';
+    const nameValue = note.name || note.text.split('\n')[0] || '';
+    const companyValue = note.company || '';
+
+    (document.getElementById('detail-name') as HTMLInputElement).value = nameValue;
     (document.getElementById('detail-role') as HTMLInputElement).value = note.role || '';
-    (document.getElementById('detail-company') as HTMLInputElement).value = note.company || '';
+    (document.getElementById('detail-company') as HTMLInputElement).value = companyValue;
     (document.getElementById('detail-phone') as HTMLInputElement).value = note.phone || '';
     (document.getElementById('detail-email') as HTMLInputElement).value = note.email || '';
+    (document.getElementById('detail-linkedin') as HTMLInputElement).value = note.linkedin || '';
     (document.getElementById('detail-website') as HTMLInputElement).value = note.website || '';
-    (document.getElementById('detail-notes') as HTMLTextAreaElement).value = note.notes || '';
+
+    // Populate snooze date and action
+    const snoozeInput = document.getElementById('detail-snooze') as HTMLInputElement;
+    if (note.snoozeUntil) {
+      const d = new Date(note.snoozeUntil);
+      snoozeInput.value = d.toISOString().split('T')[0];
+    } else {
+      snoozeInput.value = '';
+    }
+
+    // Set snooze action
+    selectedSnoozeAction = note.snoozeAction || null;
+    document.querySelectorAll('.snooze-action-btn').forEach(btn => {
+      const action = (btn as HTMLElement).dataset.action;
+      btn.classList.toggle('active', action === selectedSnoozeAction);
+    });
+    updateSnoozeDisplay();
+
+    // Set active board with custom titles
+    editingNoteQuadrant = note.quadrant ?? 0;
+    const titles = state.boardTitles || DEFAULT_TITLES;
+    document.querySelectorAll('#detail-board-picker .board-opt').forEach(btn => {
+      const q = parseInt((btn as HTMLElement).dataset.q || '0');
+      btn.classList.toggle('active', q === editingNoteQuadrant);
+      (btn as HTMLElement).title = titles[q] || DEFAULT_TITLES[q];
+    });
+    updateSelectedBoardName();
+    updateAvatarRingColor();
+
+    // Load activities
+    editingActivities = note.activity ? [...note.activity] : [];
+    document.getElementById('activity-input')?.classList.add('hidden');
+    (document.getElementById('activity-text') as HTMLInputElement).value = '';
+    document.querySelectorAll('.activity-type-btn').forEach(b => b.classList.remove('active'));
+    renderActivities();
+
+    // Close snooze popover
+    document.getElementById('snooze-popover')?.classList.remove('visible');
 
     modal.classList.add('visible');
+  }
+
+  function updateSelectedBoardName() {
+    const nameEl = document.getElementById('selected-board-name');
+    const titles = state.boardTitles || DEFAULT_TITLES;
+    if (nameEl) {
+      nameEl.textContent = titles[editingNoteQuadrant] || DEFAULT_TITLES[editingNoteQuadrant];
+    }
+  }
+
+  function updateAvatarRingColor() {
+    const boardColor = BOARD_COLORS[editingNoteQuadrant] || BOARD_COLORS[0];
+    const ring = document.querySelector('.profile-avatar-ring') as HTMLElement;
+    const lightboxRing = document.querySelector('.lightbox-avatar-ring') as HTMLElement;
+    const lightboxAvatar = document.querySelector('.lightbox-avatar') as HTMLElement;
+    if (ring) ring.style.setProperty('--board-color', boardColor);
+    if (lightboxRing) lightboxRing.style.setProperty('--board-color', boardColor);
+    if (lightboxAvatar) lightboxAvatar.style.setProperty('--board-color', boardColor);
+  }
+
+  function openAvatarLightbox() {
+    const avatar = document.getElementById('detail-avatar');
+    const lightboxImg = document.getElementById('lightbox-avatar-img');
+    const lightbox = document.getElementById('avatar-lightbox');
+
+    if (avatar && lightboxImg && lightbox) {
+      // Copy avatar content to lightbox
+      lightboxImg.innerHTML = avatar.innerHTML;
+      lightbox.classList.add('visible');
+      updateAvatarRingColor();
+    }
+  }
+
+  function closeAvatarLightbox() {
+    const lightbox = document.getElementById('avatar-lightbox');
+    if (lightbox) lightbox.classList.remove('visible');
+  }
+
+  function renderActivities() {
+    const listEl = document.getElementById('activity-list')!;
+
+    if (editingActivities.length === 0) {
+      listEl.innerHTML = '<div class="activity-empty">No activity yet</div>';
+      return;
+    }
+
+    const sorted = [...editingActivities].sort((a, b) => b.timestamp - a.timestamp);
+
+    listEl.innerHTML = sorted.map(act => `
+      <div class="activity-item" data-id="${act.id}" data-type="${act.type}">
+        <span class="activity-icon">${ACTIVITY_ICONS[act.type] || '📝'}</span>
+        <div class="activity-content">
+          <div class="activity-text">${escapeHtml(act.text)}</div>
+          <div class="activity-time">${formatActivityTime(act.timestamp)}</div>
+        </div>
+        <button class="activity-delete" data-id="${act.id}" title="Delete">✕</button>
+      </div>
+    `).join('');
+
+    listEl.querySelectorAll('.activity-delete').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = (btn as HTMLElement).dataset.id;
+        editingActivities = editingActivities.filter(a => a.id !== id);
+        renderActivities();
+      });
+    });
+  }
+
+  function formatActivityTime(timestamp: number): string {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const mins = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
+
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
 
   function closeDetailModal() {
@@ -1159,8 +2907,15 @@ body {
     const company = (document.getElementById('detail-company') as HTMLInputElement).value;
     const phone = (document.getElementById('detail-phone') as HTMLInputElement).value;
     const email = (document.getElementById('detail-email') as HTMLInputElement).value;
+    const linkedin = (document.getElementById('detail-linkedin') as HTMLInputElement).value;
     const website = (document.getElementById('detail-website') as HTMLInputElement).value;
-    const notes = (document.getElementById('detail-notes') as HTMLTextAreaElement).value;
+    const snoozeValue = (document.getElementById('detail-snooze') as HTMLInputElement).value;
+    const snoozeUntil = snoozeValue ? new Date(snoozeValue + 'T00:00:00').getTime() : undefined;
+    const snoozeAction = snoozeUntil ? selectedSnoozeAction : undefined;
+
+    // Get selected board
+    const quadrant = editingNoteQuadrant;
+    const colors = BOARD_COLORS;
 
     // Update text to show name/role/company on card
     let displayText = name;
@@ -1169,8 +2924,13 @@ body {
 
     updateNote(detailNoteId, {
       text: displayText,
-      name, role, company, phone, email, website, notes,
-      isLead: true
+      name, role, company, phone, email, linkedin, website,
+      activity: editingActivities,
+      isLead: true,
+      quadrant,
+      color: colors[quadrant],
+      snoozeUntil,
+      snoozeAction
     });
 
     render();
@@ -1183,6 +2943,8 @@ body {
 
     const mapWidth = 94;
     const mapHeight = 52;
+    const titles = state.boardTitles || DEFAULT_TITLES;
+    const keys = ['O', 'Y', 'G', 'B', 'I', 'V'];
 
     state.notes.forEach(note => {
       const q = note.quadrant ?? 0;
@@ -1201,6 +2963,8 @@ body {
     document.querySelectorAll('.quadrant-btn').forEach(btn => {
       const q = parseInt((btn as HTMLElement).dataset.q || '0');
       btn.classList.toggle('active', q === activeQuadrant);
+      // Update button title from state.boardTitles
+      (btn as HTMLElement).title = `${titles[q]} (${keys[q]})`;
     });
   }
 
@@ -1257,7 +3021,24 @@ body {
     if (dragTarget) {
       dragTarget.classList.remove('dragging');
       if (isDragging && selectedId) {
+        // Check for overlapping notes and adopt color
+        const note = state.notes.find(n => n.id === selectedId);
+        if (note) {
+          const overlapping = state.notes
+            .filter(n => n.id !== selectedId && (n.quadrant ?? 0) === (note.quadrant ?? 0))
+            .filter(n => {
+              const l1 = note.x, r1 = note.x + 180, t1 = note.y, b1 = note.y + 140;
+              const l2 = n.x, r2 = n.x + 180, t2 = n.y, b2 = n.y + 140;
+              return l1 < r2 && r1 > l2 && t1 < b2 && b1 > t2;
+            })
+            .sort((a, b) => b.zIndex - a.zIndex);
+
+          if (overlapping.length > 0 && overlapping[0].color !== note.color) {
+            note.color = overlapping[0].color;
+          }
+        }
         save();
+        render();
         updateMinimap();
       }
     }
@@ -1339,6 +3120,7 @@ body {
   // Keyboard shortcuts
   document.addEventListener('keydown', e => {
     if (document.activeElement?.closest('.sticky-note-content') ||
+        document.activeElement?.closest('.board-tape') ||
         document.activeElement?.tagName === 'INPUT' ||
         document.activeElement?.tagName === 'TEXTAREA') return;
 
@@ -1349,6 +3131,49 @@ body {
       selectedId = null;
       document.querySelectorAll('.sticky-note.selected').forEach(n => n.classList.remove('selected'));
       hideColorPicker();
+      // Exit multi-select mode
+      if (multiSelectMode) {
+        multiSelectMode = false;
+        multiSelected.clear();
+        document.body.classList.remove('multi-select-mode');
+        document.getElementById('multi-select-indicator')?.classList.remove('visible');
+        document.querySelectorAll('.sticky-note.multi-selected').forEach(n => n.classList.remove('multi-selected'));
+      }
+    }
+    // Toggle multi-select mode with S
+    if (e.key === 's' || e.key === 'S') {
+      multiSelectMode = !multiSelectMode;
+      if (multiSelectMode) {
+        document.body.classList.add('multi-select-mode');
+        document.getElementById('multi-select-indicator')?.classList.add('visible');
+      } else {
+        document.body.classList.remove('multi-select-mode');
+        document.getElementById('multi-select-indicator')?.classList.remove('visible');
+        multiSelected.clear();
+        document.querySelectorAll('.sticky-note.multi-selected').forEach(n => n.classList.remove('multi-selected'));
+      }
+    }
+    // Number keys 1-6 to move selected cards to that board
+    if (multiSelectMode && multiSelected.size > 0 && /^[1-6]$/.test(e.key)) {
+      const targetBoard = parseInt(e.key) - 1;
+      multiSelected.forEach(noteId => {
+        const note = state.notes.find(n => n.id === noteId);
+        if (note) {
+          note.quadrant = targetBoard;
+          // Reset position for the new board
+          note.x = 100 + Math.random() * 200;
+          note.y = 100 + Math.random() * 200;
+        }
+      });
+      save();
+      syncToCloud();
+      render();
+      // Exit multi-select mode after move
+      multiSelectMode = false;
+      multiSelected.clear();
+      document.body.classList.remove('multi-select-mode');
+      document.getElementById('multi-select-indicator')?.classList.remove('visible');
+      switchQuadrant(targetBoard);
     }
     if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
       deleteNote(selectedId);
@@ -1366,6 +3191,37 @@ body {
         (document.querySelector(`[data-id="${note.id}"] .sticky-note-content`) as HTMLElement)?.focus();
       }, 50);
     }
+    // Board shortcuts: O Y G B I V
+    if (e.key === 'o' || e.key === 'O') switchQuadrant(0);
+    if (e.key === 'y' || e.key === 'Y') switchQuadrant(1);
+    if (e.key === 'g' || e.key === 'G') switchQuadrant(2);
+    if (e.key === 'b' || e.key === 'B') switchQuadrant(3);
+    if (e.key === 'i' || e.key === 'I') switchQuadrant(4);
+    if (e.key === 'v' || e.key === 'V') switchQuadrant(5);
+    // M toggles just the minimap
+    if (e.key === 'm' || e.key === 'M') {
+      const minimap = document.getElementById('minimap')!;
+      minimap.classList.toggle('ui-hidden');
+    }
+    // Spacebar toggles all UI elements (minimap, hints, FAB)
+    if (e.key === ' ') {
+      e.preventDefault();
+      const minimap = document.getElementById('minimap')!;
+      const hints = document.getElementById('hints')!;
+      const fab = document.getElementById('new-note-fab')!;
+      const anyVisible = !minimap.classList.contains('ui-hidden') ||
+                         !hints.classList.contains('ui-hidden') ||
+                         !fab.classList.contains('ui-hidden');
+      if (anyVisible) {
+        minimap.classList.add('ui-hidden');
+        hints.classList.add('ui-hidden');
+        fab.classList.add('ui-hidden');
+      } else {
+        minimap.classList.remove('ui-hidden');
+        hints.classList.remove('ui-hidden');
+        fab.classList.remove('ui-hidden');
+      }
+    }
   });
 
   // Quadrant buttons
@@ -1378,10 +3234,27 @@ body {
 
   // Settings modal
   const settingsModal = document.getElementById('settings-modal')!;
+
+  function updateCurrentProjectDisplay() {
+    const projectName = getSyncPassword();
+    const nameEl = document.getElementById('current-project-name')!;
+    const badge = document.getElementById('project-badge');
+    if (projectName) {
+      nameEl.textContent = projectName;
+      nameEl.classList.remove('no-project');
+      if (badge) badge.textContent = projectName;
+    } else {
+      nameEl.textContent = 'No project (local only)';
+      nameEl.classList.add('no-project');
+      if (badge) badge.textContent = 'No project';
+    }
+  }
+
   document.getElementById('settings-btn')?.addEventListener('click', () => {
     settingsModal.classList.add('visible');
-    const input = document.getElementById('sync-password-input') as HTMLInputElement;
-    input.value = getSyncPassword() || '';
+    updateCurrentProjectDisplay();
+    renderSavedProjects();
+    (document.getElementById('switch-project-input') as HTMLInputElement).value = '';
   });
   settingsModal.querySelector('.modal-close')?.addEventListener('click', () => {
     settingsModal.classList.remove('visible');
@@ -1390,18 +3263,95 @@ body {
     if (e.target === settingsModal) settingsModal.classList.remove('visible');
   });
 
-  document.getElementById('save-sync-password')?.addEventListener('click', () => {
-    const input = document.getElementById('sync-password-input') as HTMLInputElement;
-    localStorage.setItem(SYNC_PASSWORD_KEY, input.value);
-    syncToCloud();
-    settingsModal.classList.remove('visible');
-  });
+  document.getElementById('switch-project-btn')?.addEventListener('click', async () => {
+    const input = document.getElementById('switch-project-input') as HTMLInputElement;
+    const newProject = input.value.trim();
 
-  document.getElementById('clear-sync-password')?.addEventListener('click', () => {
-    localStorage.removeItem(SYNC_PASSWORD_KEY);
-    (document.getElementById('sync-password-input') as HTMLInputElement).value = '';
-    syncStatus = 'none';
+    if (!newProject || newProject.length < 4) {
+      alert('Project name must be at least 4 characters');
+      return;
+    }
+
+    const currentProject = getSyncPassword();
+
+    // Don't switch if same project
+    if (newProject === currentProject) {
+      settingsModal.classList.remove('visible');
+      return;
+    }
+
+    // Step 1: Check if project exists first
+    syncStatus = 'syncing';
     updateSyncIndicator();
+
+    let projectExists = false;
+    let cloudData: State | null = null;
+
+    try {
+      const checkRes = await fetch(`${WORKER_URL}?t=${Date.now()}`, {
+        method: 'GET',
+        headers: { 'X-Sync-Password': newProject },
+        cache: 'no-store'
+      });
+
+      if (checkRes.ok) {
+        projectExists = true;
+        cloudData = await checkRes.json() as State;
+      } else if (checkRes.status === 404) {
+        projectExists = false;
+      } else {
+        throw new Error('Failed to check project');
+      }
+    } catch (e) {
+      syncStatus = 'error';
+      updateSyncIndicator();
+      alert('Connection error. Please try again.');
+      return;
+    }
+
+    // Step 2: If new project, confirm with user
+    if (!projectExists) {
+      const confirmed = confirm(`"${newProject}" is a new project.\n\nThis will create an empty board. Continue?`);
+      if (!confirmed) {
+        syncStatus = 'success';
+        updateSyncIndicator();
+        return;
+      }
+    }
+
+    // Step 3: Save current data to current project (if we have one)
+    if (currentProject) {
+      try {
+        await fetch(WORKER_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Sync-Password': currentProject },
+          body: JSON.stringify(state)
+        });
+      } catch (e) {
+        console.error('Failed to save current project:', e);
+      }
+    }
+
+    // Step 4: Set new project password and save to list
+    localStorage.setItem(SYNC_PASSWORD_KEY, newProject);
+    saveProjectToList(newProject);
+
+    // Step 5: Load data
+    if (projectExists && cloudData) {
+      state = cloudData;
+    } else {
+      state = { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES] };
+    }
+    syncStatus = 'success';
+
+    // Step 6: Save to local storage and re-render
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    render();
+    updateMinimap();
+    updateSyncIndicator();
+    updateCurrentProjectDisplay();
+
+    settingsModal.classList.remove('visible');
   });
 
   document.getElementById('export-data')?.addEventListener('click', () => {
@@ -1449,6 +3399,420 @@ body {
     }
   });
 
+  // Admin modal
+  const adminModal = document.getElementById('admin-modal')!;
+  const adminLoginView = document.getElementById('admin-login-view')!;
+  const adminProjectsView = document.getElementById('admin-projects-view')!;
+  const adminProjectsList = document.getElementById('admin-projects-list')!;
+  const adminProjectCount = document.getElementById('admin-project-count')!;
+  let currentAdminPw = '';
+
+  document.getElementById('open-admin-btn')?.addEventListener('click', () => {
+    settingsModal.classList.remove('visible');
+    adminModal.classList.add('visible');
+  });
+
+  adminModal.querySelector('.modal-close')?.addEventListener('click', () => {
+    adminModal.classList.remove('visible');
+    // Reset state
+    adminLoginView.classList.remove('hidden');
+    adminProjectsView.classList.add('hidden');
+    (document.getElementById('admin-password') as HTMLInputElement).value = '';
+  });
+
+  adminModal.addEventListener('click', e => {
+    if (e.target === adminModal) {
+      adminModal.classList.remove('visible');
+    }
+  });
+
+  async function loadAdminProjects() {
+    adminProjectsList.innerHTML = '<div class="admin-empty">Loading...</div>';
+    try {
+      const res = await fetch(`${WORKER_URL}/admin/list`, {
+        headers: { 'X-Admin-Password': currentAdminPw }
+      });
+      if (!res.ok) {
+        adminProjectsList.innerHTML = '<div class="admin-empty">Failed to load</div>';
+        return;
+      }
+      const data = await res.json() as { projects: Array<{ key: string; size: number; uploaded: string; cardCount: number }> };
+
+      adminProjectCount.textContent = `${data.projects.length} project${data.projects.length !== 1 ? 's' : ''}`;
+
+      if (data.projects.length === 0) {
+        adminProjectsList.innerHTML = '<div class="admin-empty">No projects found</div>';
+        return;
+      }
+
+      adminProjectsList.innerHTML = data.projects.map(p => `
+        <div class="admin-project-card" data-key="${p.key}">
+          <div class="admin-project-info">
+            <div class="admin-project-key">${p.key}</div>
+            <div class="admin-project-stats">
+              <span class="cards">${p.cardCount} card${p.cardCount !== 1 ? 's' : ''}</span>
+              <span>${(p.size / 1024).toFixed(1)} KB</span>
+              <span>${new Date(p.uploaded).toLocaleDateString()}</span>
+            </div>
+          </div>
+          <div class="admin-project-actions">
+            <button class="admin-btn view" data-key="${p.key}">View</button>
+            <button class="admin-btn delete" data-key="${p.key}">Delete</button>
+          </div>
+        </div>
+      `).join('');
+
+      // Attach view handlers
+      adminProjectsList.querySelectorAll('.admin-btn.view').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const key = (btn as HTMLElement).dataset.key!;
+          try {
+            const res = await fetch(`${WORKER_URL}/admin/view?key=${encodeURIComponent(key)}`, {
+              headers: { 'X-Admin-Password': currentAdminPw }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              // Open in new window with formatted view
+              const viewWindow = window.open('', '_blank');
+              if (viewWindow) {
+                viewWindow.document.write(generateViewerHTML(key, data));
+                viewWindow.document.close();
+              }
+            }
+          } catch (e) {
+            alert('Failed to load project');
+          }
+        });
+      });
+
+      // Attach delete handlers
+      adminProjectsList.querySelectorAll('.admin-btn.delete').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const key = (btn as HTMLElement).dataset.key!;
+          if (!confirm(`Delete ${key}?\n\nThis cannot be undone.`)) return;
+          try {
+            const delRes = await fetch(`${WORKER_URL}/admin/delete`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Admin-Password': currentAdminPw
+              },
+              body: JSON.stringify({ key })
+            });
+            if (delRes.ok) {
+              (btn as HTMLElement).closest('.admin-project-card')?.remove();
+              const remaining = adminProjectsList.querySelectorAll('.admin-project-card').length;
+              adminProjectCount.textContent = `${remaining} project${remaining !== 1 ? 's' : ''}`;
+              if (remaining === 0) {
+                adminProjectsList.innerHTML = '<div class="admin-empty">No projects found</div>';
+              }
+            }
+          } catch (e) {
+            alert('Failed to delete');
+          }
+        });
+      });
+    } catch (e) {
+      adminProjectsList.innerHTML = '<div class="admin-empty">Error loading projects</div>';
+    }
+  }
+
+  function generateViewerHTML(key: string, data: unknown) {
+    // Handle different data structures
+    const rawData = data as Record<string, unknown>;
+    const notes = (rawData.notes || []) as Array<{ id: string; text: string; board?: number | string; quadrant?: number | string; color?: string; isLead?: boolean; company?: string; role?: string }>;
+    const boardColors = ['#fed7aa', '#fef08a', '#bbf7d0', '#93c5fd', '#c7d2fe', '#ddd6fe'];
+    const boardNames = ['Orange', 'Yellow', 'Green', 'Blue', 'Indigo', 'Violet'];
+
+    return `<!DOCTYPE html>
+<html><head>
+  <meta charset="UTF-8">
+  <title>${key} - Viewer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f4; padding: 24px; }
+    h1 { font-size: 18px; color: #374151; margin-bottom: 8px; font-family: ui-monospace, monospace; }
+    .summary { color: #6b7280; margin-bottom: 24px; }
+    .boards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .board { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .board-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; padding: 6px 10px; border-radius: 6px; display: inline-block; }
+    .card { padding: 12px; border-radius: 8px; margin-bottom: 8px; font-size: 14px; }
+    .card-text { color: #1f2937; white-space: pre-wrap; }
+    .card-meta { font-size: 11px; color: #6b7280; margin-top: 6px; }
+    .lead-badge { background: #4f46e5; color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
+    .empty { color: #9ca3af; font-size: 13px; font-style: italic; }
+  </style>
+</head><body>
+  <h1>${key}</h1>
+  <p class="summary">${notes.length} cards total</p>
+  <div class="boards">
+    ${[0,1,2,3,4,5].map(b => {
+      const boardNotes = notes.filter(n => Number(n.board ?? n.quadrant) === b);
+      return `<div class="board">
+        <div class="board-title" style="background: ${boardColors[b]}">${boardNames[b]} (${boardNotes.length})</div>
+        ${boardNotes.length === 0 ? '<p class="empty">No cards</p>' : boardNotes.map(n => `
+          <div class="card" style="background: ${n.color || boardColors[b]}">
+            <div class="card-text">${escapeHtml(n.text || '')}${n.isLead ? '<span class="lead-badge">Lead</span>' : ''}</div>
+            ${n.company || n.role ? `<div class="card-meta">${[n.role, n.company].filter(Boolean).join(' @ ')}</div>` : ''}
+          </div>
+        `).join('')}
+      </div>`;
+    }).join('')}
+  </div>
+</body></html>`;
+  }
+
+  document.getElementById('admin-unlock')?.addEventListener('click', async () => {
+    const pwInput = document.getElementById('admin-password') as HTMLInputElement;
+    const pw = pwInput.value;
+    if (!pw) return;
+
+    try {
+      const res = await fetch(`${WORKER_URL}/admin/list`, {
+        headers: { 'X-Admin-Password': pw }
+      });
+      if (res.ok) {
+        currentAdminPw = pw;
+        adminLoginView.classList.add('hidden');
+        adminProjectsView.classList.remove('hidden');
+        loadAdminProjects();
+      } else {
+        alert('Invalid password');
+      }
+    } catch (e) {
+      alert('Connection error');
+    }
+  });
+
+  // Email Templates
+  const templateModal = document.getElementById('template-modal')!;
+  const templatePicker = document.getElementById('template-picker')!;
+  const templatesList = document.getElementById('email-templates-list')!;
+  const templatePickerList = document.getElementById('template-picker-list')!;
+  let editingTemplateIndex: number | null = null;
+  let pendingEmailLead: Note | null = null;
+
+  function getTemplates(): EmailTemplate[] {
+    return state.emailTemplates || [];
+  }
+
+  function renderTemplatesList() {
+    const templates = getTemplates();
+    const addBtn = document.getElementById('add-email-template') as HTMLButtonElement;
+
+    if (templates.length === 0) {
+      templatesList.innerHTML = '<p class="setting-hint" style="margin:0;text-align:center;padding:20px 0;color:#9ca3af;">No templates yet</p>';
+    } else {
+      templatesList.innerHTML = templates.map((t, i) => `
+        <div class="email-template-item" data-index="${i}">
+          <div>
+            <div class="email-template-name">${escapeHtml(t.name || 'Untitled')}</div>
+            <div class="email-template-subject">${escapeHtml(t.subject || 'No subject')}</div>
+          </div>
+        </div>
+      `).join('');
+
+      templatesList.querySelectorAll('.email-template-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const idx = parseInt((item as HTMLElement).dataset.index || '0');
+          openTemplateEditor(idx);
+        });
+      });
+    }
+
+    addBtn.disabled = templates.length >= 3;
+    if (templates.length >= 3) {
+      addBtn.textContent = 'Maximum 3 templates';
+    } else {
+      addBtn.textContent = '+ Add Template';
+    }
+  }
+
+  function openTemplateEditor(index: number | null) {
+    editingTemplateIndex = index;
+    const templates = getTemplates();
+    const template = index !== null ? templates[index] : null;
+
+    (document.getElementById('template-modal-title') as HTMLElement).textContent = template ? 'Edit Template' : 'New Template';
+    (document.getElementById('template-name') as HTMLInputElement).value = template?.name || '';
+    (document.getElementById('template-subject') as HTMLInputElement).value = template?.subject || '';
+    (document.getElementById('template-body') as HTMLTextAreaElement).value = template?.body || '';
+    (document.getElementById('delete-template') as HTMLButtonElement).style.display = template ? 'block' : 'none';
+
+    settingsModal.classList.remove('visible');
+    templateModal.classList.add('visible');
+  }
+
+  document.getElementById('add-email-template')?.addEventListener('click', () => {
+    if (getTemplates().length >= 3) return;
+    openTemplateEditor(null);
+  });
+
+  templateModal.querySelector('.modal-close')?.addEventListener('click', () => {
+    templateModal.classList.remove('visible');
+    settingsModal.classList.add('visible');
+  });
+
+  document.getElementById('cancel-template')?.addEventListener('click', () => {
+    templateModal.classList.remove('visible');
+    settingsModal.classList.add('visible');
+  });
+
+  document.getElementById('save-template')?.addEventListener('click', async () => {
+    const name = (document.getElementById('template-name') as HTMLInputElement).value.trim();
+    const subject = (document.getElementById('template-subject') as HTMLInputElement).value.trim();
+    const body = (document.getElementById('template-body') as HTMLTextAreaElement).value.trim();
+
+    if (!name) {
+      alert('Template name is required');
+      return;
+    }
+
+    const templates = getTemplates();
+    const newTemplate: EmailTemplate = { name, subject, body };
+
+    if (editingTemplateIndex !== null) {
+      templates[editingTemplateIndex] = newTemplate;
+    } else {
+      templates.push(newTemplate);
+    }
+
+    state.emailTemplates = templates;
+    save();
+    await syncToCloud();
+
+    templateModal.classList.remove('visible');
+    settingsModal.classList.add('visible');
+    renderTemplatesList();
+  });
+
+  document.getElementById('delete-template')?.addEventListener('click', async () => {
+    if (editingTemplateIndex === null) return;
+    if (!confirm('Delete this template?')) return;
+
+    const templates = getTemplates();
+    templates.splice(editingTemplateIndex, 1);
+    state.emailTemplates = templates;
+    save();
+    await syncToCloud();
+
+    templateModal.classList.remove('visible');
+    settingsModal.classList.add('visible');
+    renderTemplatesList();
+  });
+
+  // Template picker for sending email
+  function showTemplatePicker(note: Note) {
+    const templates = getTemplates();
+    if (templates.length === 0) {
+      alert('No email templates. Create one in Settings first.');
+      return;
+    }
+
+    pendingEmailLead = note;
+    templatePickerList.innerHTML = templates.map((t, i) => `
+      <button class="template-picker-item" data-index="${i}">
+        <div class="name">${escapeHtml(t.name)}</div>
+      </button>
+    `).join('');
+
+    templatePickerList.querySelectorAll('.template-picker-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt((btn as HTMLElement).dataset.index || '0');
+        sendEmailWithTemplate(idx);
+      });
+    });
+
+    templatePicker.classList.add('visible');
+  }
+
+  function sendEmailWithTemplate(templateIndex: number) {
+    const templates = getTemplates();
+    const template = templates[templateIndex];
+    if (!template || !pendingEmailLead) return;
+
+    const lead = pendingEmailLead;
+    const replacePlaceholders = (text: string) => {
+      return text
+        .replace(/\[name\]/gi, lead.name || lead.text?.split('\n')[0] || '')
+        .replace(/\[company\]/gi, lead.company || '')
+        .replace(/\[role\]/gi, lead.role || '');
+    };
+
+    const subject = encodeURIComponent(replacePlaceholders(template.subject));
+    const body = encodeURIComponent(replacePlaceholders(template.body));
+    const email = lead.email || '';
+
+    const mailtoUrl = `mailto:${email}?subject=${subject}&body=${body}`;
+    window.open(mailtoUrl, '_blank');
+
+    templatePicker.classList.remove('visible');
+    pendingEmailLead = null;
+  }
+
+  document.getElementById('template-picker-cancel')?.addEventListener('click', () => {
+    templatePicker.classList.remove('visible');
+    pendingEmailLead = null;
+  });
+
+  templatePicker.addEventListener('click', (e) => {
+    if (e.target === templatePicker) {
+      templatePicker.classList.remove('visible');
+      pendingEmailLead = null;
+    }
+  });
+
+  // Initialize templates list when settings opens
+  document.getElementById('settings-btn')?.addEventListener('click', () => {
+    renderTemplatesList();
+  });
+
+  // Send email button in contact popover
+  // Contact action buttons
+  document.getElementById('action-phone')?.addEventListener('click', () => {
+    const phone = (document.getElementById('detail-phone') as HTMLInputElement).value;
+    if (phone) {
+      window.location.href = `tel:${phone.replace(/\s/g, '')}`;
+    }
+  });
+
+  document.getElementById('action-email')?.addEventListener('click', () => {
+    if (!detailNoteId) return;
+    const note = state.notes.find(n => n.id === detailNoteId);
+    if (!note) return;
+
+    // Get current values from form (in case user edited them)
+    const currentNote = {
+      ...note,
+      name: (document.getElementById('detail-name') as HTMLInputElement).value,
+      email: (document.getElementById('detail-email') as HTMLInputElement).value,
+      company: (document.getElementById('detail-company') as HTMLInputElement).value,
+      role: (document.getElementById('detail-role') as HTMLInputElement).value,
+    };
+
+    if (currentNote.email) {
+      showTemplatePicker(currentNote);
+    }
+  });
+
+  document.getElementById('action-linkedin')?.addEventListener('click', () => {
+    const linkedin = (document.getElementById('detail-linkedin') as HTMLInputElement).value;
+    if (linkedin) {
+      let url = linkedin;
+      if (!url.startsWith('http')) url = 'https://' + url;
+      window.open(url, '_blank');
+    }
+  });
+
+  document.getElementById('action-website')?.addEventListener('click', () => {
+    const website = (document.getElementById('detail-website') as HTMLInputElement).value;
+    if (website) {
+      let url = website;
+      if (!url.startsWith('http')) url = 'https://' + url;
+      window.open(url, '_blank');
+    }
+  });
+
   // Detail modal handlers
   const detailModal = document.getElementById('detail-modal')!;
   detailModal.querySelector('.modal-close')?.addEventListener('click', closeDetailModal);
@@ -1456,10 +3820,135 @@ body {
     if (e.target === detailModal) closeDetailModal();
   });
   document.getElementById('detail-save')?.addEventListener('click', saveDetailModal);
+
   document.getElementById('detail-delete')?.addEventListener('click', () => {
     if (detailNoteId) {
       deleteNote(detailNoteId);
       closeDetailModal();
+    }
+  });
+
+  // Clear snooze button
+  // Snooze trigger toggle
+  document.getElementById('snooze-trigger')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const popover = document.getElementById('snooze-popover');
+    popover?.classList.toggle('visible');
+  });
+
+  // Close snooze popover when clicking outside
+  document.addEventListener('click', (e) => {
+    const popover = document.getElementById('snooze-popover');
+    const trigger = document.getElementById('snooze-trigger');
+    if (popover?.classList.contains('visible') &&
+        !popover.contains(e.target as Node) &&
+        !trigger?.contains(e.target as Node)) {
+      popover.classList.remove('visible');
+    }
+  });
+
+  // Snooze action buttons
+  document.querySelectorAll('.snooze-action-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const action = (btn as HTMLElement).dataset.action as 'call' | 'email' | 'meeting' | 'linkedin' | 'web';
+
+      // Toggle selection
+      if (selectedSnoozeAction === action) {
+        selectedSnoozeAction = null;
+        btn.classList.remove('active');
+      } else {
+        selectedSnoozeAction = action;
+        document.querySelectorAll('.snooze-action-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+
+      updateSnoozeDisplay();
+    });
+  });
+
+  // Update display when date changes
+  document.getElementById('detail-snooze')?.addEventListener('change', () => {
+    updateSnoozeDisplay();
+  });
+
+  // Clear snooze button
+  document.getElementById('snooze-clear')?.addEventListener('click', () => {
+    const input = document.getElementById('detail-snooze') as HTMLInputElement;
+    if (input) input.value = '';
+    selectedSnoozeAction = null;
+    document.querySelectorAll('.snooze-action-btn').forEach(b => b.classList.remove('active'));
+    updateSnoozeDisplay();
+  });
+
+  // Board picker in detail modal
+  document.querySelectorAll('#detail-board-picker .board-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#detail-board-picker .board-opt').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      editingNoteQuadrant = parseInt((btn as HTMLElement).dataset.q || '0');
+      updateSelectedBoardName();
+      updateAvatarRingColor();
+    });
+  });
+
+  // Avatar lightbox
+  document.querySelector('.profile-avatar')?.addEventListener('click', openAvatarLightbox);
+  document.querySelector('.lightbox-backdrop')?.addEventListener('click', closeAvatarLightbox);
+  document.querySelector('.lightbox-close')?.addEventListener('click', closeAvatarLightbox);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeAvatarLightbox();
+  });
+
+  // Activity type buttons
+  document.querySelectorAll('.activity-type-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = (btn as HTMLElement).dataset.type as 'call' | 'email' | 'meeting' | 'note' | 'linkedin' | 'web';
+      currentActivityType = type;
+
+      document.querySelectorAll('.activity-type-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const inputEl = document.getElementById('activity-input')!;
+      const textEl = document.getElementById('activity-text') as HTMLInputElement;
+      inputEl.classList.remove('hidden');
+      textEl.placeholder = `Add ${type}...`;
+      textEl.focus();
+    });
+  });
+
+  // Add activity
+  document.getElementById('activity-add')?.addEventListener('click', () => {
+    const textEl = document.getElementById('activity-text') as HTMLInputElement;
+    const text = textEl.value.trim();
+
+    if (!text) return;
+
+    const activity: Activity = {
+      id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      type: currentActivityType,
+      text,
+    };
+
+    editingActivities.push(activity);
+    renderActivities();
+
+    textEl.value = '';
+    document.getElementById('activity-input')?.classList.add('hidden');
+    document.querySelectorAll('.activity-type-btn').forEach(b => b.classList.remove('active'));
+  });
+
+  // Cancel activity input
+  document.getElementById('activity-cancel')?.addEventListener('click', () => {
+    document.getElementById('activity-input')?.classList.add('hidden');
+    (document.getElementById('activity-text') as HTMLInputElement).value = '';
+    document.querySelectorAll('.activity-type-btn').forEach(b => b.classList.remove('active'));
+  });
+
+  // Enter key to add activity
+  document.getElementById('activity-text')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      document.getElementById('activity-add')?.click();
     }
   });
 
@@ -1541,14 +4030,29 @@ body {
   async function init() {
     state = load();
     const cloudData = await syncFromCloud();
-    if (cloudData && cloudData.notes && cloudData.notes.length >= state.notes.length) {
-      state = cloudData;
+    if (cloudData && cloudData.notes) {
+      // Merge: keep local notes + add any cloud notes not in local
+      const localIds = new Set(state.notes.map(n => n.id));
+      const newFromCloud = cloudData.notes.filter(n => !localIds.has(n.id));
+      if (newFromCloud.length > 0) {
+        state.notes.push(...newFromCloud);
+        state.nextZIndex = Math.max(state.nextZIndex, cloudData.nextZIndex || 1);
+      }
+      // Merge board titles from cloud if present
+      if (cloudData.boardTitles) {
+        state.boardTitles = cloudData.boardTitles;
+      }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
     render();
     updateSyncIndicator();
     updateFabColor();
     updateMinimap();
+    updateCurrentProjectDisplay();
+
+    // Save current project to list on init
+    const currentProject = getSyncPassword();
+    if (currentProject) saveProjectToList(currentProject);
   }
 
   // Start
