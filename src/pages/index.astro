@@ -76,11 +76,23 @@
         <button class="quadrant-btn" data-q="5" title="Violet (V)"></button>
       </div>
 
+      <!-- Props Palette -->
+      <div id="props-palette" class="props-palette hidden">
+        <div class="palette-header">Props <button class="palette-close">&times;</button></div>
+        <div class="palette-items">
+          <button data-type="mobile" title="Mobile Phone">📱</button>
+          <button data-type="pc" title="PC Monitor">🖥️</button>
+          <button data-type="tv" title="TV Screen">📺</button>
+        </div>
+        <button id="arrow-mode-btn" class="arrow-mode-btn">🔗 Draw Arrow</button>
+      </div>
+
       <!-- Keyboard hints -->
       <div id="hints">
         <span><kbd>O</kbd><kbd>Y</kbd><kbd>G</kbd><kbd>B</kbd><kbd>I</kbd><kbd>V</kbd> boards</span>
         <span><kbd>N</kbd> new</span>
         <span><kbd>X</kbd> lead</span>
+        <span><kbd>P</kbd> props</span>
       </div>
     </div>
 
@@ -260,6 +272,60 @@ Best regards"></textarea>
           </div>
         </div>
         <div class="modal-body">
+          <!-- Note View (for regular stikis) -->
+          <div class="detail-note-view" id="detail-note-view">
+            <div class="note-main-area">
+              <textarea id="detail-note-content" class="note-textarea" placeholder="Write your note..."></textarea>
+            </div>
+            <div class="note-sidebar">
+              <!-- Attachments Panel -->
+              <div class="sidebar-panel" id="attachments-panel">
+                <button class="panel-toggle" id="attachments-toggle">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                  <span>Attachments</span>
+                  <span class="panel-count" id="attachments-count"></span>
+                </button>
+                <div class="panel-content" id="attachments-content">
+                  <div id="note-images" class="note-images-grid"></div>
+                  <button id="add-note-image" class="add-attachment-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add image
+                  </button>
+                  <input type="file" id="note-image-upload" accept="image/*" style="display: none" multiple>
+                </div>
+              </div>
+              <!-- Activity Panel -->
+              <div class="sidebar-panel expanded" id="activity-panel">
+                <button class="panel-toggle" id="activity-toggle">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+                  <span>Activity</span>
+                  <span class="panel-count" id="activity-count"></span>
+                </button>
+                <div class="panel-content">
+                  <div id="note-activity-list" class="activity-thread"></div>
+                  <div class="activity-actions">
+                    <button class="note-activity-btn" data-type="note" title="Add note">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    </button>
+                    <button class="note-activity-btn" data-type="link" title="Add link">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+                    </button>
+                    <button class="note-activity-btn" data-type="reminder" title="Add reminder">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                    </button>
+                  </div>
+                  <div id="note-activity-input" class="activity-input-row hidden">
+                    <input type="text" id="note-activity-text" placeholder="Add note..." class="activity-text-input">
+                    <button id="note-activity-add" class="activity-add-btn">Add</button>
+                    <button id="note-activity-cancel" class="activity-cancel-btn">✕</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lead View (for lead cards) -->
+          <div class="detail-lead-view" id="detail-lead-view">
           <div class="detail-two-col">
             <!-- Left Column: Profile Card -->
             <div class="detail-left-col">
@@ -347,6 +413,7 @@ Best regards"></textarea>
               </div>
             </div>
           </div>
+          </div><!-- end detail-lead-view -->
         </div>
       </div>
     </div>
@@ -612,6 +679,341 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
 }
 
+/* Board Labels (T shortcut) */
+.board-label {
+  position: absolute;
+  padding: 6px 16px;
+  background: rgba(255, 248, 220, 0.9);
+  border-top: 1px solid rgba(200, 180, 140, 0.3);
+  border-bottom: 1px solid rgba(200, 180, 140, 0.3);
+  font-family: 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
+  font-size: 16px;
+  font-weight: 500;
+  color: #5a4a3a;
+  cursor: move;
+  user-select: none;
+  min-width: 60px;
+  z-index: 100;
+}
+.board-label:hover {
+  background: rgba(255, 252, 235, 0.95);
+}
+.board-label.editing {
+  cursor: text;
+  background: rgba(255, 252, 235, 0.98);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.board-label-text {
+  outline: none;
+  min-width: 40px;
+  display: inline-block;
+}
+.board-label-delete {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 18px;
+  height: 18px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 12px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.board-label:hover .board-label-delete {
+  display: flex;
+}
+
+/* Props Palette */
+.props-palette {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  padding: 12px;
+  z-index: 200;
+  min-width: 140px;
+}
+.props-palette.hidden { display: none; }
+.palette-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 14px;
+  color: #374151;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+.palette-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 0;
+  line-height: 1;
+}
+.palette-close:hover { color: #374151; }
+.palette-items {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.palette-items button {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.palette-items button:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  transform: scale(1.05);
+}
+.arrow-mode-btn {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.arrow-mode-btn:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+.arrow-mode-btn.active {
+  border-color: #3b82f6;
+  background: #3b82f6;
+  color: white;
+}
+
+/* Device Props */
+.device-prop {
+  position: absolute;
+  cursor: move;
+  user-select: none;
+}
+.device-prop.selected {
+  outline: 2px solid #3b82f6;
+  outline-offset: 4px;
+}
+.device-prop.dragging {
+  cursor: grabbing;
+  z-index: 9999 !important;
+  opacity: 0.9;
+}
+
+/* Mobile mockup */
+.device-mobile {
+  background: #1f2937;
+  border-radius: 24px;
+  padding: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+.device-mobile .device-screen {
+  background: #f8fafc;
+  border-radius: 16px;
+  width: 100%;
+  height: calc(100% - 16px);
+  position: relative;
+}
+.device-mobile .device-notch {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 20px;
+  background: #1f2937;
+  border-radius: 0 0 12px 12px;
+}
+
+/* PC mockup */
+.device-pc {
+  background: #374151;
+  border-radius: 8px;
+  padding: 8px 8px 4px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+.device-pc .device-screen {
+  background: #f8fafc;
+  border-radius: 4px;
+  width: 100%;
+  height: calc(100% - 30px);
+}
+.device-pc .device-stand {
+  width: 50%;
+  height: 20px;
+  background: #4b5563;
+  margin: 4px auto 0;
+  border-radius: 0 0 4px 4px;
+}
+
+/* TV mockup */
+.device-tv {
+  background: #1f2937;
+  border-radius: 4px;
+  padding: 6px 6px 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+.device-tv .device-screen {
+  background: #f8fafc;
+  border-radius: 2px;
+  width: 100%;
+  height: calc(100% - 18px);
+}
+.device-tv .device-led {
+  width: 8px;
+  height: 8px;
+  background: #22c55e;
+  border-radius: 50%;
+  position: absolute;
+  bottom: 4px;
+  right: 10px;
+}
+
+/* Device label */
+.device-label {
+  position: absolute;
+  bottom: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #374151;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  white-space: nowrap;
+  cursor: text;
+  min-width: 30px;
+  text-align: center;
+}
+.device-label:focus {
+  outline: 2px solid #3b82f6;
+}
+
+/* Resize handles */
+.device-prop .resize-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #3b82f6;
+  border: 2px solid white;
+  border-radius: 50%;
+  display: none;
+  z-index: 10;
+}
+.device-prop.selected .resize-handle {
+  display: block;
+}
+.resize-handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
+.resize-handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
+.resize-handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
+.resize-handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
+
+/* Arrow anchors */
+.device-prop .arrow-anchor {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #22c55e;
+  border: 2px solid white;
+  border-radius: 50%;
+  display: none;
+  z-index: 10;
+  cursor: crosshair;
+}
+.device-prop:hover .arrow-anchor,
+.device-prop.selected .arrow-anchor,
+body.arrow-mode .device-prop .arrow-anchor {
+  display: block;
+}
+.arrow-anchor.top { top: -7px; left: 50%; transform: translateX(-50%); }
+.arrow-anchor.right { right: -7px; top: 50%; transform: translateY(-50%); }
+.arrow-anchor.bottom { bottom: -7px; left: 50%; transform: translateX(-50%); }
+.arrow-anchor.left { left: -7px; top: 50%; transform: translateY(-50%); }
+.arrow-anchor:hover {
+  background: #16a34a;
+  transform: scale(1.2);
+}
+.arrow-anchor.top:hover { transform: translateX(-50%) scale(1.2); }
+.arrow-anchor.right:hover { transform: translateY(-50%) scale(1.2); }
+.arrow-anchor.bottom:hover { transform: translateX(-50%) scale(1.2); }
+.arrow-anchor.left:hover { transform: translateY(-50%) scale(1.2); }
+
+/* SVG Arrow layer */
+.arrow-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+}
+.arrow-layer path {
+  fill: none;
+  stroke: #6b7280;
+  stroke-width: 2;
+  pointer-events: stroke;
+}
+.arrow-layer path:hover {
+  stroke: #3b82f6;
+  stroke-width: 3;
+}
+.arrow-layer path.selected {
+  stroke: #3b82f6;
+}
+
+/* Arrow mode cursor */
+body.arrow-mode {
+  cursor: crosshair;
+}
+body.arrow-mode .device-prop {
+  cursor: crosshair;
+}
+
+/* Delete button for props */
+.device-prop .prop-delete {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 22px;
+  height: 22px;
+  background: #ef4444;
+  color: white;
+  border: 2px solid white;
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 20;
+}
+.device-prop.selected .prop-delete,
+.device-prop:hover .prop-delete {
+  display: flex;
+}
+
 /* Minimap */
 #minimap {
   position: fixed;
@@ -692,7 +1094,8 @@ body {
 .sticky-note:hover { box-shadow: 3px 5px 16px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08); }
 .sticky-note.dragging { cursor: grabbing; box-shadow: 6px 10px 24px rgba(0,0,0,0.18); z-index: 9999 !important; }
 .sticky-note.editing { cursor: text; }
-.sticky-note.selected { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5), 3px 5px 16px rgba(0,0,0,0.12); }
+.sticky-note.selected { box-shadow: 0 0 0 3px white, 3px 5px 16px rgba(0,0,0,0.15); }
+.sticky-note.selected.light-color { box-shadow: 0 0 0 3px #1f2937, 3px 5px 16px rgba(0,0,0,0.15); }
 .sticky-note.multi-selected {
   box-shadow: 0 0 0 3px #22c55e, 0 0 12px rgba(34, 197, 94, 0.4), 3px 5px 16px rgba(0,0,0,0.12);
 }
@@ -785,6 +1188,36 @@ body.multi-select-mode .sticky-note:hover {
 .sticky-note.awakened-web {
   --awaken-color: rgba(6, 182, 212, 0.5);
   border: 2px solid #06b6d4;
+}
+
+/* Note detail indicators */
+.note-indicators {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+  pointer-events: none;
+}
+.indicator-badge {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  background: rgba(0,0,0,0.06);
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(0,0,0,0.5);
+}
+.indicator-badge svg {
+  opacity: 0.6;
+}
+.indicator-badge.images {
+  color: rgba(59, 130, 246, 0.8);
+}
+.indicator-badge.activity {
+  color: rgba(107, 114, 128, 0.8);
 }
 
 .sticky-note.lead { padding-top: 50px; }
@@ -1520,6 +1953,297 @@ body.multi-select-mode .sticky-note:hover {
 
 /* Detail Modal - Two Column Layout */
 .detail-content { max-width: 900px; }
+/* Note vs Lead view toggle */
+.detail-note-view { display: none; }
+.detail-lead-view { display: block; }
+.modal.note-mode .detail-note-view { display: grid; }
+.modal.note-mode .detail-lead-view { display: none; }
+
+/* Note View - Two Column Layout */
+.detail-note-view {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 24px;
+  min-height: 400px;
+}
+.note-main-area {
+  display: flex;
+  flex-direction: column;
+}
+.note-textarea {
+  width: 100%;
+  flex: 1;
+  min-height: 350px;
+  padding: 20px;
+  border: none;
+  border-radius: 16px;
+  background: #fafafa;
+  font-size: 15px;
+  line-height: 1.7;
+  resize: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+.note-textarea:focus {
+  outline: none;
+  background: #f5f5f7;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+}
+.note-textarea::placeholder {
+  color: #a1a1aa;
+}
+
+/* Sidebar */
+.note-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Collapsible Panels */
+.sidebar-panel {
+  background: #f9fafb;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+.sidebar-panel:hover {
+  background: #f5f5f7;
+}
+.panel-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  transition: color 0.15s;
+}
+.panel-toggle:hover {
+  color: #374151;
+}
+.panel-toggle svg {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+.panel-toggle span:first-of-type {
+  flex: 1;
+}
+.panel-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  background: rgba(0,0,0,0.04);
+  padding: 2px 7px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+.panel-count:empty {
+  display: none;
+}
+.panel-content {
+  display: none;
+  padding: 0 16px 16px;
+}
+.sidebar-panel.expanded .panel-content {
+  display: block;
+}
+.sidebar-panel.expanded .panel-toggle {
+  color: #1f2937;
+}
+.sidebar-panel.expanded .panel-toggle svg {
+  opacity: 1;
+}
+
+/* Images Grid in Panel */
+.note-images-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.note-images-grid:empty {
+  display: none;
+}
+.note-image-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+.note-image-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.note-image-item:hover img {
+  transform: scale(1.05);
+}
+.note-image-item .delete-image {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  backdrop-filter: blur(4px);
+}
+.note-image-item:hover .delete-image { display: flex; }
+
+.add-attachment-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  border: 1px dashed #d1d5db;
+  border-radius: 10px;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.add-attachment-btn:hover {
+  border-color: #9ca3af;
+  color: #6b7280;
+  background: rgba(0,0,0,0.02);
+}
+
+/* Activity in Panel */
+.activity-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.note-activity-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.04);
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.15s;
+}
+.note-activity-btn:hover {
+  background: rgba(0,0,0,0.08);
+  color: #374151;
+}
+.note-activity-btn.active {
+  background: #3b82f6;
+  color: white;
+}
+
+.activity-input-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.activity-input-row.hidden {
+  display: none;
+}
+.activity-text-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  background: white;
+}
+.activity-text-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+.activity-add-btn {
+  padding: 8px 12px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.activity-add-btn:hover {
+  background: #2563eb;
+}
+.activity-cancel-btn {
+  padding: 8px 10px;
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #9ca3af;
+}
+.activity-cancel-btn:hover {
+  background: #f3f4f6;
+}
+
+/* Activity Thread in Panel */
+#note-activity-list.activity-thread {
+  max-height: 180px;
+  margin-bottom: 8px;
+}
+#note-activity-list .activity-item {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+#note-activity-list .activity-item:last-child {
+  border-bottom: none;
+}
+#note-activity-list .activity-icon {
+  font-size: 14px;
+}
+#note-activity-list .activity-text {
+  font-size: 13px;
+}
+#note-activity-list .activity-time {
+  font-size: 11px;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .detail-note-view {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .note-textarea {
+    min-height: 200px;
+  }
+  .note-sidebar {
+    flex-direction: row;
+    gap: 8px;
+  }
+  .sidebar-panel {
+    flex: 1;
+  }
+}
+
 .detail-two-col {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2219,6 +2943,7 @@ body.multi-select-mode .sticky-note:hover {
     activity?: Activity[];
     snoozeUntil?: number;
     snoozeAction?: 'call' | 'email' | 'meeting' | 'linkedin' | 'web';
+    images?: string[]; // Base64 encoded images for notes
   }
 
   interface EmailTemplate {
@@ -2227,11 +2952,45 @@ body.multi-select-mode .sticky-note:hover {
     body: string;
   }
 
+  interface BoardLabel {
+    id: string;
+    text: string;
+    x: number;
+    y: number;
+    quadrant: number;
+  }
+
+  interface Prop {
+    id: string;
+    type: 'mobile' | 'tv' | 'pc';
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    label: string;
+    quadrant: number;
+    zIndex: number;
+    createdAt: number;
+  }
+
+  interface Arrow {
+    id: string;
+    fromPropId: string;
+    toPropId: string;
+    fromAnchor: 'top' | 'right' | 'bottom' | 'left';
+    toAnchor: 'top' | 'right' | 'bottom' | 'left';
+    label?: string;
+    quadrant: number;
+  }
+
   interface State {
     notes: Note[];
+    props?: Prop[];
+    arrows?: Arrow[];
     nextZIndex: number;
     boardTitles?: string[];
     emailTemplates?: EmailTemplate[];
+    boardLabels?: BoardLabel[];
   }
 
   const DEFAULT_TITLES = ['Orange', 'Yellow', 'Green', 'Blue', 'Indigo', 'Violet'];
@@ -2242,6 +3001,9 @@ body.multi-select-mode .sticky-note:hover {
     meeting: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
     linkedin: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>',
     web: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>',
+    note: '📝',
+    link: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
+    reminder: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
   };
   let state: State = { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES] };
   let selectedId: string | null = null;
@@ -2262,6 +3024,15 @@ body.multi-select-mode .sticky-note:hover {
   let selectedSnoozeAction: 'call' | 'email' | 'meeting' | 'linkedin' | 'web' | null = null;
   let multiSelectMode = false;
   let multiSelected: Set<string> = new Set();
+
+  // Props state
+  let selectedPropId: string | null = null;
+  let propsPaletteOpen = false;
+  let arrowMode = false;
+  let arrowFromProp: { id: string; anchor: 'top' | 'right' | 'bottom' | 'left' } | null = null;
+  let resizingProp: { id: string; handle: string; startX: number; startY: number; startWidth: number; startHeight: number } | null = null;
+  let draggingProp: HTMLElement | null = null;
+  let propDragOffset = { x: 0, y: 0 };
 
   // Auth
   function checkAuth(): boolean {
@@ -2318,11 +3089,16 @@ body.multi-select-mode .sticky-note:hover {
     if (data) {
       try {
         const parsed = JSON.parse(data);
-        return { ...parsed, boardTitles: parsed.boardTitles || [...DEFAULT_TITLES] };
+        return {
+          ...parsed,
+          boardTitles: parsed.boardTitles || [...DEFAULT_TITLES],
+          props: parsed.props || [],
+          arrows: parsed.arrows || []
+        };
       }
-      catch { return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES] }; }
+      catch { return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES], props: [], arrows: [] }; }
     }
-    return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES] };
+    return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES], props: [], arrows: [] };
   }
 
   // Sync
@@ -2511,6 +3287,633 @@ body.multi-select-mode .sticky-note:hover {
     return `${d.getDate()} ${d.toLocaleString('default', { month: 'short' })}`;
   }
 
+  // Board Labels
+  let draggingLabel: HTMLElement | null = null;
+  let labelDragOffset = { x: 0, y: 0 };
+
+  function createBoardLabel(x: number, y: number, quadrant: number) {
+    const label: BoardLabel = {
+      id: `label-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      text: 'Label',
+      x,
+      y,
+      quadrant
+    };
+
+    if (!state.boardLabels) state.boardLabels = [];
+    state.boardLabels.push(label);
+    save();
+    renderBoardLabels();
+
+    // Focus the new label for editing
+    setTimeout(() => {
+      const el = document.querySelector(`.board-label[data-id="${label.id}"] .board-label-text`) as HTMLElement;
+      if (el) {
+        el.focus();
+        // Select all text
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+      }
+    }, 50);
+  }
+
+  function updateBoardLabel(id: string, updates: Partial<BoardLabel>) {
+    if (!state.boardLabels) return;
+    const label = state.boardLabels.find(l => l.id === id);
+    if (label) {
+      Object.assign(label, updates);
+      save();
+    }
+  }
+
+  function deleteBoardLabel(id: string) {
+    if (!state.boardLabels) return;
+    state.boardLabels = state.boardLabels.filter(l => l.id !== id);
+    save();
+    renderBoardLabels();
+  }
+
+  function renderBoardLabels() {
+    // Remove existing labels
+    document.querySelectorAll('.board-label').forEach(l => l.remove());
+
+    if (!state.boardLabels) return;
+
+    state.boardLabels.forEach(label => {
+      const board = document.getElementById(`board-${label.quadrant}`);
+      if (!board) return;
+
+      const el = document.createElement('div');
+      el.className = 'board-label';
+      el.dataset.id = label.id;
+      el.style.left = `${label.x}px`;
+      el.style.top = `${label.y}px`;
+      el.innerHTML = `
+        <span class="board-label-text" contenteditable="true">${escapeHtml(label.text)}</span>
+        <button class="board-label-delete" title="Delete">&times;</button>
+      `;
+
+      const textEl = el.querySelector('.board-label-text') as HTMLElement;
+      const deleteBtn = el.querySelector('.board-label-delete') as HTMLButtonElement;
+
+      // Edit text
+      textEl.addEventListener('blur', () => {
+        el.classList.remove('editing');
+        const newText = textEl.textContent?.trim() || 'Label';
+        updateBoardLabel(label.id, { text: newText });
+      });
+
+      textEl.addEventListener('focus', () => {
+        el.classList.add('editing');
+      });
+
+      textEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          textEl.blur();
+        }
+      });
+
+      // Delete
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteBoardLabel(label.id);
+      });
+
+      // Drag
+      el.addEventListener('mousedown', (e) => {
+        if ((e.target as HTMLElement).classList.contains('board-label-text') && el.classList.contains('editing')) {
+          return; // Don't drag while editing
+        }
+        if ((e.target as HTMLElement).classList.contains('board-label-delete')) return;
+
+        e.preventDefault();
+        draggingLabel = el;
+        const rect = el.getBoundingClientRect();
+        labelDragOffset = {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+        el.style.zIndex = '1000';
+      });
+
+      board.appendChild(el);
+    });
+  }
+
+  // Label drag handlers
+  document.addEventListener('mousemove', (e) => {
+    if (!draggingLabel) return;
+
+    const board = draggingLabel.closest('.board') as HTMLElement;
+    if (!board) return;
+
+    const boardRect = board.getBoundingClientRect();
+    const x = e.clientX - boardRect.left + board.scrollLeft - labelDragOffset.x;
+    const y = e.clientY - boardRect.top + board.scrollTop - labelDragOffset.y;
+
+    draggingLabel.style.left = `${Math.max(0, x)}px`;
+    draggingLabel.style.top = `${Math.max(0, y)}px`;
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (draggingLabel) {
+      const id = draggingLabel.dataset.id;
+      const x = parseInt(draggingLabel.style.left);
+      const y = parseInt(draggingLabel.style.top);
+      draggingLabel.style.zIndex = '100';
+
+      if (id) {
+        updateBoardLabel(id, { x, y });
+      }
+      draggingLabel = null;
+    }
+  });
+
+  // Props System
+  const PROP_SIZES: Record<string, { width: number; height: number; ratio: number }> = {
+    mobile: { width: 140, height: 280, ratio: 9 / 19 },
+    pc: { width: 320, height: 200, ratio: 16 / 10 },
+    tv: { width: 400, height: 225, ratio: 16 / 9 }
+  };
+
+  function createProp(type: 'mobile' | 'tv' | 'pc', x: number, y: number): Prop {
+    const size = PROP_SIZES[type];
+    const prop: Prop = {
+      id: `prop-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type,
+      x,
+      y,
+      width: size.width,
+      height: size.height,
+      label: type.charAt(0).toUpperCase() + type.slice(1),
+      quadrant: activeQuadrant,
+      zIndex: state.nextZIndex++,
+      createdAt: Date.now()
+    };
+
+    if (!state.props) state.props = [];
+    state.props.push(prop);
+    save();
+    renderProps();
+    return prop;
+  }
+
+  function updateProp(id: string, updates: Partial<Prop>) {
+    if (!state.props) return;
+    const prop = state.props.find(p => p.id === id);
+    if (prop) {
+      Object.assign(prop, updates);
+      save();
+    }
+  }
+
+  function deleteProp(id: string) {
+    if (!state.props) return;
+    state.props = state.props.filter(p => p.id !== id);
+    // Remove connected arrows
+    if (state.arrows) {
+      state.arrows = state.arrows.filter(a => a.fromPropId !== id && a.toPropId !== id);
+    }
+    if (selectedPropId === id) selectedPropId = null;
+    save();
+    renderProps();
+    renderArrows();
+  }
+
+  function bringPropToFront(id: string) {
+    if (!state.props) return;
+    const prop = state.props.find(p => p.id === id);
+    if (prop) {
+      prop.zIndex = state.nextZIndex++;
+      save();
+    }
+  }
+
+  function renderProps() {
+    // Remove existing props
+    document.querySelectorAll('.device-prop').forEach(p => p.remove());
+
+    if (!state.props) return;
+
+    state.props.forEach(prop => {
+      const board = document.getElementById(`board-${prop.quadrant}`);
+      if (!board) return;
+
+      const el = document.createElement('div');
+      el.className = `device-prop device-${prop.type} ${selectedPropId === prop.id ? 'selected' : ''}`;
+      el.dataset.id = prop.id;
+      el.style.cssText = `
+        left: ${prop.x}px;
+        top: ${prop.y}px;
+        width: ${prop.width}px;
+        height: ${prop.height}px;
+        z-index: ${prop.zIndex};
+      `;
+
+      let innerHtml = '';
+      if (prop.type === 'mobile') {
+        innerHtml = `
+          <div class="device-screen">
+            <div class="device-notch"></div>
+          </div>
+        `;
+      } else if (prop.type === 'pc') {
+        innerHtml = `
+          <div class="device-screen"></div>
+          <div class="device-stand"></div>
+        `;
+      } else if (prop.type === 'tv') {
+        innerHtml = `
+          <div class="device-screen"></div>
+          <div class="device-led"></div>
+        `;
+      }
+
+      el.innerHTML = `
+        ${innerHtml}
+        <div class="device-label" contenteditable="true">${escapeHtml(prop.label)}</div>
+        <button class="prop-delete" title="Delete">&times;</button>
+        <div class="resize-handle nw" data-handle="nw"></div>
+        <div class="resize-handle ne" data-handle="ne"></div>
+        <div class="resize-handle sw" data-handle="sw"></div>
+        <div class="resize-handle se" data-handle="se"></div>
+        <div class="arrow-anchor top" data-anchor="top"></div>
+        <div class="arrow-anchor right" data-anchor="right"></div>
+        <div class="arrow-anchor bottom" data-anchor="bottom"></div>
+        <div class="arrow-anchor left" data-anchor="left"></div>
+      `;
+
+      // Label editing
+      const labelEl = el.querySelector('.device-label') as HTMLElement;
+      labelEl.addEventListener('blur', () => {
+        updateProp(prop.id, { label: labelEl.textContent?.trim() || prop.type });
+      });
+      labelEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          labelEl.blur();
+        }
+      });
+      labelEl.addEventListener('mousedown', (e) => e.stopPropagation());
+
+      // Delete button
+      const deleteBtn = el.querySelector('.prop-delete') as HTMLButtonElement;
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteProp(prop.id);
+      });
+
+      // Resize handles
+      el.querySelectorAll('.resize-handle').forEach(handle => {
+        handle.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
+          const h = (handle as HTMLElement).dataset.handle!;
+          resizingProp = {
+            id: prop.id,
+            handle: h,
+            startX: (e as MouseEvent).clientX,
+            startY: (e as MouseEvent).clientY,
+            startWidth: prop.width,
+            startHeight: prop.height
+          };
+          selectedPropId = prop.id;
+          renderProps();
+        });
+      });
+
+      // Arrow anchors
+      el.querySelectorAll('.arrow-anchor').forEach(anchor => {
+        anchor.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const anchorType = (anchor as HTMLElement).dataset.anchor as 'top' | 'right' | 'bottom' | 'left';
+          handleAnchorClick(prop.id, anchorType);
+        });
+      });
+
+      // Prop drag
+      el.addEventListener('mousedown', (e) => {
+        if ((e.target as HTMLElement).closest('.device-label') ||
+            (e.target as HTMLElement).closest('.prop-delete') ||
+            (e.target as HTMLElement).closest('.resize-handle') ||
+            (e.target as HTMLElement).closest('.arrow-anchor')) return;
+
+        selectedPropId = prop.id;
+        selectedId = null; // Deselect any sticky note
+        draggingProp = el;
+        bringPropToFront(prop.id);
+
+        const rect = el.getBoundingClientRect();
+        propDragOffset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+
+        el.classList.add('dragging');
+        renderProps();
+      });
+
+      // Double-click to edit label
+      el.addEventListener('dblclick', (e) => {
+        if (!(e.target as HTMLElement).closest('.device-label')) {
+          labelEl.focus();
+          const range = document.createRange();
+          range.selectNodeContents(labelEl);
+          const sel = window.getSelection();
+          sel?.removeAllRanges();
+          sel?.addRange(range);
+        }
+      });
+
+      board.appendChild(el);
+    });
+
+    // Render arrows after props are in place
+    renderArrows();
+  }
+
+  // Arrow System
+  function handleAnchorClick(propId: string, anchor: 'top' | 'right' | 'bottom' | 'left') {
+    if (!arrowMode) return;
+
+    if (!arrowFromProp) {
+      // First click - set source
+      arrowFromProp = { id: propId, anchor };
+    } else {
+      // Second click - create arrow
+      if (arrowFromProp.id !== propId) {
+        createArrow(arrowFromProp.id, propId, arrowFromProp.anchor, anchor);
+      }
+      arrowFromProp = null;
+    }
+  }
+
+  function createArrow(fromId: string, toId: string, fromAnchor: 'top' | 'right' | 'bottom' | 'left', toAnchor: 'top' | 'right' | 'bottom' | 'left') {
+    if (!state.props) return;
+
+    const fromProp = state.props.find(p => p.id === fromId);
+    const toProp = state.props.find(p => p.id === toId);
+    if (!fromProp || !toProp) return;
+
+    // Only allow arrows on same board
+    if (fromProp.quadrant !== toProp.quadrant) return;
+
+    const arrow: Arrow = {
+      id: `arrow-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      fromPropId: fromId,
+      toPropId: toId,
+      fromAnchor,
+      toAnchor,
+      quadrant: fromProp.quadrant
+    };
+
+    if (!state.arrows) state.arrows = [];
+    state.arrows.push(arrow);
+    save();
+    renderArrows();
+  }
+
+  function deleteArrow(id: string) {
+    if (!state.arrows) return;
+    state.arrows = state.arrows.filter(a => a.id !== id);
+    save();
+    renderArrows();
+  }
+
+  function getAnchorPosition(prop: Prop, anchor: 'top' | 'right' | 'bottom' | 'left'): { x: number; y: number } {
+    switch (anchor) {
+      case 'top':
+        return { x: prop.x + prop.width / 2, y: prop.y };
+      case 'right':
+        return { x: prop.x + prop.width, y: prop.y + prop.height / 2 };
+      case 'bottom':
+        return { x: prop.x + prop.width / 2, y: prop.y + prop.height };
+      case 'left':
+        return { x: prop.x, y: prop.y + prop.height / 2 };
+    }
+  }
+
+  function renderArrows() {
+    // Remove existing SVG layers
+    document.querySelectorAll('.arrow-layer').forEach(l => l.remove());
+
+    if (!state.arrows || !state.props) return;
+
+    // Group arrows by quadrant
+    const arrowsByQuadrant: Record<number, Arrow[]> = {};
+    state.arrows.forEach(arrow => {
+      if (!arrowsByQuadrant[arrow.quadrant]) arrowsByQuadrant[arrow.quadrant] = [];
+      arrowsByQuadrant[arrow.quadrant].push(arrow);
+    });
+
+    // Create SVG layer for each board that has arrows
+    Object.entries(arrowsByQuadrant).forEach(([q, arrows]) => {
+      const board = document.getElementById(`board-${q}`);
+      if (!board) return;
+
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'arrow-layer');
+      svg.setAttribute('width', '100%');
+      svg.setAttribute('height', '100%');
+      svg.style.position = 'absolute';
+      svg.style.top = '0';
+      svg.style.left = '0';
+      svg.style.overflow = 'visible';
+
+      // Add arrowhead marker
+      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      defs.innerHTML = `
+        <marker id="arrowhead-${q}" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#6b7280" />
+        </marker>
+      `;
+      svg.appendChild(defs);
+
+      arrows.forEach(arrow => {
+        const fromProp = state.props!.find(p => p.id === arrow.fromPropId);
+        const toProp = state.props!.find(p => p.id === arrow.toPropId);
+        if (!fromProp || !toProp) return;
+
+        const start = getAnchorPosition(fromProp, arrow.fromAnchor);
+        const end = getAnchorPosition(toProp, arrow.toAnchor);
+
+        // Calculate control points for curved line
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const curveOffset = Math.min(dist * 0.3, 80);
+
+        let cp1x = start.x, cp1y = start.y, cp2x = end.x, cp2y = end.y;
+
+        // Adjust control points based on anchor direction
+        if (arrow.fromAnchor === 'top') cp1y -= curveOffset;
+        else if (arrow.fromAnchor === 'bottom') cp1y += curveOffset;
+        else if (arrow.fromAnchor === 'left') cp1x -= curveOffset;
+        else if (arrow.fromAnchor === 'right') cp1x += curveOffset;
+
+        if (arrow.toAnchor === 'top') cp2y -= curveOffset;
+        else if (arrow.toAnchor === 'bottom') cp2y += curveOffset;
+        else if (arrow.toAnchor === 'left') cp2x -= curveOffset;
+        else if (arrow.toAnchor === 'right') cp2x += curveOffset;
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M ${start.x} ${start.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${end.x} ${end.y}`);
+        path.setAttribute('marker-end', `url(#arrowhead-${q})`);
+        path.setAttribute('data-id', arrow.id);
+        path.style.pointerEvents = 'stroke';
+        path.style.cursor = 'pointer';
+
+        // Click to delete arrow
+        path.addEventListener('click', () => {
+          if (confirm('Delete this arrow?')) {
+            deleteArrow(arrow.id);
+          }
+        });
+
+        svg.appendChild(path);
+      });
+
+      // Insert SVG at the beginning of board (behind props)
+      board.insertBefore(svg, board.firstChild?.nextSibling || null);
+    });
+  }
+
+  function togglePropsPalette() {
+    propsPaletteOpen = !propsPaletteOpen;
+    const palette = document.getElementById('props-palette');
+    if (palette) {
+      palette.classList.toggle('hidden', !propsPaletteOpen);
+    }
+  }
+
+  function enterArrowMode() {
+    arrowMode = true;
+    arrowFromProp = null;
+    document.body.classList.add('arrow-mode');
+    document.getElementById('arrow-mode-btn')?.classList.add('active');
+  }
+
+  function exitArrowMode() {
+    arrowMode = false;
+    arrowFromProp = null;
+    document.body.classList.remove('arrow-mode');
+    document.getElementById('arrow-mode-btn')?.classList.remove('active');
+  }
+
+  // Prop drag/resize handlers
+  document.addEventListener('mousemove', (e) => {
+    // Prop dragging
+    if (draggingProp && selectedPropId) {
+      const prop = state.props?.find(p => p.id === selectedPropId);
+      if (!prop) return;
+
+      const board = document.getElementById(`board-${prop.quadrant}`)!;
+      const rect = board.getBoundingClientRect();
+      const x = e.clientX - rect.left - propDragOffset.x + board.scrollLeft;
+      const y = e.clientY - rect.top - propDragOffset.y + board.scrollTop;
+
+      prop.x = Math.max(0, x);
+      prop.y = Math.max(0, y);
+
+      draggingProp.style.left = `${prop.x}px`;
+      draggingProp.style.top = `${prop.y}px`;
+
+      // Update arrows in real-time
+      renderArrows();
+    }
+
+    // Prop resizing
+    if (resizingProp) {
+      const prop = state.props?.find(p => p.id === resizingProp!.id);
+      if (!prop) return;
+
+      const dx = e.clientX - resizingProp.startX;
+      const dy = e.clientY - resizingProp.startY;
+      const size = PROP_SIZES[prop.type];
+
+      let newWidth = resizingProp.startWidth;
+      let newHeight = resizingProp.startHeight;
+
+      // Calculate new dimensions based on handle
+      if (resizingProp.handle.includes('e')) {
+        newWidth = Math.max(80, resizingProp.startWidth + dx);
+      }
+      if (resizingProp.handle.includes('w')) {
+        newWidth = Math.max(80, resizingProp.startWidth - dx);
+        prop.x = prop.x + (resizingProp.startWidth - newWidth);
+      }
+      if (resizingProp.handle.includes('s')) {
+        newHeight = Math.max(60, resizingProp.startHeight + dy);
+      }
+      if (resizingProp.handle.includes('n')) {
+        newHeight = Math.max(60, resizingProp.startHeight - dy);
+        prop.y = prop.y + (resizingProp.startHeight - newHeight);
+      }
+
+      // Maintain aspect ratio
+      if (resizingProp.handle === 'se' || resizingProp.handle === 'nw') {
+        newHeight = newWidth / size.ratio;
+      } else if (resizingProp.handle === 'sw' || resizingProp.handle === 'ne') {
+        newWidth = newHeight * size.ratio;
+      }
+
+      prop.width = newWidth;
+      prop.height = newHeight;
+
+      const el = document.querySelector(`[data-id="${prop.id}"]`) as HTMLElement;
+      if (el) {
+        el.style.width = `${newWidth}px`;
+        el.style.height = `${newHeight}px`;
+        el.style.left = `${prop.x}px`;
+        el.style.top = `${prop.y}px`;
+      }
+
+      renderArrows();
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (draggingProp && selectedPropId) {
+      const prop = state.props?.find(p => p.id === selectedPropId);
+      if (prop) {
+        save();
+        renderArrows();
+      }
+      draggingProp.classList.remove('dragging');
+      draggingProp = null;
+    }
+
+    if (resizingProp) {
+      save();
+      resizingProp = null;
+      renderProps();
+    }
+  });
+
+  // Props palette event listeners
+  document.getElementById('props-palette')?.querySelector('.palette-close')?.addEventListener('click', () => {
+    propsPaletteOpen = false;
+    document.getElementById('props-palette')?.classList.add('hidden');
+  });
+
+  document.querySelectorAll('#props-palette .palette-items button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = (btn as HTMLElement).dataset.type as 'mobile' | 'tv' | 'pc';
+      const board = document.getElementById(`board-${activeQuadrant}`)!;
+      const x = board.scrollLeft + 150 + Math.random() * 100;
+      const y = board.scrollTop + 100 + Math.random() * 100;
+      createProp(type, x, y);
+    });
+  });
+
+  document.getElementById('arrow-mode-btn')?.addEventListener('click', () => {
+    if (arrowMode) {
+      exitArrowMode();
+    } else {
+      enterArrowMode();
+    }
+  });
+
   // Render
   function render() {
     // Create tape labels for each board
@@ -2536,6 +3939,12 @@ body.multi-select-mode .sticky-note:hover {
       });
     });
 
+    // Render board labels
+    renderBoardLabels();
+
+    // Render props and arrows
+    renderProps();
+
     state.notes.forEach(note => {
       const quadrant = note.quadrant ?? 0;
       const board = document.getElementById(`board-${quadrant}`);
@@ -2543,8 +3952,9 @@ body.multi-select-mode .sticky-note:hover {
 
       const isSnoozed = note.snoozeUntil && note.snoozeUntil > Date.now();
       const isAwakened = note.snoozeUntil && note.snoozeUntil <= Date.now() && note.snoozeAction;
+      const isLightColor = isColorLight(note.color);
       const el = document.createElement('div');
-      el.className = `sticky-note ${selectedId === note.id ? 'selected' : ''} ${note.isLead ? 'lead' : ''} ${multiSelected.has(note.id) ? 'multi-selected' : ''} ${isSnoozed ? 'snoozed' : ''} ${isAwakened ? `awakened awakened-${note.snoozeAction}` : ''}`;
+      el.className = `sticky-note ${selectedId === note.id ? 'selected' : ''} ${note.isLead ? 'lead' : ''} ${multiSelected.has(note.id) ? 'multi-selected' : ''} ${isSnoozed ? 'snoozed' : ''} ${isAwakened ? `awakened awakened-${note.snoozeAction}` : ''} ${isLightColor ? 'light-color' : ''}`;
       el.dataset.id = note.id;
       el.dataset.color = note.color;
       el.style.cssText = `
@@ -2572,10 +3982,21 @@ body.multi-select-mode .sticky-note:hover {
       };
       const awakenedBadgeHtml = isAwakened ? `<div class="awakened-badge">${actionIcons[note.snoozeAction!]}</div>` : '';
 
+      // Detail indicators for regular notes
+      const hasActivity = note.activity && note.activity.length > 0;
+      const hasImages = note.images && note.images.length > 0;
+      const indicatorsHtml = !note.isLead && (hasActivity || hasImages) ? `
+        <div class="note-indicators">
+          ${hasImages ? `<span class="indicator-badge images"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>${note.images!.length}</span>` : ''}
+          ${hasActivity ? `<span class="indicator-badge activity"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>${note.activity!.length}</span>` : ''}
+        </div>
+      ` : '';
+
       el.innerHTML = `
         ${avatarHtml}
         ${snoozeBadgeHtml}
         ${awakenedBadgeHtml}
+        ${indicatorsHtml}
         <div class="sticky-note-content" contenteditable="true">${escapeHtml(note.text)}</div>
         <div class="sticky-note-meta">
           <span class="sticky-note-date">${formatDate(note.createdAt)}</span>
@@ -2692,6 +4113,20 @@ body.multi-select-mode .sticky-note:hover {
     updateMinimap();
   }
 
+  function isColorLight(color: string): boolean {
+    // Check if color is white or very light
+    const hex = color.replace('#', '');
+    if (hex.length === 6) {
+      const r = parseInt(hex.substr(0, 2), 16);
+      const g = parseInt(hex.substr(2, 2), 16);
+      const b = parseInt(hex.substr(4, 2), 16);
+      // Calculate luminance
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      return luminance > 0.92; // Very light colors (white, near-white)
+    }
+    return color.toLowerCase() === 'white' || color === '#fff' || color === '#ffffff';
+  }
+
   function escapeHtml(s: string): string {
     const div = document.createElement('div');
     div.textContent = s;
@@ -2743,6 +4178,55 @@ body.multi-select-mode .sticky-note:hover {
     }
   }
 
+  // Note images
+  let editingNoteImages: string[] = [];
+
+  function renderNoteImages(note: Note) {
+    editingNoteImages = note.images ? [...note.images] : [];
+    const container = document.getElementById('note-images');
+    const countBadge = document.getElementById('attachments-count');
+    const panel = document.getElementById('attachments-panel');
+    if (!container) return;
+
+    // Update count badge
+    if (countBadge) {
+      countBadge.textContent = editingNoteImages.length > 0 ? String(editingNoteImages.length) : '';
+    }
+
+    // Auto-expand if has images
+    if (panel && editingNoteImages.length > 0) {
+      panel.classList.add('expanded');
+    }
+
+    if (editingNoteImages.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = editingNoteImages.map((img, idx) => `
+      <div class="note-image-item" data-idx="${idx}">
+        <img src="${img}" alt="Note image" />
+        <button class="delete-image" data-idx="${idx}">&times;</button>
+      </div>
+    `).join('');
+
+    container.querySelectorAll('.delete-image').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt((btn as HTMLElement).dataset.idx || '0');
+        editingNoteImages.splice(idx, 1);
+        renderNoteImages({ ...state.notes.find(n => n.id === detailNoteId)!, images: editingNoteImages });
+      });
+    });
+
+    container.querySelectorAll('.note-image-item img').forEach(img => {
+      img.addEventListener('click', () => {
+        const src = (img as HTMLImageElement).src;
+        window.open(src, '_blank');
+      });
+    });
+  }
+
   // Detail modal
   function openDetailModal(noteId: string) {
     const note = state.notes.find(n => n.id === noteId);
@@ -2751,7 +4235,21 @@ body.multi-select-mode .sticky-note:hover {
     detailNoteId = noteId;
     const modal = document.getElementById('detail-modal')!;
 
-    // Populate fields
+    // Toggle between lead and note mode
+    if (note.isLead) {
+      modal.classList.remove('note-mode');
+    } else {
+      modal.classList.add('note-mode');
+    }
+
+    // Populate note view fields (for regular notes)
+    const noteContent = document.getElementById('detail-note-content') as HTMLTextAreaElement;
+    if (noteContent) {
+      noteContent.value = note.text || '';
+    }
+    renderNoteImages(note);
+
+    // Populate lead view fields
     const avatar = document.getElementById('detail-avatar')!;
     if (note.avatar) {
       avatar.innerHTML = `<img src="${note.avatar}" alt="" />`;
@@ -2848,32 +4346,43 @@ body.multi-select-mode .sticky-note:hover {
   }
 
   function renderActivities() {
-    const listEl = document.getElementById('activity-list')!;
+    // Render to both lead and note activity lists
+    const leadListEl = document.getElementById('activity-list');
+    const noteListEl = document.getElementById('note-activity-list');
+    const countBadge = document.getElementById('activity-count');
 
-    if (editingActivities.length === 0) {
-      listEl.innerHTML = '<div class="activity-empty">No activity yet</div>';
-      return;
+    // Update count badge
+    if (countBadge) {
+      countBadge.textContent = editingActivities.length > 0 ? String(editingActivities.length) : '';
     }
 
     const sorted = [...editingActivities].sort((a, b) => b.timestamp - a.timestamp);
 
-    listEl.innerHTML = sorted.map(act => `
-      <div class="activity-item" data-id="${act.id}" data-type="${act.type}">
-        <span class="activity-icon">${ACTIVITY_ICONS[act.type] || '📝'}</span>
-        <div class="activity-content">
-          <div class="activity-text">${escapeHtml(act.text)}</div>
-          <div class="activity-time">${formatActivityTime(act.timestamp)}</div>
+    const html = editingActivities.length === 0
+      ? '<div class="activity-empty">No activity yet</div>'
+      : sorted.map(act => `
+        <div class="activity-item" data-id="${act.id}" data-type="${act.type}">
+          <span class="activity-icon">${ACTIVITY_ICONS[act.type] || '📝'}</span>
+          <div class="activity-content">
+            <div class="activity-text">${escapeHtml(act.text)}</div>
+            <div class="activity-time">${formatActivityTime(act.timestamp)}</div>
+          </div>
+          <button class="activity-delete" data-id="${act.id}" title="Delete">✕</button>
         </div>
-        <button class="activity-delete" data-id="${act.id}" title="Delete">✕</button>
-      </div>
-    `).join('');
+      `).join('');
 
-    listEl.querySelectorAll('.activity-delete').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = (btn as HTMLElement).dataset.id;
-        editingActivities = editingActivities.filter(a => a.id !== id);
-        renderActivities();
+    // Update both lists
+    [leadListEl, noteListEl].forEach(listEl => {
+      if (!listEl) return;
+      listEl.innerHTML = html;
+
+      listEl.querySelectorAll('.activity-delete').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = (btn as HTMLElement).dataset.id;
+          editingActivities = editingActivities.filter(a => a.id !== id);
+          renderActivities();
+        });
       });
     });
   }
@@ -2922,16 +4431,41 @@ body.multi-select-mode .sticky-note:hover {
     if (role) displayText += `\n${role}`;
     if (company) displayText += `\n${company}`;
 
-    updateNote(detailNoteId, {
-      text: displayText,
-      name, role, company, phone, email, linkedin, website,
-      activity: editingActivities,
-      isLead: true,
-      quadrant,
-      color: colors[quadrant],
-      snoozeUntil,
-      snoozeAction
-    });
+    // Preserve isLead state - only leads get the lead-specific fields
+    const currentNote = state.notes.find(n => n.id === detailNoteId);
+    const isLead = currentNote?.isLead || false;
+
+    if (isLead) {
+      // Lead mode: update lead-specific fields
+      let displayText = name;
+      if (role) displayText += `\n${role}`;
+      if (company) displayText += `\n${company}`;
+
+      updateNote(detailNoteId, {
+        text: displayText,
+        name, role, company, phone, email, linkedin, website,
+        activity: editingActivities,
+        isLead: true,
+        quadrant,
+        color: colors[quadrant],
+        snoozeUntil,
+        snoozeAction
+      });
+    } else {
+      // Note mode: update note-specific fields
+      const noteContent = (document.getElementById('detail-note-content') as HTMLTextAreaElement)?.value || '';
+
+      updateNote(detailNoteId, {
+        text: noteContent,
+        activity: editingActivities,
+        isLead: false,
+        quadrant,
+        color: colors[quadrant],
+        snoozeUntil,
+        snoozeAction,
+        images: editingNoteImages
+      });
+    }
 
     render();
     closeDetailModal();
@@ -3054,10 +4588,22 @@ body.multi-select-mode .sticky-note:hover {
     }
   });
 
-  // Board double-click
+  // Board click/double-click
   document.querySelectorAll('.board').forEach(board => {
+    board.addEventListener('click', e => {
+      // Deselect props when clicking on empty board space
+      if (!(e.target as HTMLElement).closest('.device-prop') &&
+          !(e.target as HTMLElement).closest('.sticky-note') &&
+          !(e.target as HTMLElement).closest('.board-label')) {
+        if (selectedPropId) {
+          selectedPropId = null;
+          renderProps();
+        }
+      }
+    });
     board.addEventListener('dblclick', e => {
       if ((e.target as HTMLElement).closest('.sticky-note')) return;
+      if ((e.target as HTMLElement).closest('.device-prop')) return;
       const rect = board.getBoundingClientRect();
       const x = (e as MouseEvent).clientX - rect.left + board.scrollLeft - 90;
       const y = (e as MouseEvent).clientY - rect.top + board.scrollTop - 70;
@@ -3121,11 +4667,17 @@ body.multi-select-mode .sticky-note:hover {
   document.addEventListener('keydown', e => {
     if (document.activeElement?.closest('.sticky-note-content') ||
         document.activeElement?.closest('.board-tape') ||
+        document.activeElement?.closest('.board-label-text') ||
+        document.activeElement?.closest('.device-label') ||
         document.activeElement?.tagName === 'INPUT' ||
         document.activeElement?.tagName === 'TEXTAREA') return;
 
     if (e.key === 'n' || e.key === 'N') {
       document.getElementById('fab-add-btn')?.click();
+    }
+    // P - toggle props palette
+    if (e.key === 'p' || e.key === 'P') {
+      togglePropsPalette();
     }
     if (e.key === 'Escape') {
       selectedId = null;
@@ -3138,6 +4690,19 @@ body.multi-select-mode .sticky-note:hover {
         document.body.classList.remove('multi-select-mode');
         document.getElementById('multi-select-indicator')?.classList.remove('visible');
         document.querySelectorAll('.sticky-note.multi-selected').forEach(n => n.classList.remove('multi-selected'));
+      }
+      // Deselect props and exit arrow mode
+      if (selectedPropId) {
+        selectedPropId = null;
+        renderProps();
+      }
+      if (arrowMode) {
+        exitArrowMode();
+      }
+      // Close props palette
+      if (propsPaletteOpen) {
+        propsPaletteOpen = false;
+        document.getElementById('props-palette')?.classList.add('hidden');
       }
     }
     // Toggle multi-select mode with S
@@ -3175,11 +4740,34 @@ body.multi-select-mode .sticky-note:hover {
       document.getElementById('multi-select-indicator')?.classList.remove('visible');
       switchQuadrant(targetBoard);
     }
-    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
-      deleteNote(selectedId);
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (selectedPropId) {
+        deleteProp(selectedPropId);
+      } else if (selectedId) {
+        deleteNote(selectedId);
+      }
     }
     if (e.key === 'u' || e.key === 'U') {
       undoDelete();
+    }
+    // D - duplicate selected note
+    if ((e.key === 'd' || e.key === 'D') && selectedId) {
+      const original = state.notes.find(n => n.id === selectedId);
+      if (original) {
+        const duplicate: Note = {
+          ...original,
+          id: `note-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          x: original.x + 30,
+          y: original.y + 30,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          zIndex: state.nextZIndex++,
+        };
+        state.notes.push(duplicate);
+        selectedId = duplicate.id;
+        save();
+        render();
+      }
     }
     if (e.key === 'x' || e.key === 'X') {
       const board = document.getElementById(`board-${activeQuadrant}`)!;
@@ -3190,6 +4778,13 @@ body.multi-select-mode .sticky-note:hover {
       setTimeout(() => {
         (document.querySelector(`[data-id="${note.id}"] .sticky-note-content`) as HTMLElement)?.focus();
       }, 50);
+    }
+    // T - add text label to board
+    if (e.key === 't' || e.key === 'T') {
+      const board = document.getElementById(`board-${activeQuadrant}`)!;
+      const x = board.scrollLeft + 150;
+      const y = board.scrollTop + 100;
+      createBoardLabel(x, y, activeQuadrant);
     }
     // Board shortcuts: O Y G B I V
     if (e.key === 'o' || e.key === 'O') switchQuadrant(0);
@@ -3952,6 +5547,61 @@ body.multi-select-mode .sticky-note:hover {
     }
   });
 
+  // Note activity buttons (for note mode)
+  let noteActivityType: 'note' | 'link' | 'reminder' = 'note';
+
+  document.querySelectorAll('.note-activity-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = (btn as HTMLElement).dataset.type as 'note' | 'link' | 'reminder';
+      noteActivityType = type;
+
+      document.querySelectorAll('.note-activity-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const inputEl = document.getElementById('note-activity-input')!;
+      const textEl = document.getElementById('note-activity-text') as HTMLInputElement;
+      inputEl.classList.remove('hidden');
+      textEl.placeholder = type === 'note' ? 'Add note...' : type === 'link' ? 'Add link...' : 'Add reminder...';
+      textEl.focus();
+    });
+  });
+
+  // Add note activity
+  document.getElementById('note-activity-add')?.addEventListener('click', () => {
+    const textEl = document.getElementById('note-activity-text') as HTMLInputElement;
+    const text = textEl.value.trim();
+
+    if (!text) return;
+
+    const activity: Activity = {
+      id: `act-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      type: noteActivityType,
+      text,
+    };
+
+    editingActivities.push(activity);
+    renderActivities();
+
+    textEl.value = '';
+    document.getElementById('note-activity-input')?.classList.add('hidden');
+    document.querySelectorAll('.note-activity-btn').forEach(b => b.classList.remove('active'));
+  });
+
+  // Cancel note activity
+  document.getElementById('note-activity-cancel')?.addEventListener('click', () => {
+    document.getElementById('note-activity-input')?.classList.add('hidden');
+    (document.getElementById('note-activity-text') as HTMLInputElement).value = '';
+    document.querySelectorAll('.note-activity-btn').forEach(b => b.classList.remove('active'));
+  });
+
+  // Enter key to add note activity
+  document.getElementById('note-activity-text')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      document.getElementById('note-activity-add')?.click();
+    }
+  });
+
   document.getElementById('detail-avatar-btn')?.addEventListener('click', () => {
     document.getElementById('detail-avatar-upload')?.click();
   });
@@ -3983,6 +5633,61 @@ body.multi-select-mode .sticky-note:hover {
       img.src = dataUrl;
     };
     reader.readAsDataURL(file);
+    (e.target as HTMLInputElement).value = '';
+  });
+
+  // Note image upload
+  document.getElementById('add-note-image')?.addEventListener('click', () => {
+    document.getElementById('note-image-upload')?.click();
+  });
+
+  // Panel toggles
+  document.getElementById('attachments-toggle')?.addEventListener('click', () => {
+    document.getElementById('attachments-panel')?.classList.toggle('expanded');
+  });
+  document.getElementById('activity-toggle')?.addEventListener('click', () => {
+    document.getElementById('activity-panel')?.classList.toggle('expanded');
+  });
+
+  document.getElementById('note-image-upload')?.addEventListener('change', e => {
+    const files = (e.target as HTMLInputElement).files;
+    if (!files || !detailNoteId) return;
+
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const dataUrl = ev.target?.result as string;
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxSize = 800;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxSize || h > maxSize) {
+            if (w > h) {
+              h = (h / w) * maxSize;
+              w = maxSize;
+            } else {
+              w = (w / h) * maxSize;
+              h = maxSize;
+            }
+          }
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(img, 0, 0, w, h);
+          const compressed = canvas.toDataURL('image/jpeg', 0.7);
+
+          editingNoteImages.push(compressed);
+          const note = state.notes.find(n => n.id === detailNoteId);
+          if (note) {
+            renderNoteImages({ ...note, images: editingNoteImages });
+          }
+        };
+        img.src = dataUrl;
+      };
+      reader.readAsDataURL(file);
+    });
     (e.target as HTMLInputElement).value = '';
   });
 
