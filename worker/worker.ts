@@ -1,12 +1,13 @@
 interface Env {
   BUCKET: R2Bucket;
   ANTHROPIC_API_KEY: string;
+  API_TOKEN: string;   // wrangler secret - bearer token for /api/leads
 }
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Sync-Password, X-Admin-Password',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Sync-Password, X-Admin-Password, Authorization',
 };
 
 const ADMIN_PASSWORD = 'Benny123';
@@ -80,6 +81,48 @@ export default {
       });
     }
 
+    // Move every pending lead from one project's inbox to another
+    if (url.pathname === '/admin/inbox/move' && request.method === 'POST') {
+      if (request.headers.get('X-Admin-Password') !== ADMIN_PASSWORD) {
+        return json({ error: 'Invalid admin password' }, 401);
+      }
+      const { from, to } = await request.json() as { from: string; to: string };
+      if (!from || !to) return json({ error: 'from and to hashes required' }, 400);
+
+      const listed = await env.BUCKET.list({ prefix: `inbox/${from}/`, limit: 500 });
+      const moved: string[] = [];
+      for (const obj of listed.objects) {
+        const o = await env.BUCKET.get(obj.key);
+        if (!o) continue;
+        const lead = await o.json() as Record<string, unknown>;
+        // fresh key, so a name collision at the destination cannot overwrite
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        lead.id = id;
+        await env.BUCKET.put(`inbox/${to}/${id}.json`, JSON.stringify(lead), {
+          httpMetadata: { contentType: 'application/json' },
+        });
+        await env.BUCKET.delete(obj.key);
+        moved.push(String(lead.name || ''));
+      }
+      return json({ moved: moved.length, names: moved });
+    }
+
+    // Debug: what is sitting in every project's agent inbox
+    if (url.pathname === '/admin/inbox' && request.method === 'GET') {
+      if (request.headers.get('X-Admin-Password') !== ADMIN_PASSWORD) {
+        return json({ error: 'Invalid admin password' }, 401);
+      }
+      const listed = await env.BUCKET.list({ prefix: 'inbox/', limit: 500 });
+      const items = await Promise.all(listed.objects.map(async obj => {
+        try {
+          const o = await env.BUCKET.get(obj.key);
+          const lead = o ? await o.json() as Record<string, unknown> : null;
+          return { key: obj.key, name: lead?.name, board: lead?.board, receivedAt: obj.uploaded.toISOString() };
+        } catch { return { key: obj.key }; }
+      }));
+      return json({ count: items.length, items });
+    }
+
     if (url.pathname === '/admin/view' && request.method === 'GET') {
       const adminPw = request.headers.get('X-Admin-Password');
       if (adminPw !== ADMIN_PASSWORD) {
@@ -111,6 +154,93 @@ export default {
       });
     }
 
+    /* ============================================================
+     * Agent API - lets a ChatGPT Action post leads into a project.
+     *
+     * Leads are NOT written into the project blob: the browser PUTs
+     * that object wholesale on every save, so an open tab would
+     * silently overwrite anything we appended. Each lead is instead
+     * written as its own object under inbox/<hash>/, which the app
+     * drains and deletes. One object per lead also means concurrent
+     * posts can never clobber each other.
+     * ============================================================ */
+
+    if (url.pathname === '/openapi.json') {
+      return new Response(JSON.stringify(openApiSchema(url.origin), null, 2), {
+        headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (url.pathname === '/api/leads' && request.method === 'POST') {
+      const auth = request.headers.get('Authorization') || '';
+      const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+      if (!env.API_TOKEN || token !== env.API_TOKEN) {
+        return json({ error: 'Unauthorized' }, 401);
+      }
+
+      let body: { project?: string; board?: number; leads?: LeadInput[]; lead?: LeadInput };
+      try {
+        body = await request.json();
+      } catch {
+        return json({ error: 'Body must be JSON' }, 400);
+      }
+
+      const project = (body.project || '').trim();
+      if (project.length < 4) {
+        return json({ error: 'project is required (the Stiki project name, min 4 chars)' }, 400);
+      }
+
+      const incoming = body.leads || (body.lead ? [body.lead] : []);
+      if (!Array.isArray(incoming) || incoming.length === 0) {
+        return json({ error: 'Provide leads: [...] with at least one lead' }, 400);
+      }
+      if (incoming.length > 50) {
+        return json({ error: 'Maximum 50 leads per request' }, 400);
+      }
+
+      const named = incoming.filter(l => l && typeof l.name === 'string' && l.name.trim());
+      if (named.length === 0) {
+        return json({ error: 'Every lead needs a name' }, 400);
+      }
+
+      const hash = await simpleHash(project);
+
+      // Refuse unknown projects. Without this the worker happily creates an
+      // inbox for a made-up name, the leads look accepted, and nothing ever
+      // drains them - which is exactly how four leads went missing.
+      const target = await env.BUCKET.head(`levitate-${hash}.json`);
+      if (!target) {
+        return json({
+          error: `No Stiki project named "${project}". Check the exact project name in Stiki's settings and try again.`,
+        }, 404);
+      }
+
+      const board = Number.isInteger(body.board) && body.board! >= 0 && body.board! <= 5 ? body.board! : 0;
+
+      const accepted = await Promise.all(named.map(async (lead, i) => {
+        const id = `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`;
+        const record = {
+          id,
+          board,
+          receivedAt: Date.now(),
+          name: str(lead.name),
+          role: str(lead.role),
+          company: str(lead.company),
+          email: str(lead.email),
+          phone: str(lead.phone),
+          linkedin: str(lead.linkedin),
+          website: str(lead.website),
+          notes: str(lead.notes),
+        };
+        await env.BUCKET.put(`inbox/${hash}/${id}.json`, JSON.stringify(record), {
+          httpMetadata: { contentType: 'application/json' },
+        });
+        return record.name;
+      }));
+
+      return json({ accepted: accepted.length, names: accepted, project });
+    }
+
     const password = request.headers.get('X-Sync-Password');
 
     if (!password || password.length < 4) {
@@ -123,6 +253,30 @@ export default {
     // Simple hash for filename - not crypto secure but prevents guessing
     const hash = await simpleHash(password);
     const filename = `levitate-${hash}.json`;
+
+    // Pending agent leads for this project
+    if (url.pathname === '/api/inbox' && request.method === 'GET') {
+      const listed = await env.BUCKET.list({ prefix: `inbox/${hash}/`, limit: 200 });
+      const leads = await Promise.all(listed.objects.map(async obj => {
+        try {
+          const o = await env.BUCKET.get(obj.key);
+          return o ? { key: obj.key, lead: await o.json() } : null;
+        } catch { return null; }
+      }));
+      return json({ leads: leads.filter(Boolean) });
+    }
+
+    // The app calls this once it has merged them in
+    if (url.pathname === '/api/inbox/ack' && request.method === 'POST') {
+      let keys: string[] = [];
+      try {
+        const b = await request.json() as { keys?: string[] };
+        keys = Array.isArray(b.keys) ? b.keys : [];
+      } catch { /* empty ack is a no-op */ }
+      const mine = keys.filter(k => typeof k === 'string' && k.startsWith(`inbox/${hash}/`));
+      await Promise.all(mine.map(k => env.BUCKET.delete(k)));
+      return json({ deleted: mine.length });
+    }
 
     if (request.method === 'GET') {
       // Load data
@@ -152,6 +306,7 @@ export default {
             'Content-Type': 'application/json',
             'x-api-key': env.ANTHROPIC_API_KEY,
             'anthropic-version': '2023-06-01',
+            'anthropic-beta': 'web-search-2025-03-05',
           },
           body: JSON.stringify({
             model: 'claude-haiku-4-5-20251001',
@@ -466,10 +621,113 @@ Start your response with [ and end with ]`,
   },
 };
 
+interface LeadInput {
+  name?: string;
+  role?: string;
+  company?: string;
+  email?: string;
+  phone?: string;
+  linkedin?: string;
+  website?: string;
+  notes?: string;
+}
+
+function str(v: unknown): string {
+  return typeof v === 'string' ? v.trim().slice(0, 500) : '';
+}
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+  });
+}
+
 async function simpleHash(str: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(str);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/* OpenAPI 3.1 schema, imported by the ChatGPT Action builder via URL. */
+function openApiSchema(origin: string) {
+  const lead = {
+    type: 'object',
+    required: ['name'],
+    properties: {
+      name: { type: 'string', description: "The person's full name. The only required field." },
+      company: { type: 'string', description: 'Company they work for. Core field - always try to fill this.' },
+      role: { type: 'string', description: 'Job title, e.g. Director, Chartered Accountant. Core field - always try to fill this.' },
+      email: { type: 'string', description: 'Email address. Core field. Only include one you actually saw in a source; never guess or construct it from a pattern.' },
+      phone: {
+        type: 'string',
+        description: 'Phone number. Core field. A New Zealand mobile is strongly preferred - these start 02 or +642. If you only have a landline or switchboard number, send it anyway but say so in notes.',
+      },
+      linkedin: {
+        type: 'string',
+        description: "LinkedIn profile URL. Core field. If you cannot find the real profile URL, do not leave it blank and do not guess a slug - send a Google search link instead, in the form https://www.google.com/search?q=NAME+COMPANY+linkedin with spaces as + signs. That gives Ben a clickable way to find them.",
+      },
+      website: { type: 'string', description: 'Company or personal website.' },
+      notes: { type: 'string', description: 'Any context worth keeping: where they came from, why they matter, and any caveats about the contact details (e.g. landline not mobile, LinkedIn is a search link).' },
+    },
+  };
+
+  return {
+    openapi: '3.1.0',
+    info: {
+      title: 'Stiki Leads',
+      description: 'Send leads to a Stiki board. Core fields Ben wants for every lead: name, company, role, email, phone (NZ mobile preferred), and a LinkedIn URL or Google search link.',
+      version: '1.0.0',
+    },
+    servers: [{ url: origin }],
+    paths: {
+      '/api/leads': {
+        post: {
+          operationId: 'addLeads',
+          summary: 'Add one or more leads to a Stiki project board.',
+          description: 'Creates a lead card per person. They appear on the board next time Stiki is open.',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['project', 'leads'],
+                  properties: {
+                    project: { type: 'string', description: 'The Stiki project name to file these under.' },
+                    board: {
+                      type: 'integer', minimum: 0, maximum: 5, default: 0,
+                      description: 'Which board: 0 Orange, 1 Yellow, 2 Green, 3 Blue, 4 Indigo, 5 Violet. Defaults to 0.',
+                    },
+                    leads: { type: 'array', minItems: 1, maxItems: 50, items: lead },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            '200': {
+              description: 'Leads accepted.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      accepted: { type: 'integer' },
+                      names: { type: 'array', items: { type: 'string' } },
+                      project: { type: 'string' },
+                    },
+                  },
+                },
+              },
+            },
+            '400': { description: 'Bad request.' },
+            '401': { description: 'Bad or missing token.' },
+          },
+        },
+      },
+    },
+  };
 }

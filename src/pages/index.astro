@@ -30,6 +30,13 @@
     <div id="whiteboard">
       <!-- Top-right toolbar -->
       <div id="toolbar">
+        <div id="mode-toggle">
+          <button class="mode-btn mode-icon" data-mode="list" title="List" aria-label="List view">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+          </button>
+          <button class="mode-btn" data-mode="goals">Goals</button>
+          <button class="mode-btn active" data-mode="tasks">Tasks</button>
+        </div>
         <div id="project-badge" title="Current project">No project</div>
         <div id="sync-indicator" title="Cloud sync">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
@@ -66,6 +73,17 @@
       <div id="board-4" class="board" data-q="4"></div>
       <div id="board-5" class="board" data-q="5"></div>
 
+      <!-- List View -->
+      <div id="list-view">
+        <div id="list-inner"></div>
+      </div>
+
+      <!-- Goals View -->
+      <div id="goals-view">
+        <div id="goals-head"><span id="goals-count"></span></div>
+        <div id="goals-grid"></div>
+      </div>
+
       <!-- Minimap -->
       <div id="minimap">
         <button class="quadrant-btn" data-q="0" title="Orange (O)"></button>
@@ -87,12 +105,33 @@
         <button id="arrow-mode-btn" class="arrow-mode-btn">🔗 Draw Arrow</button>
       </div>
 
+      <!-- Prop Image Modal -->
+      <div id="prop-image-modal" class="modal">
+        <div class="modal-content prop-image-modal-content">
+          <div class="modal-header">
+            <h2>Screen Image</h2>
+            <button class="modal-close">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div id="prop-image-preview" class="prop-image-preview">
+              <span class="preview-placeholder">No image</span>
+            </div>
+            <div class="prop-image-actions">
+              <button id="prop-image-upload-btn" class="primary">Upload Image</button>
+              <button id="prop-image-clear-btn" class="secondary">Clear</button>
+            </div>
+            <input type="file" id="prop-image-upload" accept="image/*" style="display: none">
+          </div>
+        </div>
+      </div>
+
       <!-- Keyboard hints -->
       <div id="hints">
         <span><kbd>O</kbd><kbd>Y</kbd><kbd>G</kbd><kbd>B</kbd><kbd>I</kbd><kbd>V</kbd> boards</span>
         <span><kbd>N</kbd> new</span>
         <span><kbd>X</kbd> lead</span>
         <span><kbd>P</kbd> props</span>
+        <span><kbd>Tab</kbd> goals</span>
       </div>
     </div>
 
@@ -265,6 +304,7 @@ Best regards"></textarea>
               <button class="board-opt" data-q="4" style="background: #c7d2fe" title="Indigo"></button>
               <button class="board-opt" data-q="5" style="background: #ddd6fe" title="Violet"></button>
             </div>
+            <select id="detail-goal" class="detail-goal-select" title="Link this task to a goal"></select>
             <button id="detail-save" class="header-btn primary" title="Save">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
             </button>
@@ -326,93 +366,66 @@ Best regards"></textarea>
 
           <!-- Lead View (for lead cards) -->
           <div class="detail-lead-view" id="detail-lead-view">
-          <div class="detail-two-col">
-            <!-- Left Column: Profile Card -->
-            <div class="detail-left-col">
-              <!-- Profile Card - Centered -->
-              <div class="profile-card-centered">
-                <div class="profile-avatar-wrapper-centered">
-                  <div class="profile-avatar-ring"></div>
-                  <div class="profile-avatar" id="detail-avatar">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M12 14c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
-                  </div>
-                  <button id="detail-avatar-btn" class="avatar-edit-btn" title="Change photo">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                  </button>
-
-                  <!-- Contact Popover (appears on hover) -->
-                  <div class="contact-popover" id="contact-popover">
-                    <div class="popover-arrow"></div>
-                    <div class="popover-content">
-                      <div class="popover-row">
-                        <button class="popover-action-icon phone" id="action-phone" title="Call">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
-                        </button>
-                        <input type="tel" id="detail-phone" placeholder="Phone" class="popover-input">
-                      </div>
-                      <div class="popover-row">
-                        <button class="popover-action-icon email" id="action-email" title="Send email">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                        </button>
-                        <input type="email" id="detail-email" placeholder="Email" class="popover-input">
-                      </div>
-                      <div class="popover-row">
-                        <button class="popover-action-icon linkedin" id="action-linkedin" title="Open LinkedIn">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                        </button>
-                        <input type="url" id="detail-linkedin" placeholder="LinkedIn URL" class="popover-input">
-                      </div>
-                      <div class="popover-row">
-                        <button class="popover-action-icon website" id="action-website" title="Open website">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-                        </button>
-                        <input type="url" id="detail-website" placeholder="Website" class="popover-input">
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="profile-info-stack">
-                  <input type="text" id="detail-name" class="profile-name-centered" placeholder="Name">
-                  <input type="text" id="detail-role" class="profile-role-centered" placeholder="Role">
-                  <input type="text" id="detail-company" class="profile-company-centered" placeholder="Company">
-                </div>
-
-                <div class="profile-hint">Hover avatar for contact details</div>
+          <!-- Identity: large portrait top-left, everything else to its right -->
+          <div class="lead-top">
+            <div class="lead-portrait-wrap">
+              <div class="profile-avatar" id="detail-avatar">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M12 14c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
               </div>
+              <div class="profile-avatar-ring"></div>
+              <button id="detail-avatar-btn" class="avatar-edit-btn" title="Change photo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <span>Change photo</span>
+              </button>
             </div>
 
-            <!-- Right Column: History + Add Activity -->
-            <div class="detail-right-col">
-              <label>History</label>
-              <div id="activity-list" class="activity-thread"></div>
-
-              <!-- Add Activity (trails after history) -->
-              <div class="activity-input-section">
-                <div class="activity-type-btns">
-                  <button class="activity-type-btn" data-type="call" title="Log call">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-                  </button>
-                  <button class="activity-type-btn" data-type="email" title="Log email">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7"/></svg>
-                  </button>
-                  <button class="activity-type-btn" data-type="meeting" title="Log meeting">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-                  </button>
-                  <button class="activity-type-btn" data-type="linkedin" title="Log LinkedIn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                  </button>
-                  <button class="activity-type-btn" data-type="web" title="Log web research">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-                  </button>
-                </div>
-                <div id="activity-input" class="activity-input">
-                  <input type="text" id="activity-text" placeholder="Add activity...">
-                  <button id="activity-add" class="btn-small primary">Add</button>
-                </div>
+            <div class="lead-info">
+              <div class="lead-identity">
+                <input type="text" id="detail-name" class="lead-name" placeholder="Name">
+                <input type="text" id="detail-role" class="lead-role" placeholder="Role">
+                <input type="text" id="detail-company" class="lead-company" placeholder="Company">
+              </div>
+              <div class="lead-contacts">
+            <div class="lead-contact-row">
+              <button class="popover-action-icon phone" id="action-phone" title="Call"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></button>
+              <input type="tel" id="detail-phone" placeholder="Phone" class="popover-input">
+            </div>
+            <div class="lead-contact-row">
+              <button class="popover-action-icon email" id="action-email" title="Send email"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></button>
+              <input type="email" id="detail-email" placeholder="Email" class="popover-input">
+            </div>
+            <div class="lead-contact-row">
+              <button class="popover-action-icon linkedin" id="action-linkedin" title="Open LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></button>
+              <input type="url" id="detail-linkedin" placeholder="LinkedIn URL" class="popover-input">
+            </div>
+            <div class="lead-contact-row">
+              <button class="popover-action-icon website" id="action-website" title="Open website"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></button>
+              <input type="url" id="detail-website" placeholder="Website" class="popover-input">
+            </div>
               </div>
             </div>
           </div>
+
+          <!-- Toolbar: log an activity -->
+          <div class="lead-toolbar">
+            <div class="activity-type-btns">
+            <button class="activity-type-btn" data-type="call" title="Log call"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></button>
+            <button class="activity-type-btn" data-type="email" title="Log email"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7"/></svg></button>
+            <button class="activity-type-btn" data-type="meeting" title="Log meeting"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></button>
+            <button class="activity-type-btn" data-type="linkedin" title="Log LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></button>
+            <button class="activity-type-btn" data-type="web" title="Log web research"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></button>
+            </div>
+            <div id="activity-input" class="activity-input">
+              <input type="text" id="activity-text" placeholder="Add activity...">
+              <button id="activity-add" class="btn-small primary">Add</button>
+            </div>
+          </div>
+
+          <!-- History -->
+          <div class="lead-history">
+            <div id="activity-list" class="activity-thread"></div>
+          </div>
+
           </div><!-- end detail-lead-view -->
         </div>
       </div>
@@ -498,7 +511,10 @@ body {
 /* App */
 #app { display: none; height: 100vh; width: 100vw; }
 #app.visible { display: block; }
-#whiteboard { position: relative; height: 100%; width: 100%; }
+/* isolate: gives the board its own stacking context, so note z-indexes
+   (which grow unbounded, and hit 9999 while dragging) can never rise
+   above a modal, which is a sibling of #whiteboard rather than a child */
+#whiteboard { position: relative; height: 100%; width: 100%; isolation: isolate; z-index: 0; }
 
 /* Toolbar */
 #toolbar {
@@ -808,6 +824,9 @@ body {
   position: absolute;
   cursor: move;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  touch-action: none;
 }
 .device-prop.selected {
   outline: 2px solid #3b82f6;
@@ -957,6 +976,15 @@ body.arrow-mode .device-prop .arrow-anchor {
 .arrow-anchor.right:hover { transform: translateY(-50%) scale(1.2); }
 .arrow-anchor.bottom:hover { transform: translateX(-50%) scale(1.2); }
 .arrow-anchor.left:hover { transform: translateY(-50%) scale(1.2); }
+.arrow-anchor.active {
+  background: #3b82f6;
+  transform: scale(1.3);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+.arrow-anchor.top.active { transform: translateX(-50%) scale(1.3); }
+.arrow-anchor.right.active { transform: translateY(-50%) scale(1.3); }
+.arrow-anchor.bottom.active { transform: translateX(-50%) scale(1.3); }
+.arrow-anchor.left.active { transform: translateY(-50%) scale(1.3); }
 
 /* SVG Arrow layer */
 .arrow-layer {
@@ -967,6 +995,7 @@ body.arrow-mode .device-prop .arrow-anchor {
   height: 100%;
   pointer-events: none;
   z-index: 5;
+  background: transparent !important;
 }
 .arrow-layer path {
   fill: none;
@@ -1014,6 +1043,70 @@ body.arrow-mode .device-prop {
   display: flex;
 }
 
+/* Device screen image */
+.device-screen {
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.device-screen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Prop Image Modal */
+.prop-image-modal-content {
+  max-width: 400px;
+}
+.prop-image-preview {
+  width: 100%;
+  height: 200px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.prop-image-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.preview-placeholder {
+  color: #9ca3af;
+  font-size: 14px;
+}
+.prop-image-actions {
+  display: flex;
+  gap: 8px;
+}
+.prop-image-actions button {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+}
+.prop-image-actions .primary {
+  background: #3b82f6;
+  color: white;
+}
+.prop-image-actions .primary:hover {
+  background: #2563eb;
+}
+.prop-image-actions .secondary {
+  background: #e5e7eb;
+  color: #374151;
+}
+.prop-image-actions .secondary:hover {
+  background: #d1d5db;
+}
+
 /* Minimap */
 #minimap {
   position: fixed;
@@ -1038,6 +1131,7 @@ body.arrow-mode .device-prop {
   cursor: pointer;
   transition: all 0.15s;
   position: relative;
+  overflow: hidden;   /* dots stay inside their own board, whatever the maths says */
 }
 .quadrant-btn:hover { filter: brightness(0.95); }
 .quadrant-btn.active { box-shadow: inset 0 0 0 2px rgba(0,0,0,0.2); }
@@ -1092,6 +1186,8 @@ body.arrow-mode .device-prop {
   transition: box-shadow 0.15s;
 }
 .sticky-note:hover { box-shadow: 3px 5px 16px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.08); }
+.sticky-note-content { cursor: inherit; }
+.sticky-note-content.on-glyph { cursor: text; }
 .sticky-note.dragging { cursor: grabbing; box-shadow: 6px 10px 24px rgba(0,0,0,0.18); z-index: 9999 !important; }
 .sticky-note.editing { cursor: text; }
 .sticky-note.selected { box-shadow: 0 0 0 3px white, 3px 5px 16px rgba(0,0,0,0.15); }
@@ -1320,7 +1416,7 @@ body.multi-select-mode .sticky-note:hover {
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 4000;
   padding: 20px;
 }
 .modal.visible { display: flex; }
@@ -1952,20 +2048,21 @@ body.multi-select-mode .sticky-note:hover {
 }
 
 /* Detail Modal - Two Column Layout */
-.detail-content { max-width: 900px; }
-/* Note vs Lead view toggle */
-.detail-note-view { display: none; }
-.detail-lead-view { display: block; }
-.modal.note-mode .detail-note-view { display: grid; }
-.modal.note-mode .detail-lead-view { display: none; }
-
-/* Note View - Two Column Layout */
+.detail-content { max-width: 980px; }
+/* Note vs Lead view toggle.
+   The layout below used to live in a second .detail-note-view rule, which
+   re-set display:grid at equal specificity and so beat the display:none -
+   leaving the note view rendered on leads as well. Layout and visibility
+   now live in one rule, and only .note-mode reveals it. */
 .detail-note-view {
-  display: grid;
+  display: none;
   grid-template-columns: 1fr 280px;
   gap: 24px;
   min-height: 400px;
 }
+.detail-lead-view { display: block; }
+.modal.note-mode .detail-note-view { display: grid; }
+.modal.note-mode .detail-lead-view { display: none; }
 .note-main-area {
   display: flex;
   flex-direction: column;
@@ -2244,301 +2341,272 @@ body.multi-select-mode .sticky-note:hover {
   }
 }
 
-.detail-two-col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-}
-.detail-left-col {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.detail-right-col {
-  display: flex;
-  flex-direction: column;
-}
-.detail-right-col > label {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  color: #9ca3af;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 10px;
-}
+
 .detail-layout { display: flex; gap: 16px; flex-wrap: wrap; }
-/* Profile Card */
-/* Profile Card - Centered Design */
-.profile-card-centered {
+/* ============ LEAD PROFILE ============ */
+
+/* ---- Top block: large portrait left, everything else right ---- */
+.lead-top {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 20px;
-  height: 100%;
+  align-items: flex-start;
+  gap: 26px;
 }
-.profile-avatar-wrapper-centered {
+
+.lead-portrait-wrap {
   position: relative;
-  margin-bottom: 24px;
+  flex: none;
+  width: 208px;
+  height: 208px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #f1efec;
+  box-shadow: 0 1px 2px rgba(18,16,14,0.06), 0 14px 30px -20px rgba(18,16,14,0.5);
 }
-.profile-avatar-ring {
+.lead-portrait-wrap .profile-avatar {
   position: absolute;
-  inset: -6px;
-  border-radius: 50%;
-  background: var(--board-color, #c7d2fe);
-  opacity: 0.5;
-  animation: ring-pulse 3s ease-in-out infinite;
-  filter: blur(1px);
-}
-@keyframes ring-pulse {
-  0%, 100% { opacity: 0.35; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.03); }
-}
-.profile-avatar {
-  position: relative;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: linear-gradient(145deg, #f8fafc 0%, #e2e8f0 100%);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: linear-gradient(160deg, #f6f5f3 0%, #e7e5e0 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  border: 4px solid white;
-  box-shadow:
-    0 10px 40px rgba(0,0,0,0.12),
-    0 4px 12px rgba(0,0,0,0.08),
-    inset 0 -2px 6px rgba(0,0,0,0.04);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
+  cursor: zoom-in;
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.3, 1);
 }
-.profile-avatar:hover {
-  transform: scale(1.05);
-  box-shadow:
-    0 14px 48px rgba(0,0,0,0.18),
-    0 6px 16px rgba(0,0,0,0.12),
-    inset 0 -2px 6px rgba(0,0,0,0.04);
-}
-.profile-avatar svg {
-  width: 56px;
-  height: 56px;
-  color: #cbd5e1;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-}
-.profile-avatar img {
+.lead-portrait-wrap:hover .profile-avatar { transform: scale(1.03); }
+.lead-portrait-wrap .profile-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s ease;
+  display: block;
 }
-.profile-avatar:hover img {
-  transform: scale(1.08);
-}
-.avatar-edit-btn {
-  position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 32px;
-  height: 32px;
-  background: white;
-  border: 2px solid #f3f4f6;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #6b7280;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  transition: all 0.2s;
-  z-index: 5;
-}
-.avatar-edit-btn:hover {
-  background: #3b82f6;
-  border-color: #3b82f6;
-  color: white;
-  transform: scale(1.1);
-}
+.lead-portrait-wrap .profile-avatar > svg { width: 52px; height: 52px; color: #d2cec8; }
 
-/* Contact Popover */
-.contact-popover {
+/* board colour, as a spine down the left edge */
+.lead-portrait-wrap .profile-avatar-ring {
   position: absolute;
-  top: 50%;
-  left: calc(100% + 16px);
-  transform: translateY(-50%);
-  background: white;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow:
-    0 20px 50px rgba(0,0,0,0.15),
-    0 10px 20px rgba(0,0,0,0.1),
-    0 0 0 1px rgba(0,0,0,0.05);
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 100;
-  min-width: 220px;
-}
-.profile-avatar-wrapper-centered:hover .contact-popover {
+  inset: 0 auto 0 0;
+  width: 5px;
+  height: 100%;
+  border-radius: 0;
+  background: var(--board-color, #c7d2fe);
   opacity: 1;
-  visibility: visible;
-  transform: translateY(-50%) translateX(0);
+  filter: none;
+  animation: none;
+  z-index: 3;
+  pointer-events: none;
 }
-.contact-popover:hover {
-  opacity: 1;
-  visibility: visible;
-}
-.popover-arrow {
+.lead-portrait-wrap .avatar-edit-btn {
   position: absolute;
-  left: -8px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
-  background: white;
-  border-radius: 3px;
-  transform: translateY(-50%) rotate(45deg);
-  box-shadow: -2px 2px 4px rgba(0,0,0,0.05);
-}
-.popover-content {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.popover-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.popover-action-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: auto;
+  width: auto;
+  height: 38px;
   border: none;
+  border-radius: 0;
+  background: rgba(18,16,14,0.74);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  box-shadow: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 4;
 }
-.popover-action-icon:hover {
-  transform: scale(1.1);
-  filter: brightness(0.95);
+.lead-portrait-wrap:hover .avatar-edit-btn,
+.lead-portrait-wrap .avatar-edit-btn:focus-visible { opacity: 1; transform: translateY(0); }
+
+/* ---- Identity + contacts ---- */
+.lead-info { flex: 1; min-width: 0; }
+
+.lead-identity { display: flex; flex-direction: column; gap: 1px; }
+.lead-identity input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  padding: 3px 8px;
+  margin-left: -8px;
+  outline: none;
+  transition: background 0.14s;
 }
-.popover-action-icon:active {
-  transform: scale(0.95);
+.lead-identity input:hover { background: #f4f2ef; }
+.lead-identity input:focus { background: #eeece8; }
+.lead-name { font-size: 23px; font-weight: 700; letter-spacing: -0.025em; color: #12100e; }
+.lead-name::placeholder { color: #cfcbc5; font-weight: 600; }
+.lead-role { font-size: 13.5px; font-weight: 600; color: #57534e; }
+.lead-company { font-size: 13.5px; font-weight: 500; color: #a19b93; }
+.lead-role::placeholder, .lead-company::placeholder { color: #d4d0ca; }
+
+/* two columns, so the contacts sit alongside the portrait rather than under it */
+.lead-contacts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 20px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #eae8e3;
 }
-.popover-action-icon.phone {
-  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-  color: #16a34a;
-}
-.popover-action-icon.email {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  color: #d97706;
-}
-.popover-action-icon.linkedin {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  color: #0077b5;
-}
-.popover-action-icon.website {
-  background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
-  color: #9333ea;
-}
-.popover-input {
-  flex: 1;
-  padding: 8px 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #374151;
-  background: #fafafa;
-  transition: all 0.2s;
+.lead-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   min-width: 0;
 }
-.popover-input:hover {
-  border-color: #d1d5db;
-  background: white;
+.lead-contacts .popover-action-icon {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #bdb8b1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
 }
-.popover-input:focus {
+.lead-contacts .popover-action-icon:hover { background: #f0eeea; color: #12100e; }
+.lead-contacts .popover-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
   outline: none;
-  border-color: #3b82f6;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  padding: 9px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #3f3b36;
+  transition: background 0.14s;
 }
-.popover-input::placeholder {
-  color: #9ca3af;
+.lead-contacts .popover-input:hover { background: #f6f5f2; }
+.lead-contacts .popover-input:focus { background: #f0eeea; }
+.lead-contacts .popover-input::placeholder { color: #cfcbc5; }
+
+/* ---- Toolbar: log an activity ---- */
+.lead-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 22px;
+  padding: 8px 10px;
+  background: #f3f1ee;
+  border: 1px solid #e7e4df;
+  border-radius: 11px;
 }
-/* Profile Info Stack */
-.profile-info-stack {
+.lead-toolbar .activity-type-btns {
+  display: flex;
+  gap: 2px;
+  flex: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+.lead-toolbar .activity-type-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #8f8a83;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+}
+.lead-toolbar .activity-type-btn:hover { background: #e6e3dd; color: #12100e; }
+.lead-toolbar .activity-type-btn.active { background: #12100e; color: #ffffff; }
+.lead-toolbar .activity-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+.lead-toolbar .activity-input.hidden { display: flex; }
+.lead-toolbar .activity-input input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  border: 1px solid #e2dfd9;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 13px;
+  color: #3f3b36;
+  outline: none;
+  transition: border-color 0.14s;
+}
+.lead-toolbar .activity-input input:focus { border-color: #b5b0a9; }
+.lead-toolbar .activity-input input::placeholder { color: #bdb8b1; }
+.lead-toolbar .activity-input button {
+  flex: none;
+  height: 34px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 8px;
+  background: #12100e;
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.lead-toolbar .activity-input button:hover { background: #2b2723; }
+
+/* ---- History: grows with content, scrolls only once there is a lot ---- */
+.lead-history { margin-top: 16px; }
+.lead-history .activity-thread {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-  margin-bottom: 16px;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0;
+  flex: none;
 }
-.profile-name-centered {
-  width: 100%;
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #1f2937;
-  text-align: center;
-  border: none;
+.lead-history .activity-empty {
+  padding: 22px 10px;
   background: transparent;
-  padding: 6px 12px;
-  border-radius: 8px;
-  letter-spacing: -0.02em;
-}
-.profile-name-centered:hover { background: #f9fafb; }
-.profile-name-centered:focus { outline: none; background: #f3f4f6; }
-.profile-name-centered::placeholder { color: #d1d5db; font-weight: 400; }
-
-.profile-role-centered {
-  width: 100%;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #4b5563;
+  border: 1px dashed #e7e4df;
+  border-radius: 10px;
+  color: #b5b0a9;
+  font-size: 12.5px;
   text-align: center;
-  border: none;
-  background: transparent;
-  padding: 4px 12px;
-  border-radius: 6px;
 }
-.profile-role-centered:hover { background: #f9fafb; }
-.profile-role-centered:focus { outline: none; background: #f3f4f6; }
-.profile-role-centered::placeholder { color: #d1d5db; }
 
-.profile-company-centered {
-  width: 100%;
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: #6b7280;
-  text-align: center;
-  border: none;
-  background: transparent;
-  padding: 4px 12px;
-  border-radius: 6px;
-}
-.profile-company-centered:hover { background: #f9fafb; }
-.profile-company-centered:focus { outline: none; background: #f3f4f6; }
-.profile-company-centered::placeholder { color: #d1d5db; }
-
-.profile-hint {
-  font-size: 11px;
-  color: #9ca3af;
-  margin-top: auto;
-  padding-top: 16px;
-  font-style: italic;
+@media (max-width: 820px) {
+  .lead-top { flex-direction: column; gap: 18px; }
+  .lead-portrait-wrap { width: 168px; height: 168px; }
+  .lead-contacts { grid-template-columns: 1fr; }
+  .lead-toolbar { flex-wrap: wrap; }
+  .lead-toolbar .activity-input { flex-basis: 100%; }
 }
 
 /* Avatar Lightbox */
 .avatar-lightbox {
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  z-index: 5000;  /* opens from within a modal, so it must sit above one */
   display: none;
   align-items: center;
   justify-content: center;
@@ -2803,12 +2871,6 @@ body.multi-select-mode .sticky-note:hover {
 
 /* Mobile: stack columns */
 @media (max-width: 700px) {
-  .detail-two-col {
-    grid-template-columns: 1fr;
-  }
-  .detail-right-col {
-    order: -1;
-  }
   .activity-thread {
     max-height: 200px;
   }
@@ -2837,7 +2899,598 @@ body.multi-select-mode .sticky-note:hover {
   .detail-layout { flex-direction: column; align-items: center; }
   .detail-fields-compact { width: 100%; }
   .detail-row { grid-template-columns: 1fr; }
+  #goals-head { padding: 74px 16px 0; }
+  #goals-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; padding: 14px 16px 32px; }
+  .goal-card { padding: 20px; }
+  .goal-text { font-size: 17px; }
+  .goal-foot { margin-top: 12px; }
+  .goal-stiki { width: 25px; height: 25px; }
+  .goal-stiki-n { font-size: 9px; margin: 0 7px 6px 0; }
+  #toolbar #mode-toggle .mode-btn { padding: 0 10px; font-size: 11.5px; }
+  #project-badge { display: none; }
 }
+
+/* ============ MODE TOGGLE ============ */
+#mode-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  height: 40px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-sizing: border-box;
+}
+#toolbar #mode-toggle .mode-btn {
+  width: auto;
+  height: 34px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+#toolbar #mode-toggle .mode-btn:hover { background: transparent; color: #4b5563; }
+#toolbar #mode-toggle .mode-btn.active { background: #111827; color: white; }
+#toolbar #mode-toggle .mode-icon { padding: 0 9px; display: flex; align-items: center; justify-content: center; }
+
+/* ============ LIST VIEW ============ */
+#list-view {
+  position: absolute;
+  inset: 0;
+  display: none;
+  overflow: auto;
+  background: #f6f5f3;
+}
+#list-view.active { display: block; }
+body.list-mode #minimap,
+body.list-mode #hints,
+body.list-mode #props-palette { display: none !important; }
+body.list-mode .board { display: none !important; }
+
+#list-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 84px 32px 64px;
+}
+
+.list-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.list-summary {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a8a29e;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Board filter ---- */
+.list-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.lf-chip {
+  height: 24px;
+  width: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: var(--c, #eceae5);
+  box-shadow: inset 0 0 0 1px rgba(18,16,14,0.1);
+  cursor: pointer;
+  transition: transform 0.14s, box-shadow 0.14s, opacity 0.14s, background 0.14s, color 0.14s;
+}
+.lf-chip:hover { transform: translateY(-1px); }
+.lf-chip.active {
+  box-shadow: inset 0 0 0 1px rgba(18,16,14,0.1), 0 0 0 2px #12100e;
+}
+/* a board with nothing on it stays in place so the row never reshuffles */
+.lf-chip.empty { opacity: 0.28; cursor: default; }
+.lf-chip.empty:hover { transform: none; }
+
+.lf-all {
+  width: auto;
+  padding: 0 11px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #78716c;
+  background: #eceae5;
+  box-shadow: none;
+  margin-right: 2px;
+}
+.lf-all.active { background: #12100e; color: #ffffff; box-shadow: none; }
+
+.list-section { margin-bottom: 30px; }
+
+.list-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px 9px;
+  cursor: pointer;
+  border-bottom: 1px solid #e4e2dd;
+}
+.list-head:hover h3 { color: #12100e; }
+.list-swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex: none;
+  box-shadow: inset 0 0 0 1px rgba(18,16,14,0.09);
+}
+.list-head h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #78716c;
+  transition: color 0.15s;
+}
+.list-n {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: #b5b0a9;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Rows ---- */
+.list-rows { background: #fffefb; border: 1px solid #e9e7e2; border-top: none; border-radius: 0 0 6px 6px; }
+
+.lrow {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto auto auto 46px;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 16px;
+  border-top: 1px solid #f0eeea;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.13s;
+}
+.lrow:first-child { border-top: none; }
+.lrow:hover { background: #faf9f6; }
+.lrow:focus-visible { background: #f4f2ee; box-shadow: inset 2px 0 0 #12100e; }
+
+/* Avatar / colour chip */
+.lrow-avatar { display: flex; align-items: center; justify-content: center; }
+.lrow-face {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 1px rgba(18,16,14,0.08);
+}
+.lrow-initials {
+  background: #eceae5;
+  color: #78716c;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+/* a plain stiki shows its own paper, folded like the real thing */
+.lrow-chip {
+  width: 22px;
+  height: 22px;
+  border-radius: 2px 2px 0 0;
+  display: block;
+  clip-path: polygon(0 0, 100% 0, 100% 68%, 68% 100%, 0 100%);
+  filter: drop-shadow(0.5px 1px 1px rgba(18,16,14,0.18));
+}
+
+.lrow-main { min-width: 0; }
+.lrow-primary {
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.008em;
+  color: #12100e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lrow-secondary {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #a19b93;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Contacts: live links, so they stop the row click */
+.lrow-contacts { display: flex; gap: 2px; }
+.lrow-contact {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c2bdb6;
+  transition: color 0.14s, background 0.14s;
+}
+.lrow-contact:hover { color: #12100e; background: #f0eeea; }
+
+.lrow-tags { display: flex; align-items: center; gap: 8px; }
+.lrow-goal {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 168px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8a847c;
+  background: #f2f1ed;
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lrow-goal.done { text-decoration: line-through; opacity: 0.6; }
+
+.lrow-snooze {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8a847c;
+  background: #f2f1ed;
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+.lrow-snooze.due { color: #b45309; background: #fdf3e3; }
+.lrow-snooze svg { width: 12px; height: 12px; }
+
+.lrow-counts { display: flex; gap: 8px; }
+.lrow-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #b5b0a9;
+  font-variant-numeric: tabular-nums;
+}
+
+.lrow-date {
+  font-size: 11px;
+  color: #b5b0a9;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.list-empty {
+  padding: 60px 0;
+  text-align: center;
+  color: #a8a29e;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  #list-inner { padding: 74px 14px 40px; }
+  .list-bar { gap: 10px; }
+  .lf-chip { width: 22px; height: 22px; }
+  .lrow { grid-template-columns: 32px minmax(0, 1fr) auto; gap: 10px; padding: 10px 12px; }
+  .lrow-contacts, .lrow-counts { display: none; }
+  .lrow-tags { grid-column: 2 / -1; }
+  .lrow-face { width: 30px; height: 30px; }
+}
+
+/* ============ GOALS VIEW ============ */
+#goals-view {
+  position: absolute;
+  inset: 0;
+  display: none;
+  overflow: auto;
+  background: #f6f5f3;
+}
+#goals-view.active { display: block; }
+body.goals-mode #minimap,
+body.goals-mode #new-note-fab,
+body.goals-mode #hints,
+body.goals-mode #props-palette { display: none !important; }
+body.goals-mode .board { display: none !important; }
+
+#goals-head {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 84px 40px 0;
+}
+#goals-count {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a8a29e;
+}
+
+#goals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 20px 40px 56px;
+}
+
+/* ---- The square ---- */
+.goal-card {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  background: #fffefb;
+  border: 1px solid #e9e7e2;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(18,16,14,0.04);
+  overflow: hidden;
+  transition: background 0.45s ease, border-color 0.45s ease, box-shadow 0.2s ease;
+}
+.goal-card:hover { box-shadow: 0 2px 4px rgba(18,16,14,0.05), 0 12px 24px -16px rgba(18,16,14,0.3); }
+
+.goal-text {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: none;
+  font-size: clamp(20px, 1.75vw, 29px);
+  line-height: 1.24;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  color: #12100e;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  transition: color 0.45s ease;
+}
+.goal-text::-webkit-scrollbar { display: none; }
+.goal-text:empty::before {
+  content: 'Name the goal';
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: #d4d0ca;
+}
+
+.goal-foot {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* ---- Cartoon stickies: one per board holding this goal's tasks ---- */
+.goal-stikis {
+  display: flex;
+  align-items: flex-end;
+  padding-right: 2px;
+}
+.goal-stiki {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  margin-left: -7px;
+  padding: 0;
+  border: none;
+  border-radius: 2px 2px 0 0;
+  background: var(--sc, #fef08a);
+  cursor: pointer;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  transform: rotate(var(--st, 0deg));
+  /* clip-path would clip a box-shadow, so the lift comes from a filter */
+  filter: drop-shadow(1px 1.5px 1.5px rgba(18,16,14,0.22));
+  clip-path: polygon(0 0, 100% 0, 100% 66%, 66% 100%, 0 100%);
+  transition: transform 0.18s ease, margin-left 0.18s ease, filter 0.18s ease;
+}
+.goal-stiki:first-child { margin-left: 0; }
+.goal-stikis:hover .goal-stiki { margin-left: 3px; }
+.goal-stikis:hover .goal-stiki:first-child { margin-left: 0; }
+.goal-stiki:hover {
+  transform: rotate(0deg) translateY(-3px) scale(1.12);
+  filter: drop-shadow(1px 3px 4px rgba(18,16,14,0.3));
+  z-index: 1;
+}
+/* the curled corner */
+.goal-stiki::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 34%;
+  height: 34%;
+  background: rgba(18,16,14,0.16);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+.goal-stiki-n {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(18,16,14,0.52);
+  margin: 0 9px 8px 0;
+}
+.goal-card.done .goal-stikis { opacity: 0.5; }
+
+.goal-controls { display: flex; align-items: center; gap: 6px; }
+
+/* Delete is secondary, so it stays out of the way until you need it */
+.goal-delete {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: #c8c4be;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+.goal-card:hover .goal-delete,
+.goal-card:focus-within .goal-delete { opacity: 1; }
+.goal-delete:hover { background: #f0efec; color: #57534e; }
+
+/* Completing is the primary action, so it is always visible */
+.goal-check {
+  width: 30px;
+  height: 30px;
+  border: 1.5px solid #dedad4;
+  border-radius: 50%;
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.18s, background 0.18s, color 0.18s, transform 0.18s;
+}
+.goal-check:hover { border-color: #12100e; color: #bdb9b3; transform: scale(1.06); }
+.goal-card.done .goal-check {
+  background: #12100e;
+  border-color: #12100e;
+  color: #ffffff;
+}
+
+/* ---- The cross-out ---- */
+.goal-cross {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+.goal-cross path {
+  fill: none;
+  stroke: #12100e;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  opacity: 0;
+}
+
+/*
+ * Completion is a moment, not a permanent state: the ink strikes at full
+ * weight, holds long enough to register, then settles to a faint pencil
+ * mark so the finished goal stays readable.
+ */
+.goal-card.done .goal-cross path {
+  animation:
+    goal-draw 0.36s cubic-bezier(0.2, 0.8, 0.3, 1) forwards,
+    goal-settle 0.55s ease 0.78s forwards;
+}
+.goal-card.done .goal-cross .s2 { animation-delay: 0.14s, 0.92s; }
+@keyframes goal-draw {
+  from { stroke-dashoffset: 100; opacity: 0.92; }
+  to   { stroke-dashoffset: 0;   opacity: 0.92; }
+}
+@keyframes goal-settle { to { opacity: 0.14; } }
+
+/* Already done when the page loaded: no replay, just the mark */
+.goal-card.done.settled .goal-cross path {
+  animation: none;
+  stroke-dashoffset: 0;
+  opacity: 0.14;
+}
+
+.goal-card.done { background: #f2f1ee; border-color: #e4e2dd; transition-delay: 0.72s; }
+.goal-card.done.settled { transition-delay: 0s; }
+.goal-card.done:hover { box-shadow: 0 1px 2px rgba(18,16,14,0.04); }
+.goal-card.done .goal-text { color: #8a847c; transition-delay: 0.72s; }
+.goal-card.done.settled .goal-text { transition-delay: 0s; }
+
+/* A restrained flinch: the paper takes the stroke */
+.goal-card.done:not(.settled) { animation: goal-flinch 0.4s ease-out; }
+@keyframes goal-flinch {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(0.986); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .goal-card.done { animation: none; transition-delay: 0s; }
+  .goal-card.done .goal-text { transition-delay: 0s; }
+  .goal-card.done .goal-cross path { animation: none; stroke-dashoffset: 0; opacity: 0.14; }
+}
+
+/* ---- Add a goal ---- */
+.goal-add {
+  aspect-ratio: 1 / 1;
+  border: 1px dashed #dedad4;
+  border-radius: 4px;
+  background: transparent;
+  color: #cfcbc5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.18s, color 0.18s, background 0.18s;
+}
+.goal-add:hover { border-color: #b5b0a9; color: #78716c; background: #fffefb; }
+
+/* ---- Goal marker on sticky notes: just the diamond, name on hover ---- */
+.sticky-note-meta-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.sticky-goal-chip {
+  font-size: 9px;
+  line-height: 1;
+  color: rgba(0,0,0,0.3);
+  cursor: default;
+  flex: none;
+}
+
+/* Goal select in detail header */
+.detail-goal-select {
+  height: 34px;
+  max-width: 170px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0 8px;
+  cursor: pointer;
+  outline: none;
+}
+.detail-goal-select:focus { border-color: #9ca3af; }
 </style>
 
 <script>
@@ -2944,6 +3597,7 @@ body.multi-select-mode .sticky-note:hover {
     snoozeUntil?: number;
     snoozeAction?: 'call' | 'email' | 'meeting' | 'linkedin' | 'web';
     images?: string[]; // Base64 encoded images for notes
+    goalId?: string; // Optional link to a Goal
   }
 
   interface EmailTemplate {
@@ -2971,6 +3625,7 @@ body.multi-select-mode .sticky-note:hover {
     quadrant: number;
     zIndex: number;
     createdAt: number;
+    image?: string; // Base64 encoded image for screen
   }
 
   interface Arrow {
@@ -2983,8 +3638,18 @@ body.multi-select-mode .sticky-note:hover {
     quadrant: number;
   }
 
+  interface Goal {
+    id: string;
+    text: string;
+    done: boolean;
+    createdAt: number;
+    completedAt?: number;
+  }
+
+
   interface State {
     notes: Note[];
+    goals?: Goal[];
     props?: Prop[];
     arrows?: Arrow[];
     nextZIndex: number;
@@ -3033,6 +3698,7 @@ body.multi-select-mode .sticky-note:hover {
   let resizingProp: { id: string; handle: string; startX: number; startY: number; startWidth: number; startHeight: number } | null = null;
   let draggingProp: HTMLElement | null = null;
   let propDragOffset = { x: 0, y: 0 };
+  let editingPropId: string | null = null;
 
   // Auth
   function checkAuth(): boolean {
@@ -3084,21 +3750,42 @@ body.multi-select-mode .sticky-note:hover {
     save();
   }
 
+  function emptyState(): State {
+    return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES], props: [], arrows: [], goals: [], boardLabels: [] };
+  }
+
+  /* Any blob becoming `state` goes through here. Older projects predate
+     props/arrows/goals/boardLabels, and assigning one raw leaves those
+     undefined, which breaks renderProps/renderBoardLabels downstream. */
+  function normalizeState(raw: any): State {
+    if (!raw || typeof raw !== 'object') return emptyState();
+    return {
+      ...raw,
+      notes: Array.isArray(raw.notes) ? raw.notes : [],
+      nextZIndex: typeof raw.nextZIndex === 'number' ? raw.nextZIndex : 1,
+      boardTitles: Array.isArray(raw.boardTitles) ? raw.boardTitles : [...DEFAULT_TITLES],
+      props: Array.isArray(raw.props) ? raw.props : [],
+      arrows: Array.isArray(raw.arrows) ? raw.arrows : [],
+      goals: Array.isArray(raw.goals) ? raw.goals : [],
+      boardLabels: Array.isArray(raw.boardLabels) ? raw.boardLabels : [],
+    };
+  }
+
+  /* Re-render whatever the user is actually looking at. render() only fills
+     the .board elements, and those are display:none in Goals and List mode -
+     so calling it alone leaves those views showing the previous project. */
+  function refreshView() {
+    if (viewMode === 'goals') renderGoals();
+    else if (viewMode === 'list') renderList();
+    else render();
+    updateMinimap();
+  }
+
   function load(): State {
     const data = localStorage.getItem(STORAGE_KEY);
-    if (data) {
-      try {
-        const parsed = JSON.parse(data);
-        return {
-          ...parsed,
-          boardTitles: parsed.boardTitles || [...DEFAULT_TITLES],
-          props: parsed.props || [],
-          arrows: parsed.arrows || []
-        };
-      }
-      catch { return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES], props: [], arrows: [] }; }
-    }
-    return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES], props: [], arrows: [] };
+    if (!data) return emptyState();
+    try { return normalizeState(JSON.parse(data)); }
+    catch { return emptyState(); }
   }
 
   // Sync
@@ -3514,21 +4201,23 @@ body.multi-select-mode .sticky-note:hover {
         z-index: ${prop.zIndex};
       `;
 
+      const screenContent = prop.image ? `<img src="${prop.image}" alt="Screen">` : '';
       let innerHtml = '';
       if (prop.type === 'mobile') {
         innerHtml = `
           <div class="device-screen">
+            ${screenContent}
             <div class="device-notch"></div>
           </div>
         `;
       } else if (prop.type === 'pc') {
         innerHtml = `
-          <div class="device-screen"></div>
+          <div class="device-screen">${screenContent}</div>
           <div class="device-stand"></div>
         `;
       } else if (prop.type === 'tv') {
         innerHtml = `
-          <div class="device-screen"></div>
+          <div class="device-screen">${screenContent}</div>
           <div class="device-led"></div>
         `;
       }
@@ -3571,6 +4260,7 @@ body.multi-select-mode .sticky-note:hover {
       el.querySelectorAll('.resize-handle').forEach(handle => {
         handle.addEventListener('mousedown', (e) => {
           e.stopPropagation();
+          e.preventDefault();
           const h = (handle as HTMLElement).dataset.handle!;
           resizingProp = {
             id: prop.id,
@@ -3581,7 +4271,8 @@ body.multi-select-mode .sticky-note:hover {
             startHeight: prop.height
           };
           selectedPropId = prop.id;
-          renderProps();
+          document.querySelectorAll('.device-prop.selected').forEach(p => p.classList.remove('selected'));
+          el.classList.add('selected');
         });
       });
 
@@ -3601,6 +4292,8 @@ body.multi-select-mode .sticky-note:hover {
             (e.target as HTMLElement).closest('.resize-handle') ||
             (e.target as HTMLElement).closest('.arrow-anchor')) return;
 
+        e.preventDefault(); // Prevent text selection during drag
+
         selectedPropId = prop.id;
         selectedId = null; // Deselect any sticky note
         draggingProp = el;
@@ -3609,20 +4302,16 @@ body.multi-select-mode .sticky-note:hover {
         const rect = el.getBoundingClientRect();
         propDragOffset = { x: e.clientX - rect.left, y: e.clientY - rect.top };
 
-        el.classList.add('dragging');
-        renderProps();
+        // Update visual state without re-rendering (which would destroy our reference)
+        document.querySelectorAll('.device-prop.selected').forEach(p => p.classList.remove('selected'));
+        el.classList.add('selected', 'dragging');
+        el.style.zIndex = '9999';
       });
 
-      // Double-click to edit label
+      // Double-click to open image modal
       el.addEventListener('dblclick', (e) => {
-        if (!(e.target as HTMLElement).closest('.device-label')) {
-          labelEl.focus();
-          const range = document.createRange();
-          range.selectNodeContents(labelEl);
-          const sel = window.getSelection();
-          sel?.removeAllRanges();
-          sel?.addRange(range);
-        }
+        if ((e.target as HTMLElement).closest('.device-label')) return;
+        openPropImageModal(prop.id);
       });
 
       board.appendChild(el);
@@ -3634,17 +4323,22 @@ body.multi-select-mode .sticky-note:hover {
 
   // Arrow System
   function handleAnchorClick(propId: string, anchor: 'top' | 'right' | 'bottom' | 'left') {
-    if (!arrowMode) return;
-
     if (!arrowFromProp) {
-      // First click - set source
+      // First click - set source and enter arrow mode
       arrowFromProp = { id: propId, anchor };
+      enterArrowMode();
+      // Highlight the selected anchor
+      const el = document.querySelector(`[data-id="${propId}"] .arrow-anchor.${anchor}`);
+      el?.classList.add('active');
     } else {
       // Second click - create arrow
       if (arrowFromProp.id !== propId) {
         createArrow(arrowFromProp.id, propId, arrowFromProp.anchor, anchor);
       }
+      // Clear selection
+      document.querySelectorAll('.arrow-anchor.active').forEach(a => a.classList.remove('active'));
       arrowFromProp = null;
+      exitArrowMode();
     }
   }
 
@@ -3914,7 +4608,94 @@ body.multi-select-mode .sticky-note:hover {
     }
   });
 
+  // Prop Image Modal
+  function openPropImageModal(propId: string) {
+    editingPropId = propId;
+    const prop = state.props?.find(p => p.id === propId);
+    if (!prop) return;
+
+    const modal = document.getElementById('prop-image-modal')!;
+    const preview = document.getElementById('prop-image-preview')!;
+
+    if (prop.image) {
+      preview.innerHTML = `<img src="${prop.image}" alt="Preview">`;
+    } else {
+      preview.innerHTML = '<span class="preview-placeholder">No image</span>';
+    }
+
+    modal.classList.add('visible');
+  }
+
+  function closePropImageModal() {
+    editingPropId = null;
+    document.getElementById('prop-image-modal')?.classList.remove('visible');
+  }
+
+  document.getElementById('prop-image-modal')?.querySelector('.modal-close')?.addEventListener('click', closePropImageModal);
+  document.getElementById('prop-image-modal')?.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('prop-image-modal')) closePropImageModal();
+  });
+
+  document.getElementById('prop-image-upload-btn')?.addEventListener('click', () => {
+    document.getElementById('prop-image-upload')?.click();
+  });
+
+  document.getElementById('prop-image-upload')?.addEventListener('change', (e) => {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || !editingPropId) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      updateProp(editingPropId!, { image: base64 });
+
+      // Update preview
+      const preview = document.getElementById('prop-image-preview')!;
+      preview.innerHTML = `<img src="${base64}" alt="Preview">`;
+
+      // Re-render props to show new image
+      renderProps();
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  });
+
+  document.getElementById('prop-image-clear-btn')?.addEventListener('click', () => {
+    if (!editingPropId) return;
+    updateProp(editingPropId, { image: undefined });
+
+    const preview = document.getElementById('prop-image-preview')!;
+    preview.innerHTML = '<span class="preview-placeholder">No image</span>';
+
+    renderProps();
+  });
+
   // Render
+  /*
+   * True only when (x,y) lands on an actual glyph. Range.getClientRects()
+   * returns one rect per rendered line, hugging the text rather than the
+   * whole box, so clicking past the end of a line counts as empty space.
+   * An empty note has no rects, so its whole box is treated as text -
+   * otherwise there would be no way to start typing in a new note.
+   */
+  function pointOnGlyph(el: HTMLElement, x: number, y: number): boolean {
+    if (!el) return false;
+    if (!(el.textContent || '').trim()) {
+      const b = el.getBoundingClientRect();
+      return x >= b.left && x <= b.right && y >= b.top && y <= b.bottom;
+    }
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const rects = range.getClientRects();
+    for (let i = 0; i < rects.length; i++) {
+      const r = rects[i];
+      if (!r.width || !r.height) continue;
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return true;
+    }
+    return false;
+  }
+
   function render() {
     // Create tape labels for each board
     document.querySelectorAll('.board').forEach(b => {
@@ -3992,6 +4773,9 @@ body.multi-select-mode .sticky-note:hover {
         </div>
       ` : '';
 
+      const linkedGoal = note.goalId ? (state.goals || []).find(g => g.id === note.goalId) : null;
+      const goalChipHtml = linkedGoal ? `<span class="sticky-goal-chip" title="Goal: ${escapeHtml(linkedGoal.text || 'Untitled goal')}">◆</span>` : '';
+
       el.innerHTML = `
         ${avatarHtml}
         ${snoozeBadgeHtml}
@@ -3999,7 +4783,10 @@ body.multi-select-mode .sticky-note:hover {
         ${indicatorsHtml}
         <div class="sticky-note-content" contenteditable="true">${escapeHtml(note.text)}</div>
         <div class="sticky-note-meta">
-          <span class="sticky-note-date">${formatDate(note.createdAt)}</span>
+          <span class="sticky-note-meta-left">
+            <span class="sticky-note-date">${formatDate(note.createdAt)}</span>
+            ${goalChipHtml}
+          </span>
           <div class="sticky-note-actions">
             <button class="detail-btn" title="Details">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 19h20L12 2z"/></svg>
@@ -4038,8 +4825,17 @@ body.multi-select-mode .sticky-note:hover {
       // Drag / Multi-select
       el.addEventListener('mousedown', e => {
         if ((e.target as HTMLElement).closest('.lead-avatar') ||
-            (e.target as HTMLElement).closest('button') ||
-            el.classList.contains('editing')) return;
+            (e.target as HTMLElement).closest('button')) return;
+
+        // Straight onto a letter: let the browser drop the caret there, no drag
+        if (!multiSelectMode && pointOnGlyph(content, e.clientX, e.clientY)) return;
+
+        // Anywhere else: suppress the caret, drop any edit in progress, take the card
+        e.preventDefault();
+        if (document.activeElement === content) {
+          content.blur();
+          el.classList.remove('editing');
+        }
 
         // Handle multi-select mode
         if (multiSelectMode) {
@@ -4101,16 +4897,32 @@ body.multi-select-mode .sticky-note:hover {
       });
 
       el.addEventListener('dblclick', e => {
-        if ((e.target as HTMLElement).closest('.lead-avatar')) return;
+        if ((e.target as HTMLElement).closest('.lead-avatar') ||
+            (e.target as HTMLElement).closest('button')) return;
         e.stopPropagation();
-        el.classList.add('editing');
-        content.focus();
+        e.preventDefault();
+        if (document.activeElement === content) {
+          content.blur();
+          el.classList.remove('editing');
+        }
+        window.getSelection()?.removeAllRanges();
+        openDetailModal(note.id);
+      });
+
+      // Show a text cursor only over the letters, so the two zones are legible
+      el.addEventListener('mousemove', e => {
+        if (isDragging || multiSelectMode) return;
+        const onGlyph = pointOnGlyph(content, e.clientX, e.clientY);
+        if (onGlyph !== content.classList.contains('on-glyph')) {
+          content.classList.toggle('on-glyph', onGlyph);
+        }
       });
 
       board.appendChild(el);
     });
 
     updateMinimap();
+    if (viewMode === 'list') renderList();
   }
 
   function isColorLight(color: string): boolean {
@@ -4248,6 +5060,7 @@ body.multi-select-mode .sticky-note:hover {
       noteContent.value = note.text || '';
     }
     renderNoteImages(note);
+    populateGoalSelect(note);
 
     // Populate lead view fields
     const avatar = document.getElementById('detail-avatar')!;
@@ -4422,6 +5235,8 @@ body.multi-select-mode .sticky-note:hover {
     const snoozeUntil = snoozeValue ? new Date(snoozeValue + 'T00:00:00').getTime() : undefined;
     const snoozeAction = snoozeUntil ? selectedSnoozeAction : undefined;
 
+    const goalId = ((document.getElementById('detail-goal') as HTMLSelectElement)?.value) || undefined;
+
     // Get selected board
     const quadrant = editingNoteQuadrant;
     const colors = BOARD_COLORS;
@@ -4446,6 +5261,7 @@ body.multi-select-mode .sticky-note:hover {
         name, role, company, phone, email, linkedin, website,
         activity: editingActivities,
         isLead: true,
+        goalId,
         quadrant,
         color: colors[quadrant],
         snoozeUntil,
@@ -4459,6 +5275,7 @@ body.multi-select-mode .sticky-note:hover {
         text: noteContent,
         activity: editingActivities,
         isLead: false,
+        goalId,
         quadrant,
         color: colors[quadrant],
         snoozeUntil,
@@ -4475,8 +5292,9 @@ body.multi-select-mode .sticky-note:hover {
   function updateMinimap() {
     document.querySelectorAll('.minimap-note').forEach(n => n.remove());
 
-    const mapWidth = 94;
-    const mapHeight = 52;
+    // Notional board size the dots are mapped down from
+    const BOARD_W = 1500, BOARD_H = 830;
+    const DOT_W = 4, DOT_H = 3;
     const titles = state.boardTitles || DEFAULT_TITLES;
     const keys = ['O', 'Y', 'G', 'B', 'I', 'V'];
 
@@ -4485,12 +5303,17 @@ body.multi-select-mode .sticky-note:hover {
       const btn = document.querySelector(`.quadrant-btn[data-q="${q}"]`);
       if (!btn) return;
 
+      // Scale against this button, not the whole minimap, or the dots
+      // land outside their own board frame
+      const bw = (btn as HTMLElement).clientWidth;
+      const bh = (btn as HTMLElement).clientHeight;
+      if (!bw || !bh) return;
+
       const dot = document.createElement('div');
       dot.className = 'minimap-note';
-      const scale = mapWidth / 1500;
-      const x = Math.min(note.x * scale, mapWidth - 4);
-      const y = Math.min(note.y * scale, mapHeight - 3);
-      dot.style.cssText = `left:${x}px;top:${y}px;width:4px;height:3px;`;
+      const x = Math.max(0, Math.min(note.x * (bw / BOARD_W), bw - DOT_W));
+      const y = Math.max(0, Math.min(note.y * (bh / BOARD_H), bh - DOT_H));
+      dot.style.cssText = `left:${x}px;top:${y}px;width:${DOT_W}px;height:${DOT_H}px;`;
       btn.appendChild(dot);
     });
 
@@ -4501,6 +5324,454 @@ body.multi-select-mode .sticky-note:hover {
       (btn as HTMLElement).title = `${titles[q]} (${keys[q]})`;
     });
   }
+
+  // ============ GOALS ============
+  const VIEW_MODE_KEY = 'stiki-view-mode';
+  type ViewMode = 'tasks' | 'goals' | 'list';
+  const VIEW_MODES: ViewMode[] = ['tasks', 'goals', 'list'];
+  let viewMode: ViewMode = 'tasks';
+
+  function getGoals(): Goal[] {
+    if (!state.goals) state.goals = [];
+    return state.goals;
+  }
+
+  function setViewMode(mode: ViewMode) {
+    viewMode = mode;
+    localStorage.setItem(VIEW_MODE_KEY, mode);
+    document.body.classList.toggle('goals-mode', mode === 'goals');
+    document.body.classList.toggle('list-mode', mode === 'list');
+    document.getElementById('goals-view')?.classList.toggle('active', mode === 'goals');
+    document.getElementById('list-view')?.classList.toggle('active', mode === 'list');
+    document.querySelectorAll('.mode-btn').forEach(b => {
+      b.classList.toggle('active', (b as HTMLElement).dataset.mode === mode);
+    });
+    if (mode === 'goals') renderGoals();
+    else if (mode === 'list') renderList();
+    else render();
+  }
+
+  function addGoal() {
+    const goal: Goal = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      text: '',
+      done: false,
+      createdAt: Date.now()
+    };
+    getGoals().push(goal);
+    save();
+    renderGoals();
+    const el = document.querySelector(`.goal-card[data-id="${goal.id}"] .goal-text`) as HTMLElement;
+    el?.focus();
+  }
+
+  function toggleGoal(id: string) {
+    const goal = getGoals().find(g => g.id === id);
+    if (!goal) return;
+    goal.done = !goal.done;
+    goal.completedAt = goal.done ? Date.now() : undefined;
+
+    const card = document.querySelector(`.goal-card[data-id="${id}"]`) as HTMLElement;
+    if (card) {
+      card.classList.remove('settled');   // let the strike play
+      card.classList.toggle('done', goal.done);
+      const btn = card.querySelector('.goal-check') as HTMLElement;
+      if (btn) btn.title = goal.done ? 'Reopen' : 'Mark complete';
+      const count = document.getElementById('goals-count');
+      const goals = getGoals();
+      if (count) count.textContent = `${goals.filter(g => g.done).length} of ${goals.length} complete`;
+    }
+    save();
+  }
+
+
+
+  function deleteGoal(id: string) {
+    state.goals = getGoals().filter(g => g.id !== id);
+    // Unlink any tasks pointing at this goal
+    state.notes.forEach(n => { if (n.goalId === id) delete n.goalId; });
+    save();
+    renderGoals();
+  }
+
+  function renderGoals() {
+    const grid = document.getElementById('goals-grid');
+    const count = document.getElementById('goals-count');
+    if (!grid) return;
+    const goals = getGoals();
+
+    if (count) {
+      const done = goals.filter(g => g.done).length;
+      count.textContent = goals.length ? `${done} of ${goals.length} complete` : '';
+    }
+
+    const titles = state.boardTitles || DEFAULT_TITLES;
+
+    grid.innerHTML = goals.map(g => {
+      // One mini sticky per board that actually holds tasks for this goal
+      const perBoard = new Map<number, number>();
+      state.notes.forEach(n => {
+        if (n.goalId !== g.id) return;
+        const q = n.quadrant ?? 0;
+        perBoard.set(q, (perBoard.get(q) || 0) + 1);
+      });
+      const boardsHtml = perBoard.size ? `<div class="goal-stikis">` + [...perBoard.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([q, n], idx) => `<button class="goal-stiki" data-goal-board="${g.id}:${q}"
+            style="--sc:${BOARD_COLORS[q]}; --st:${idx % 2 ? 4 : -5}deg"
+            title="${n} task${n === 1 ? '' : 's'} on ${escapeHtml(titles[q] || DEFAULT_TITLES[q])}"
+            aria-label="${n} task${n === 1 ? '' : 's'} on ${escapeHtml(titles[q] || DEFAULT_TITLES[q])}"
+          ><span class="goal-stiki-n">${n}</span></button>`).join('') + `</div>` : '';
+
+      return `
+        <div class="goal-card ${g.done ? 'done settled' : ''}" data-id="${g.id}">
+          <div class="goal-text" contenteditable="true" spellcheck="false">${escapeHtml(g.text)}</div>
+          <div class="goal-foot">
+            <div class="goal-controls">
+              <button class="goal-check" title="${g.done ? 'Reopen' : 'Mark complete'}" aria-label="Mark complete">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+              <button class="goal-delete" title="Delete goal" aria-label="Delete goal">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            ${boardsHtml}
+          </div>
+          <svg class="goal-cross" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path class="s1" d="M -6 -5 C 30 28, 64 62, 106 105" pathLength="100"/>
+            <path class="s2" d="M 106 -5 C 68 30, 32 64, -6 105" pathLength="100"/>
+          </svg>
+        </div>`;
+    }).join('') + `
+      <button class="goal-add" title="New goal" aria-label="New goal">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>`;
+
+    grid.querySelector('.goal-add')?.addEventListener('click', addGoal);
+
+    grid.querySelectorAll('.goal-card').forEach(card => {
+      const id = (card as HTMLElement).dataset.id!;
+
+      const text = card.querySelector('.goal-text') as HTMLElement;
+      text.addEventListener('blur', () => {
+        const goal = getGoals().find(g => g.id === id);
+        if (!goal) return;
+        const val = (text.innerText || '').trim();
+        if (goal.text !== val) { goal.text = val; save(); }
+      });
+      text.addEventListener('keydown', (e) => {
+        if ((e as KeyboardEvent).key === 'Escape') text.blur();
+      });
+
+      card.querySelector('.goal-check')?.addEventListener('click', () => toggleGoal(id));
+      card.querySelector('.goal-delete')?.addEventListener('click', () => {
+        const goal = getGoals().find(g => g.id === id);
+        const label = goal?.text ? `"${goal.text.split('\n')[0]}"` : 'this goal';
+        if (confirm(`Delete ${label}?`)) deleteGoal(id);
+      });
+    });
+
+    // Jump straight to that goal's tasks on that board
+    grid.querySelectorAll('[data-goal-board]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const [goalId, qs] = ((btn as HTMLElement).dataset.goalBoard || '').split(':');
+        const q = parseInt(qs, 10);
+        const first = state.notes.find(n => n.goalId === goalId && (n.quadrant ?? 0) === q);
+        if (!first) return;
+        setViewMode('tasks');
+        switchQuadrant(q);
+        setTimeout(() => {
+          const el = document.querySelector(`.sticky-note[data-id="${first.id}"]`) as HTMLElement;
+          el?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+          el?.classList.add('selected');
+        }, 60);
+      });
+    });
+  }
+
+  // ============ AGENT LEAD INBOX ============
+  /*
+   * Leads posted by the ChatGPT action land in a server-side inbox rather
+   * than the project blob, because syncToCloud() PUTs that blob wholesale
+   * and any open tab would overwrite them. We pull them in here, then ack
+   * so the server can drop them. Note ids are derived from the inbox id,
+   * so a failed ack replays harmlessly instead of duplicating.
+   */
+  async function drainLeadInbox() {
+    const pw = getSyncPassword();
+    if (!pw) return;
+
+    let payload: { leads?: { key: string; lead: any }[] };
+    try {
+      const res = await fetch(`${WORKER_URL}/api/inbox`, { headers: { 'X-Sync-Password': pw } });
+      if (!res.ok) return;
+      payload = await res.json();
+    } catch { return; }
+
+    const items = payload.leads || [];
+    if (!items.length) return;
+
+    const keys: string[] = [];
+    let added = 0;
+
+    items.forEach(item => {
+      const l = item.lead || {};
+      keys.push(item.key);
+
+      const id = `agent-${l.id}`;
+      if (state.notes.some(n => n.id === id)) return;   // already merged
+
+      const q = Number.isInteger(l.board) && l.board >= 0 && l.board <= 5 ? l.board : 0;
+
+      // lay them out in a grid so they never land on top of each other
+      const onBoard = state.notes.filter(n => (n.quadrant ?? 0) === q).length + added;
+      const col = onBoard % 5;
+      const row = Math.floor(onBoard / 5);
+
+      const text = [l.name, l.role, l.company].filter(Boolean).join('\n');
+
+      const note: Note = {
+        id,
+        text,
+        color: BOARD_COLORS[q],
+        x: 40 + col * 200,
+        y: 80 + row * 175,
+        rotation: (Math.random() - 0.5) * 6,
+        createdAt: l.receivedAt || Date.now(),
+        updatedAt: Date.now(),
+        zIndex: state.nextZIndex++,
+        isLead: true,
+        quadrant: q,
+        name: l.name || '',
+        role: l.role || '',
+        company: l.company || '',
+        phone: l.phone || '',
+        email: l.email || '',
+        linkedin: l.linkedin || '',
+        website: l.website || '',
+        notes: l.notes || '',
+        activity: [{
+          id: `act-${l.id}`,
+          timestamp: l.receivedAt || Date.now(),
+          type: 'note',
+          text: l.notes ? `From agent: ${l.notes}` : 'Added by agent',
+        }],
+      };
+
+      state.notes.push(note);
+      added++;
+    });
+
+    if (added) {
+      save();
+      if (viewMode === 'tasks') render();
+      else if (viewMode === 'list') renderList();
+      else if (viewMode === 'goals') renderGoals();
+      updateMinimap();
+      console.log(`[stiki] merged ${added} lead(s) from the agent inbox`);
+    }
+
+    // Clear the server copy either way; anything we skipped was already merged
+    try {
+      await fetch(`${WORKER_URL}/api/inbox/ack`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Sync-Password': pw },
+        body: JSON.stringify({ keys }),
+      });
+    } catch { /* it will simply replay next time */ }
+  }
+
+  // ============ LIST VIEW ============
+  const LIST_FILTER_KEY = 'stiki-list-filter';
+  let listFilter: number | null = (() => {
+    const v = localStorage.getItem(LIST_FILTER_KEY);
+    const n = v === null ? NaN : parseInt(v, 10);
+    return n >= 0 && n <= 5 ? n : null;
+  })();
+
+  function setListFilter(q: number | null) {
+    listFilter = q;
+    if (q === null) localStorage.removeItem(LIST_FILTER_KEY);
+    else localStorage.setItem(LIST_FILTER_KEY, String(q));
+    renderList();
+  }
+
+  const CONTACT_LINKS: { key: keyof Note; href: (v: string) => string; label: string; icon: string }[] = [
+    { key: 'email', label: 'Email', href: v => `mailto:${v}`,
+      icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 01-2.06 0L2 7"/></svg>' },
+    { key: 'phone', label: 'Call', href: v => `tel:${v.replace(/\s+/g, '')}`,
+      icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>' },
+    { key: 'linkedin', label: 'LinkedIn', href: v => v.startsWith('http') ? v : `https://${v}`,
+      icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M20.4 20.5h-3.6v-5.6c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.9v5.7H9.4V9h3.4v1.6h.05c.5-.9 1.6-1.9 3.4-1.9 3.6 0 4.3 2.4 4.3 5.5v6.3zM5.3 7.4a2.1 2.1 0 110-4.2 2.1 2.1 0 010 4.2zM7.1 20.5H3.6V9h3.5v11.5z"/></svg>' },
+    { key: 'website', label: 'Website', href: v => v.startsWith('http') ? v : `https://${v}`,
+      icon: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>' },
+  ];
+
+  function initials(name: string): string {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return '?';
+    return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+  }
+
+  function listRowHtml(note: Note, goals: Goal[]): string {
+    const lines = (note.text || '').split('\n').map(l => l.trim()).filter(Boolean);
+    const primary = note.isLead ? (note.name || lines[0] || 'Unnamed lead') : (lines[0] || 'Untitled');
+    const secondary = note.isLead
+      ? [note.role, note.company].filter(Boolean).join(' · ')
+      : lines.slice(1).join(' · ');
+
+    // Leads keep their face; a plain stiki shows its own paper colour
+    const avatar = note.isLead
+      ? (note.avatar
+          ? `<img class="lrow-face" src="${note.avatar}" alt="">`
+          : `<span class="lrow-face lrow-initials">${escapeHtml(initials(primary))}</span>`)
+      : `<span class="lrow-chip" style="background:${note.color}"></span>`;
+
+    const contacts = note.isLead ? CONTACT_LINKS
+      .filter(c => note[c.key])
+      .map(c => `<a class="lrow-contact" href="${escapeHtml(c.href(String(note[c.key])))}" target="_blank" rel="noopener" title="${c.label}" data-stop>${c.icon}</a>`)
+      .join('') : '';
+
+    const goal = note.goalId ? goals.find(g => g.id === note.goalId) : null;
+    const goalHtml = goal
+      ? `<span class="lrow-goal ${goal.done ? 'done' : ''}" title="Goal: ${escapeHtml(goal.text || 'Untitled goal')}">◆ ${escapeHtml((goal.text || 'Untitled goal').split('\n')[0])}</span>`
+      : '';
+
+    const acts = note.activity?.length || 0;
+    const imgs = note.images?.length || 0;
+    const counts = [
+      imgs ? `<span class="lrow-count" title="${imgs} image${imgs === 1 ? '' : 's'}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>${imgs}</span>` : '',
+      acts ? `<span class="lrow-count" title="${acts} activit${acts === 1 ? 'y' : 'ies'}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>${acts}</span>` : '',
+    ].join('');
+
+    const snooze = note.snoozeUntil
+      ? `<span class="lrow-snooze ${note.snoozeUntil <= Date.now() ? 'due' : ''}" title="${note.snoozeAction ? note.snoozeAction : 'Snoozed'} on ${new Date(note.snoozeUntil).toLocaleDateString()}">${note.snoozeAction ? ACTIVITY_ICONS[note.snoozeAction] : ''}${formatDate(note.snoozeUntil)}</span>`
+      : '';
+
+    return `
+      <div class="lrow" data-id="${note.id}" role="button" tabindex="0">
+        <div class="lrow-avatar">${avatar}</div>
+        <div class="lrow-main">
+          <div class="lrow-primary">${escapeHtml(primary)}</div>
+          ${secondary ? `<div class="lrow-secondary">${escapeHtml(secondary)}</div>` : ''}
+        </div>
+        <div class="lrow-contacts">${contacts}</div>
+        <div class="lrow-tags">${goalHtml}${snooze}</div>
+        <div class="lrow-counts">${counts}</div>
+        <div class="lrow-date">${formatDate(note.updatedAt || note.createdAt)}</div>
+      </div>`;
+  }
+
+  function renderList() {
+    const root = document.getElementById('list-inner');
+    if (!root) return;
+
+    const titles = state.boardTitles || DEFAULT_TITLES;
+    const goals = getGoals();
+
+    // Counts across every board drive the filter chips, so they stay put
+    const totals = [0, 0, 0, 0, 0, 0];
+    state.notes.forEach(n => { totals[n.quadrant ?? 0]++; });
+    if (listFilter !== null && !totals[listFilter]) listFilter = null;
+
+    const shown = listFilter === null ? state.notes : state.notes.filter(n => (n.quadrant ?? 0) === listFilter);
+    const leads = shown.filter(n => n.isLead).length;
+
+    const chips = `
+      <div class="list-filter">
+        <button class="lf-chip lf-all ${listFilter === null ? 'active' : ''}" data-f="all">All</button>
+        ${totals.map((c, q) => `<button class="lf-chip ${listFilter === q ? 'active' : ''} ${c ? '' : 'empty'}"
+            data-f="${q}" style="--c:${BOARD_COLORS[q]}"
+            title="${escapeHtml(titles[q] || DEFAULT_TITLES[q])} · ${c} stiki${c === 1 ? '' : 's'}"
+            aria-label="${escapeHtml(titles[q] || DEFAULT_TITLES[q])}"></button>`).join('')}
+      </div>`;
+
+    const bar = `
+      <div class="list-bar">
+        <div class="list-summary">${shown.length} stiki${shown.length === 1 ? '' : 's'}${leads ? ` · ${leads} lead${leads === 1 ? '' : 's'}` : ''}</div>
+        ${chips}
+      </div>`;
+
+    const wire = () => {
+      root.querySelectorAll('.lf-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const f = (chip as HTMLElement).dataset.f;
+          setListFilter(f === 'all' ? null : parseInt(f!, 10));
+        });
+      });
+    };
+
+    if (!state.notes.length) {
+      root.innerHTML = `<div class="list-empty">Nothing here yet. Add a stiki from the Tasks board.</div>`;
+      return;
+    }
+    if (!shown.length) {
+      root.innerHTML = bar + `<div class="list-empty">Nothing on this board.</div>`;
+      wire();
+      return;
+    }
+
+    const byBoard = new Map<number, Note[]>();
+    shown.forEach(n => {
+      const q = n.quadrant ?? 0;
+      if (!byBoard.has(q)) byBoard.set(q, []);
+      byBoard.get(q)!.push(n);
+    });
+
+    root.innerHTML = bar + [...byBoard.entries()].sort((a, b) => a[0] - b[0]).map(([q, notes]) => {
+        notes.sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt));
+        return `
+          <section class="list-section">
+            <header class="list-head" data-board="${q}" title="Open this board">
+              <span class="list-swatch" style="background:${BOARD_COLORS[q]}"></span>
+              <h3>${escapeHtml(titles[q] || DEFAULT_TITLES[q])}</h3>
+              <span class="list-n">${notes.length}</span>
+            </header>
+            <div class="list-rows">${notes.map(n => listRowHtml(n, goals)).join('')}</div>
+          </section>`;
+      }).join('');
+
+    wire();
+
+    root.querySelectorAll('.lrow').forEach(row => {
+      const open = (e: Event) => {
+        if ((e.target as HTMLElement).closest('[data-stop]')) return;  // contact links do their own thing
+        openDetailModal((row as HTMLElement).dataset.id!);
+      };
+      row.addEventListener('click', open);
+      row.addEventListener('keydown', (e) => {
+        const k = (e as KeyboardEvent).key;
+        if (k === 'Enter' || k === ' ') { e.preventDefault(); open(e); }
+      });
+    });
+
+    root.querySelectorAll('.list-head').forEach(head => {
+      head.addEventListener('click', () => {
+        setViewMode('tasks');
+        switchQuadrant(parseInt((head as HTMLElement).dataset.board || '0', 10));
+      });
+    });
+  }
+
+  function populateGoalSelect(note: Note | undefined) {
+    const sel = document.getElementById('detail-goal') as HTMLSelectElement;
+    if (!sel) return;
+    const goals = getGoals();
+    sel.innerHTML = `<option value="">No goal</option>` +
+      goals.map(g => {
+        const label = (g.text || 'Untitled goal').split('\n')[0].slice(0, 40);
+        return `<option value="${g.id}">${g.done ? '✓ ' : ''}${escapeHtml(label)}</option>`;
+      }).join('');
+    sel.value = note?.goalId || '';
+    sel.style.display = goals.length ? '' : 'none';
+  }
+
+  // Mode toggle wiring
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setViewMode(((btn as HTMLElement).dataset.mode as ViewMode) || 'tasks');
+    });
+  });
 
   function switchQuadrant(q: number) {
     activeQuadrant = q;
@@ -4666,11 +5937,24 @@ body.multi-select-mode .sticky-note:hover {
   // Keyboard shortcuts
   document.addEventListener('keydown', e => {
     if (document.activeElement?.closest('.sticky-note-content') ||
+        document.activeElement?.closest('.goal-text') ||
         document.activeElement?.closest('.board-tape') ||
         document.activeElement?.closest('.board-label-text') ||
         document.activeElement?.closest('.device-label') ||
         document.activeElement?.tagName === 'INPUT' ||
         document.activeElement?.tagName === 'TEXTAREA') return;
+
+    // Tab toggles Tasks / Goals
+    if (e.key === 'Tab' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      e.preventDefault();
+      setViewMode(VIEW_MODES[(VIEW_MODES.indexOf(viewMode) + 1) % VIEW_MODES.length]);
+      return;
+    }
+    if (viewMode === 'goals') {
+      if (e.key === 'n' || e.key === 'N') { e.preventDefault(); addGoal(); }
+      return;
+    }
+    if (viewMode === 'list') return;
 
     if (e.key === 'n' || e.key === 'N') {
       document.getElementById('fab-add-btn')?.click();
@@ -4932,19 +6216,20 @@ body.multi-select-mode .sticky-note:hover {
     saveProjectToList(newProject);
 
     // Step 5: Load data
-    if (projectExists && cloudData) {
-      state = cloudData;
-    } else {
-      state = { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES] };
-    }
+    state = (projectExists && cloudData) ? normalizeState(cloudData) : emptyState();
     syncStatus = 'success';
 
-    // Step 6: Save to local storage and re-render
+    // Step 6: Save locally and redraw the view that is actually on screen
+    selectedId = null;
+    activeQuadrant = 0;
+    document.querySelectorAll('.board').forEach(b => {
+      b.classList.toggle('active', (b as HTMLElement).dataset.q === '0');
+    });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    render();
-    updateMinimap();
+    refreshView();
     updateSyncIndicator();
     updateCurrentProjectDisplay();
+    drainLeadInbox();   // this project may have agent leads waiting
 
     settingsModal.classList.remove('visible');
   });
@@ -5734,8 +7019,9 @@ body.multi-select-mode .sticky-note:hover {
   // Init
   async function init() {
     state = load();
-    const cloudData = await syncFromCloud();
-    if (cloudData && cloudData.notes) {
+    const rawCloud = await syncFromCloud();
+    const cloudData = normalizeState(rawCloud);
+    if (rawCloud) {   // merge whenever the cloud had anything, not only notes
       // Merge: keep local notes + add any cloud notes not in local
       const localIds = new Set(state.notes.map(n => n.id));
       const newFromCloud = cloudData.notes.filter(n => !localIds.has(n.id));
@@ -5747,17 +7033,28 @@ body.multi-select-mode .sticky-note:hover {
       if (cloudData.boardTitles) {
         state.boardTitles = cloudData.boardTitles;
       }
+      // Merge goals: keep local + add any cloud goals not held locally
+      if (cloudData.goals && cloudData.goals.length) {
+        const localGoalIds = new Set(getGoals().map(g => g.id));
+        state.goals = [...getGoals(), ...cloudData.goals.filter(g => !localGoalIds.has(g.id))];
+      }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
-    render();
+    const savedMode = localStorage.getItem(VIEW_MODE_KEY);
+    setViewMode(VIEW_MODES.includes(savedMode as ViewMode) ? savedMode as ViewMode : 'tasks');
+
+    refreshView();   // setViewMode draws the right one; this keeps it explicit
     updateSyncIndicator();
     updateFabColor();
-    updateMinimap();
     updateCurrentProjectDisplay();
 
     // Save current project to list on init
     const currentProject = getSyncPassword();
     if (currentProject) saveProjectToList(currentProject);
+
+    drainLeadInbox();
+    setInterval(drainLeadInbox, 60000);
+    window.addEventListener('focus', drainLeadInbox);
   }
 
   // Start
