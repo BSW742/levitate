@@ -8,9 +8,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>PDA - Lead Sourcing</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>">
-  <meta name="theme-color" content="#1f2937">
+  <meta name="theme-color" content="#f6f5f3">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="PDA">
 </head>
 <body>
@@ -29,19 +29,26 @@
   <div id="app">
     <!-- Header -->
     <header id="header">
+      <div id="primary-nav">
+        <div id="mode-toggle">
+          <button class="mode-btn active" data-mode="leads">Leads</button>
+          <a class="mode-btn" href="/?view=goals">Goals</a>
+          <a class="mode-btn mode-icon" href="/?view=list" title="List" aria-label="List view"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></a>
+          <a class="mode-btn" href="/?view=tasks">Tasks</a>
+        </div>
+      </div>
       <div id="header-top">
         <h1 id="header-project-name">No project</h1>
         <div id="header-actions">
-          <div id="mode-toggle">
-            <button class="mode-btn active" data-mode="scan">Scan</button>
-            <button class="mode-btn" data-mode="web">Web</button>
-          </div>
           <button id="settings-btn" title="Settings">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
           </button>
         </div>
       </div>
       <div id="board-bar">
+        <button id="back-to-search" class="search-dot active" title="Find leads" aria-label="Find leads">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+        </button>
         <button class="board-dot" data-board="0" style="background: #fed7aa" title="Orange"></button>
         <button class="board-dot" data-board="1" style="background: #fef08a" title="Yellow"></button>
         <button class="board-dot" data-board="2" style="background: #bbf7d0" title="Green"></button>
@@ -56,6 +63,10 @@
       <!-- Criteria Form -->
       <div id="criteria-form">
         <div class="form-row">
+          <input type="url" id="company-url" placeholder="Company URL (e.g. acme.com) - takes precedence">
+        </div>
+        <div class="form-divider"><span>or search by</span></div>
+        <div class="form-row">
           <input type="text" id="criteria-location" placeholder="Location (e.g., Sydney, Australia)">
         </div>
         <div class="form-row">
@@ -65,9 +76,20 @@
           <input type="text" id="criteria-role" placeholder="Role (e.g., CEO, Director)">
         </div>
         <button id="gimme-btn" class="primary-btn">
-          <span class="btn-text">Gimme 10</span>
+          <span class="btn-text">Find leads</span>
           <span class="btn-loading">Searching...</span>
         </button>
+
+        <div id="lookup-results" class="lookup-results hidden"></div>
+
+        <div class="google-row">
+          <span class="google-row-label">Look up on the web</span>
+          <div class="google-btns">
+            <button class="google-btn" data-g="website">Website</button>
+            <button class="google-btn" data-g="people">People</button>
+            <button class="google-btn" data-g="companies">Companies</button>
+          </div>
+        </div>
       </div>
 
       <!-- Queue -->
@@ -178,10 +200,7 @@
 
     <!-- Mode 2: Website/Webhook -->
     <div id="web-mode" class="mode-content">
-      <div id="url-form">
-        <div class="form-row">
-          <input type="url" id="company-url" placeholder="Enter company URL (e.g., acme.com)">
-        </div>
+      <div id="url-form" hidden>
         <button id="enrich-btn" class="primary-btn">
           <span class="btn-text">Enrich</span>
           <span class="btn-loading">Enriching...</span>
@@ -465,8 +484,8 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #111827;
-  color: #f9fafb;
+  background: #f6f5f3;
+  color: #12100e;
   min-height: 100vh;
   overflow-x: hidden;
 }
@@ -475,7 +494,7 @@ body {
 #login-gate {
   position: fixed;
   inset: 0;
-  background: #111827;
+  background: #f6f5f3;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -484,18 +503,18 @@ body {
 #login-gate.hidden { display: none; }
 .login-box { text-align: center; padding: 20px; }
 .login-title { font-size: 3rem; margin-bottom: 0.5rem; font-weight: 700; }
-.login-subtitle { color: #9ca3af; margin-bottom: 2rem; }
+.login-subtitle { color: #8a847c; margin-bottom: 2rem; }
 .login-box input {
   display: block;
   width: 260px;
   padding: 14px 18px;
   margin: 0 auto 1rem;
-  border: 2px solid #374151;
+  border: 2px solid #e9e7e2;
   border-radius: 12px;
   font-size: 1rem;
   text-align: center;
-  background: #1f2937;
-  color: #f9fafb;
+  background: #ffffff;
+  color: #12100e;
 }
 .login-box input:focus { outline: none; border-color: #6366f1; }
 .login-box button {
@@ -518,12 +537,170 @@ body {
 
 /* Header */
 #header {
-  background: #1f2937;
-  border-bottom: 1px solid #374151;
+  background: #ffffff;
+  border-bottom: 1px solid #e9e7e2;
   position: sticky;
   top: 0;
   z-index: 100;
 }
+.search-dot {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  flex: none;
+  background: #eceae5;
+  color: #78716c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 4px;
+}
+.search-dot.active { background: #12100e; color: #ffffff; }
+
+.looking-up {
+  background: #faf9f7 !important;
+  color: #b5b0a9;
+}
+.looking-up::placeholder { color: #b5b0a9; font-style: italic; }
+
+.lookup-results {
+  margin-top: 14px;
+  border: 1px solid #e9e7e2;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+}
+.lookup-results.hidden { display: none; }
+.lookup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  background: #f6f5f3;
+  border-bottom: 1px solid #efedea;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8a847c;
+}
+.lookup-close {
+  border: none;
+  background: none;
+  font-size: 20px;
+  line-height: 1;
+  color: #b5b0a9;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.lookup-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  padding: 11px 14px;
+  border: none;
+  border-top: 1px solid #f2f0ec;
+  background: #ffffff;
+  cursor: pointer;
+}
+.lookup-item:first-of-type { border-top: none; }
+.lookup-item:active { background: #f6f5f3; }
+.lookup-title { font-size: 14px; font-weight: 600; color: #12100e; }
+.lookup-sub { font-size: 12px; color: #78716c; }
+.lookup-url { font-size: 11px; color: #b5b0a9; }
+.lookup-empty { padding: 20px 14px; text-align: center; font-size: 13px; color: #b5b0a9; }
+
+.google-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #efedea;
+}
+.google-row-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b5b0a9;
+}
+.google-btns { display: flex; gap: 6px; }
+.google-btn {
+  border: 1px solid #e2dfd9;
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #57534e;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.google-btn:hover { border-color: #12100e; color: #12100e; background: #faf9f7; }
+
+.form-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b5b0a9;
+}
+.form-divider::before,
+.form-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e9e7e2;
+}
+/* a URL wins, so the criteria fields visibly step back */
+#criteria-form.url-mode .form-divider,
+#criteria-form.url-mode .form-row:not(:first-child) {
+  opacity: 0.4;
+  transition: opacity 0.18s;
+}
+
+#primary-nav {
+  display: flex;
+  justify-content: center;
+  padding: 10px 20px 0;
+}
+#mode-toggle {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: #eceae5;
+  border-radius: 10px;
+  flex: none;
+}
+#mode-toggle .mode-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 13px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #8a847c;
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s, color 0.15s;
+}
+#mode-toggle .mode-btn:hover { color: #3f3b36; }
+#mode-toggle .mode-btn.active { background: #12100e; color: #ffffff; }
+#mode-toggle .mode-icon { padding: 6px 9px; }
+
 #header-top {
   display: flex;
   justify-content: space-between;
@@ -579,13 +756,13 @@ body {
 }
 .switch-success-text {
   font-size: 1rem;
-  color: #9ca3af;
+  color: #8a847c;
   margin-bottom: 8px;
 }
 .switch-success-project {
   font-size: 2rem;
   font-weight: 700;
-  color: #f9fafb;
+  color: #12100e;
 }
 #header-actions {
   display: flex;
@@ -595,7 +772,7 @@ body {
 #settings-btn {
   background: transparent;
   border: none;
-  color: #9ca3af;
+  color: #8a847c;
   cursor: pointer;
   padding: 8px;
   border-radius: 8px;
@@ -605,8 +782,8 @@ body {
   transition: all 0.2s;
 }
 #settings-btn:hover {
-  background: #374151;
-  color: #f9fafb;
+  background: #eceae5;
+  color: #12100e;
 }
 
 /* Board Bar */
@@ -633,27 +810,9 @@ body {
   box-shadow: 0 0 0 2px #6366f1;
 }
 
-#mode-toggle {
-  display: flex;
-  background: #374151;
-  border-radius: 10px;
-  padding: 4px;
-}
-.mode-btn {
-  padding: 8px 20px;
-  border: none;
-  background: transparent;
-  color: #9ca3af;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-.mode-btn.active {
-  background: #6366f1;
-  color: white;
-}
+
+
+
 
 /* Mode Content */
 .mode-content {
@@ -671,17 +830,17 @@ body {
 .form-row input {
   width: 100%;
   padding: 14px 16px;
-  background: #1f2937;
-  border: 2px solid #374151;
+  background: #ffffff;
+  border: 2px solid #e9e7e2;
   border-radius: 12px;
-  color: #f9fafb;
+  color: #12100e;
   font-size: 1rem;
 }
 .form-row input:focus {
   outline: none;
   border-color: #6366f1;
 }
-.form-row input::placeholder { color: #6b7280; }
+.form-row input::placeholder { color: #8a847c; }
 
 .primary-btn {
   width: 100%;
@@ -697,7 +856,7 @@ body {
   transition: all 0.2s;
 }
 .primary-btn:hover { background: #4f46e5; transform: scale(1.02); }
-.primary-btn:disabled { background: #4b5563; cursor: not-allowed; transform: none; }
+.primary-btn:disabled { background: #e2dfd9; cursor: not-allowed; transform: none; }
 .primary-btn.loading .btn-text { display: none; }
 .primary-btn .btn-loading { display: none; }
 .primary-btn.loading .btn-loading { display: inline; }
@@ -705,7 +864,7 @@ body {
 .text-btn {
   background: none;
   border: none;
-  color: #9ca3af;
+  color: #8a847c;
   cursor: pointer;
   font-size: 0.9rem;
 }
@@ -714,7 +873,7 @@ body {
 /* Queue */
 #queue-section {
   margin-top: 24px;
-  background: #1f2937;
+  background: #ffffff;
   border-radius: 16px;
   padding: 16px;
 }
@@ -727,7 +886,7 @@ body {
 }
 #queue-count {
   font-weight: 600;
-  color: #9ca3af;
+  color: #8a847c;
 }
 #queue-list {
   display: flex;
@@ -741,12 +900,12 @@ body {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  background: #374151;
+  background: #eceae5;
   border-radius: 10px;
   cursor: pointer;
   transition: background 0.2s;
 }
-.queue-item:hover { background: #4b5563; }
+.queue-item:hover { background: #e2dfd9; }
 .queue-item.active { background: #6366f1; }
 .queue-item-info { flex: 1; min-width: 0; }
 .queue-item-name {
@@ -757,7 +916,7 @@ body {
 }
 .queue-item-company {
   font-size: 0.85rem;
-  color: #9ca3af;
+  color: #8a847c;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -767,7 +926,7 @@ body {
 /* Profile Card */
 #current-profile.hidden, #web-profile.hidden { display: none; }
 .profile-card {
-  background: #1f2937;
+  background: #ffffff;
   border-radius: 20px;
   padding: 24px;
   text-align: center;
@@ -776,16 +935,16 @@ body {
 .profile-avatar {
   width: 100px;
   height: 100px;
-  background: #374151;
+  background: #eceae5;
   border-radius: 50%;
   margin: 0 auto 16px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.profile-avatar svg { width: 50px; height: 50px; color: #6b7280; }
+.profile-avatar svg { width: 50px; height: 50px; color: #8a847c; }
 .profile-info h2 { font-size: 1.5rem; margin-bottom: 4px; }
-.profile-info p { color: #9ca3af; }
+.profile-info p { color: #8a847c; }
 #profile-company { font-weight: 500; color: #6366f1; }
 
 .profile-actions {
@@ -814,10 +973,10 @@ body {
 }
 .action-btn.primary:hover { background: #4f46e5; }
 .action-btn.secondary {
-  background: #374151;
-  color: #f9fafb;
+  background: #eceae5;
+  color: #12100e;
 }
-.action-btn.secondary:hover { background: #4b5563; }
+.action-btn.secondary:hover { background: #e2dfd9; }
 .action-btn.linkedin {
   background: #0077b5;
   color: white;
@@ -827,14 +986,14 @@ body {
 /* Photo Capture */
 #photo-capture.hidden, #web-photo-capture.hidden { display: none; }
 #photo-capture, #web-photo-capture {
-  background: #1f2937;
+  background: #ffffff;
   border-radius: 20px;
   padding: 24px;
   text-align: center;
   margin-top: 24px;
 }
 .capture-header h3 { margin-bottom: 8px; }
-.capture-header p { color: #9ca3af; margin-bottom: 24px; }
+.capture-header p { color: #8a847c; margin-bottom: 24px; }
 .capture-actions {
   display: flex;
   flex-direction: column;
@@ -844,7 +1003,7 @@ body {
 /* Lead Preview */
 #lead-preview.hidden, #web-preview.hidden { display: none; }
 .preview-card {
-  background: #1f2937;
+  background: #ffffff;
   border-radius: 20px;
   padding: 24px;
   margin-top: 24px;
@@ -852,7 +1011,7 @@ body {
 .preview-avatar {
   width: 80px;
   height: 80px;
-  background: #374151;
+  background: #eceae5;
   border-radius: 50%;
   margin: 0 auto 20px;
   display: flex;
@@ -860,7 +1019,7 @@ body {
   justify-content: center;
   overflow: hidden;
 }
-.preview-avatar svg { width: 40px; height: 40px; color: #6b7280; }
+.preview-avatar svg { width: 40px; height: 40px; color: #8a847c; }
 .preview-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 .preview-fields {
@@ -872,7 +1031,7 @@ body {
   display: block;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #9ca3af;
+  color: #8a847c;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 4px;
@@ -880,10 +1039,10 @@ body {
 .field-group input {
   width: 100%;
   padding: 12px 14px;
-  background: #374151;
-  border: 1px solid #4b5563;
+  background: #eceae5;
+  border: 1px solid #ded9d3;
   border-radius: 10px;
-  color: #f9fafb;
+  color: #12100e;
   font-size: 1rem;
 }
 .field-group input:focus {
@@ -899,12 +1058,12 @@ body {
 .board-select {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #374151;
+  border-top: 1px solid #e9e7e2;
 }
 .board-select label {
   display: block;
   font-size: 0.85rem;
-  color: #9ca3af;
+  color: #8a847c;
   margin-bottom: 12px;
 }
 .board-options {
@@ -945,8 +1104,8 @@ body {
   width: 100%;
   background: transparent;
   border: none;
-  border-bottom: 2px solid #374151;
-  color: #f9fafb;
+  border-bottom: 2px solid #e9e7e2;
+  color: #12100e;
   font-size: 1.5rem;
   font-weight: 700;
   padding: 8px 0;
@@ -957,7 +1116,7 @@ body {
   border-bottom-color: #6366f1;
 }
 #board-title::placeholder {
-  color: #6b7280;
+  color: #8a847c;
   font-weight: 400;
 }
 
@@ -972,13 +1131,13 @@ body {
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
-  background: #1f2937;
+  background: #ffffff;
   border-radius: 14px;
   cursor: pointer;
   transition: all 0.2s;
 }
 .card-item:hover {
-  background: #374151;
+  background: #eceae5;
   transform: translateX(4px);
 }
 .card-item:active {
@@ -989,7 +1148,7 @@ body {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: #374151;
+  background: #eceae5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -999,7 +1158,7 @@ body {
 .card-avatar svg {
   width: 26px;
   height: 26px;
-  color: #6b7280;
+  color: #8a847c;
 }
 .card-avatar img {
   width: 100%;
@@ -1020,7 +1179,7 @@ body {
 }
 .card-meta {
   font-size: 0.85rem;
-  color: #9ca3af;
+  color: #8a847c;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1029,7 +1188,7 @@ body {
 #board-empty {
   text-align: center;
   padding: 60px 20px;
-  color: #6b7280;
+  color: #8a847c;
 }
 #board-empty.hidden { display: none; }
 
@@ -1037,7 +1196,7 @@ body {
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(18,16,14,0.14);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1047,7 +1206,7 @@ body {
 .modal.hidden { display: none; }
 
 .modal-content {
-  background: #1f2937;
+  background: #ffffff;
   border-radius: 20px;
   max-width: 400px;
   width: 100%;
@@ -1059,7 +1218,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #374151;
+  border-bottom: 1px solid #e9e7e2;
 }
 .modal-header h2 {
   font-size: 1.2rem;
@@ -1069,12 +1228,12 @@ body {
   background: none;
   border: none;
   font-size: 1.5rem;
-  color: #9ca3af;
+  color: #8a847c;
   cursor: pointer;
   padding: 0;
   line-height: 1;
 }
-.modal-close:hover { color: #f9fafb; }
+.modal-close:hover { color: #12100e; }
 
 .modal-body {
   padding: 20px;
@@ -1083,15 +1242,15 @@ body {
 /* Settings Modal */
 .setting-group { margin-bottom: 20px; }
 .setting-group:last-child { margin-bottom: 0; }
-.setting-group label { display: block; font-weight: 600; color: #f9fafb; margin-bottom: 4px; }
-.setting-hint { font-size: 13px; color: #9ca3af; margin-bottom: 12px; }
+.setting-group label { display: block; font-weight: 600; color: #12100e; margin-bottom: 4px; }
+.setting-hint { font-size: 13px; color: #8a847c; margin-bottom: 12px; }
 .setting-group input {
   width: 100%;
   padding: 10px 14px;
-  background: #374151;
-  border: 1px solid #4b5563;
+  background: #eceae5;
+  border: 1px solid #ded9d3;
   border-radius: 8px;
-  color: #f9fafb;
+  color: #12100e;
   font-size: 14px;
   margin-bottom: 12px;
 }
@@ -1107,22 +1266,22 @@ body {
 }
 .setting-actions button:not(.secondary):not(.danger) { background: #6366f1; color: white; }
 .setting-actions button:not(.secondary):not(.danger):hover { background: #4f46e5; }
-.setting-actions button.secondary { background: #374151; color: #f9fafb; }
-.setting-actions button.secondary:hover { background: #4b5563; }
-.setting-divider { height: 1px; background: #374151; margin: 20px 0; }
+.setting-actions button.secondary { background: #eceae5; color: #12100e; }
+.setting-actions button.secondary:hover { background: #e2dfd9; }
+.setting-divider { height: 1px; background: #eceae5; margin: 20px 0; }
 .current-project {
   padding: 12px 16px;
-  background: #374151;
+  background: #eceae5;
   border-radius: 8px;
-  border: 1px solid #4b5563;
+  border: 1px solid #ded9d3;
 }
 .current-project span {
   font-size: 15px;
   font-weight: 600;
-  color: #f9fafb;
+  color: #12100e;
 }
 .current-project span.no-project {
-  color: #9ca3af;
+  color: #8a847c;
   font-weight: 400;
 }
 
@@ -1134,7 +1293,7 @@ body {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: #374151;
+  background: #eceae5;
   margin: 0 auto;
   display: flex;
   align-items: center;
@@ -1144,7 +1303,7 @@ body {
 .detail-avatar svg {
   width: 40px;
   height: 40px;
-  color: #6b7280;
+  color: #8a847c;
 }
 .detail-avatar img {
   width: 100%;
@@ -1161,7 +1320,7 @@ body {
   display: block;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #9ca3af;
+  color: #8a847c;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 4px;
@@ -1170,10 +1329,10 @@ body {
 .detail-fields .field-group textarea {
   width: 100%;
   padding: 12px 14px;
-  background: #374151;
-  border: 1px solid #4b5563;
+  background: #eceae5;
+  border: 1px solid #ded9d3;
   border-radius: 10px;
-  color: #f9fafb;
+  color: #12100e;
   font-size: 1rem;
   font-family: inherit;
 }
@@ -1184,7 +1343,7 @@ body {
 }
 
 #selected-board-name {
-  color: #f9fafb;
+  color: #12100e;
   font-weight: 400;
   text-transform: none;
   letter-spacing: normal;
@@ -1212,7 +1371,7 @@ body {
 .activity-section {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #374151;
+  border-top: 1px solid #e9e7e2;
 }
 .activity-header {
   display: flex;
@@ -1223,7 +1382,7 @@ body {
 .activity-header label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #9ca3af;
+  color: #8a847c;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -1234,15 +1393,15 @@ body {
 .activity-type-btn {
   width: 40px;
   height: 40px;
-  border: 1.5px solid #374151;
-  background: #1f2937;
+  border: 1.5px solid #e9e7e2;
+  background: #ffffff;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: #8a847c;
 }
 .activity-type-btn svg {
   width: 18px;
@@ -1250,11 +1409,11 @@ body {
   transition: all 0.2s ease;
 }
 .activity-type-btn:hover {
-  background: #374151;
-  border-color: #4b5563;
-  color: #e5e7eb;
+  background: #eceae5;
+  border-color: #ded9d3;
+  color: #3f3b36;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 12px rgba(18,16,14,0.14);
 }
 .activity-type-btn.active {
   background: #6366f1;
@@ -1273,10 +1432,10 @@ body {
 .activity-input input {
   flex: 1;
   padding: 10px 12px;
-  background: #374151;
-  border: 1px solid #4b5563;
+  background: #eceae5;
+  border: 1px solid #ded9d3;
   border-radius: 8px;
-  color: #f9fafb;
+  color: #12100e;
   font-size: 0.95rem;
 }
 .activity-input input:focus {
@@ -1299,7 +1458,7 @@ body {
   display: flex;
   gap: 10px;
   padding: 10px 12px;
-  background: #374151;
+  background: #eceae5;
   border-radius: 10px;
   position: relative;
 }
@@ -1310,9 +1469,9 @@ body {
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: #4b5563;
+  background: #e2dfd9;
   border-radius: 6px;
-  color: #9ca3af;
+  color: #8a847c;
 }
 .activity-item[data-type="call"] .activity-icon { color: #22c55e; background: rgba(34,197,94,0.15); }
 .activity-item[data-type="email"] .activity-icon { color: #3b82f6; background: rgba(59,130,246,0.15); }
@@ -1323,12 +1482,12 @@ body {
 }
 .activity-text {
   font-size: 0.95rem;
-  color: #f9fafb;
+  color: #12100e;
   word-break: break-word;
 }
 .activity-time {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #8a847c;
   margin-top: 2px;
 }
 .activity-delete {
@@ -1337,7 +1496,7 @@ body {
   right: 8px;
   background: none;
   border: none;
-  color: #6b7280;
+  color: #8a847c;
   cursor: pointer;
   font-size: 1rem;
   padding: 2px 6px;
@@ -1352,7 +1511,7 @@ body {
 }
 .activity-empty {
   text-align: center;
-  color: #6b7280;
+  color: #8a847c;
   font-size: 0.9rem;
   padding: 20px;
 }
@@ -1362,7 +1521,7 @@ body {
   gap: 12px;
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid #374151;
+  border-top: 1px solid #e9e7e2;
 }
 .detail-actions .action-btn {
   flex: 1;
@@ -1400,7 +1559,7 @@ body {
 #cropper-modal {
   position: fixed;
   inset: 0;
-  background: #1f2937;
+  background: #ffffff;
   z-index: 200;
   display: flex;
   flex-direction: column;
@@ -1410,7 +1569,7 @@ body {
   padding: 16px 20px;
   text-align: center;
   font-weight: 600;
-  border-bottom: 1px solid #374151;
+  border-bottom: 1px solid #e9e7e2;
 }
 .cropper-container {
   flex: 1;
@@ -1433,11 +1592,11 @@ body {
   border-radius: 50%;
   cursor: move;
   touch-action: none;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 9999px rgba(18,16,14,0.14);
 }
 .cropper-controls {
   padding: 16px 20px;
-  border-top: 1px solid #374151;
+  border-top: 1px solid #e9e7e2;
 }
 .cropper-controls label {
   display: flex;
@@ -1449,7 +1608,7 @@ body {
   flex: 1;
   height: 4px;
   -webkit-appearance: none;
-  background: #374151;
+  background: #eceae5;
   border-radius: 2px;
 }
 .cropper-controls input[type="range"]::-webkit-slider-thumb {
@@ -1472,7 +1631,7 @@ body {
 #loading-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(18,16,14,0.14);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1484,7 +1643,7 @@ body {
 .loading-spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid #374151;
+  border: 4px solid #e9e7e2;
   border-top-color: #fef08a;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -1664,32 +1823,143 @@ body {
     }
   }
 
-  // Mode toggle
-  document.querySelectorAll('.mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const mode = (btn as HTMLElement).dataset.mode as 'scan' | 'web';
-      currentMode = mode;
 
-      // Deselect board view
-      selectedBoardView = null;
-      document.querySelectorAll('.board-dot').forEach(d => d.classList.remove('active'));
-      document.getElementById('board-view')?.classList.add('hidden');
+  /* One form, two paths: a company URL wins, otherwise the search criteria
+     are used. The enrich handler still reads #company-url and lives on a
+     hidden button, so that flow is reused rather than reimplemented. */
+  /* Web lookups run in the app and land in a list, rather than throwing you
+     out to Safari. Tapping a website or company result drops its domain into
+     the URL field; tapping a person copies their source link. */
+  function domainOf(u: string): string {
+    try { return new URL(u.startsWith('http') ? u : `https://${u}`).hostname.replace(/^www\./, ''); }
+    catch { return u; }
+  }
 
-      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
-      document.getElementById(`${mode}-mode`)?.classList.add('active');
+  function renderLookup(kind: string, results: Array<{ title: string; subtitle: string; url: string }>) {
+    const box = document.getElementById('lookup-results')!;
+    box.classList.remove('hidden');
+    if (!results.length) {
+      box.innerHTML = `<div class="lookup-empty">Nothing found. Try different words.</div>`;
+      return;
+    }
+    box.innerHTML = `
+      <div class="lookup-head">
+        <span>${results.length} result${results.length === 1 ? '' : 's'}</span>
+        <button class="lookup-close" aria-label="Close">&times;</button>
+      </div>` + results.map((r, i) => `
+        <button class="lookup-item" data-i="${i}">
+          <span class="lookup-title">${r.title || domainOf(r.url)}</span>
+          ${r.subtitle ? `<span class="lookup-sub">${r.subtitle}</span>` : ''}
+          <span class="lookup-url">${domainOf(r.url)}</span>
+        </button>`).join('');
+
+    box.querySelector('.lookup-close')?.addEventListener('click', () => box.classList.add('hidden'));
+    box.querySelectorAll('.lookup-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const r = results[parseInt((el as HTMLElement).dataset.i || '0', 10)];
+        if (!r) return;
+        if (kind === 'people') {
+          navigator.clipboard?.writeText(r.url).then(
+            () => showToast('Link copied'),
+            () => showToast(r.url),
+          );
+        } else {
+          const input = document.getElementById('company-url') as HTMLInputElement;
+          input.value = domainOf(r.url);
+          syncFindButton();
+          box.classList.add('hidden');
+          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          showToast('URL filled in');
+        }
+      });
+    });
+  }
+
+  document.querySelectorAll('.google-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const val = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value.trim() || '';
+      const kind = (btn as HTMLElement).dataset.g || 'website';
+      const body = {
+        kind,
+        company: val('company-url'),
+        location: val('criteria-location'),
+        industry: val('criteria-industry'),
+        role: val('criteria-role'),
+      };
+
+      if (kind === 'website' && !body.company) { showToast('Type a company name in the first field', true); return; }
+      if (kind === 'people' && !body.role && !body.industry && !body.location) { showToast('Add a role, industry or location first', true); return; }
+      if (kind === 'companies' && !body.industry && !body.location) { showToast('Add an industry or location first', true); return; }
+
+      document.querySelectorAll('.google-btn').forEach(b => (b as HTMLButtonElement).disabled = true);
+      btn.classList.add('loading');
+      showLoading('Searching the web...');
+      try {
+        const res = await fetch(`${WORKER_URL}/lookup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Sync-Password': syncPassword! },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        renderLookup(kind, data.results || []);
+      } catch {
+        showToast('Search failed', true);
+      } finally {
+        hideLoading();
+        btn.classList.remove('loading');
+        document.querySelectorAll('.google-btn').forEach(b => (b as HTMLButtonElement).disabled = false);
+      }
     });
   });
 
-  // Gimme 10
+  function urlFieldValue(): string {
+    return (document.getElementById('company-url') as HTMLInputElement)?.value.trim() || '';
+  }
+
+  /* Called when an already-selected board dot is clicked. It was referenced
+     but never defined - harmless while the Scan/Web toggle offered a way
+     back to the form, but a dead end now that it is gone. */
+  document.getElementById('back-to-search')?.addEventListener('click', deselectBoardView);
+
+  function deselectBoardView() {
+    selectedBoardView = null;
+    document.querySelectorAll('.board-dot[data-board]').forEach(d => d.classList.remove('active'));
+    document.getElementById('back-to-search')?.classList.add('active');
+    document.getElementById('board-view')?.classList.add('hidden');
+    backToFindForm();
+  }
+
+  function backToFindForm() {
+    currentMode = 'scan';
+    document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('scan-mode')?.classList.add('active');
+  }
+
+  function syncFindButton() {
+    const label = document.querySelector('#gimme-btn .btn-text');
+    if (label) label.textContent = urlFieldValue() ? 'Look up company' : 'Find leads';
+    document.getElementById('criteria-form')?.classList.toggle('url-mode', !!urlFieldValue());
+  }
+  document.getElementById('company-url')?.addEventListener('input', syncFindButton);
+  syncFindButton();
+
+  // Find leads / Look up company
   document.getElementById('gimme-btn')?.addEventListener('click', async () => {
+    if (urlFieldValue()) {
+      // hand over to the enrich flow, which owns the web-* panels
+      currentMode = 'web';
+      document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));
+      document.getElementById('web-mode')?.classList.add('active');
+      (document.getElementById('enrich-btn') as HTMLButtonElement).click();
+      return;
+    }
+
     const btn = document.getElementById('gimme-btn') as HTMLButtonElement;
     const location = (document.getElementById('criteria-location') as HTMLInputElement).value;
     const industry = (document.getElementById('criteria-industry') as HTMLInputElement).value;
     const role = (document.getElementById('criteria-role') as HTMLInputElement).value;
 
-    console.log('Gimme10 clicked', { location, industry, role, syncPassword });
+    console.log('Find leads clicked', { location, industry, role, syncPassword });
     btn.classList.add('loading');
     btn.disabled = true;
     showLoading('Searching for leads...');
@@ -1958,10 +2228,90 @@ body {
 
         document.getElementById('photo-capture')?.classList.add('hidden');
         document.getElementById('lead-preview')?.classList.remove('hidden');
+
+        // preview is up; the slow half runs behind it
+        startEnrich(
+          (document.getElementById('preview-name') as HTMLInputElement).value,
+          (document.getElementById('preview-company') as HTMLInputElement).value,
+        );
       }
     };
     img.src = rawImage;
   });
+
+  /* A phone screenshot is 3-7MB once base64'd, and it was being uploaded raw.
+     LinkedIn text stays perfectly legible to the vision model at 1400px, and
+     this cuts the upload - the slowest leg on mobile - by roughly 20x. */
+  function shrinkForScan(dataUrl: string, maxEdge = 1400, quality = 0.75): Promise<string> {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
+        if (scale === 1 && dataUrl.length < 700000) return resolve(dataUrl);
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * scale);
+        c.height = Math.round(img.height * scale);
+        const ctx = c.getContext('2d');
+        if (!ctx) return resolve(dataUrl);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
+  // Fill website/phone/email in behind the preview once they arrive
+  let enrichPending: Promise<void> | null = null;
+  const CONTACT_FIELDS = ['preview-website', 'preview-phone', 'preview-email'];
+
+  function setContactFieldsPending(pending: boolean) {
+    CONTACT_FIELDS.forEach(id => {
+      const el = document.getElementById(id) as HTMLInputElement | null;
+      if (!el) return;
+      el.classList.toggle('looking-up', pending);
+      if (pending) {
+        el.dataset.ph = el.dataset.ph ?? el.placeholder;
+        el.placeholder = 'Looking up...';
+      } else if (el.dataset.ph !== undefined) {
+        el.placeholder = el.dataset.ph;
+      }
+    });
+  }
+
+  function startEnrich(name: string, company: string) {
+    if (!company) return;
+    setContactFieldsPending(true);
+    enrichPending = enrichPreviewInBackground(name, company).finally(() => {
+      enrichPending = null;
+      setContactFieldsPending(false);
+    });
+  }
+
+  async function enrichPreviewInBackground(name: string, company: string) {
+    if (!company) return;
+    try {
+      const res = await fetch(`${WORKER_URL}/enrich-profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Sync-Password': syncPassword! },
+        body: JSON.stringify({ name, company }),
+      });
+      if (!res.ok) return;
+      const d = await res.json();
+      const fill = (id: string, v: string) => {
+        const el = document.getElementById(id) as HTMLInputElement | null;
+        if (el && v && !el.value.trim()) el.value = v;   // never overwrite typing
+      };
+      fill('preview-website', d.website || '');
+      fill('preview-phone', d.phone || '');
+      fill('preview-email', d.email || '');
+      if (scannedData) {
+        scannedData.website = scannedData.website || d.website || '';
+        scannedData.phone = scannedData.phone || d.phone || '';
+        scannedData.email = scannedData.email || d.email || '';
+      }
+    } catch { /* best effort */ }
+  }
 
   document.getElementById('photo-input')?.addEventListener('change', async (e) => {
     const file = (e.target as HTMLInputElement).files?.[0];
@@ -1975,13 +2325,14 @@ body {
       showLoading('Scanning LinkedIn profile...');
 
       try {
+        const scanImage = await shrinkForScan(dataUrl);
         const res = await fetch(`${WORKER_URL}/scan`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-Sync-Password': syncPassword!,
           },
-          body: JSON.stringify({ image: dataUrl }),
+          body: JSON.stringify({ image: scanImage, quick: true }),
         });
 
         const data = await res.json();
@@ -2038,6 +2389,14 @@ body {
 
   // Save lead
   document.getElementById('save-lead')?.addEventListener('click', async () => {
+    /* The contact lookup runs behind the preview and takes ~35s (n8n).
+       If it is still going, wait rather than saving empty phone/email. */
+    if (enrichPending) {
+      showLoading('Finding contact details...');
+      try { await enrichPending; } catch { /* save anyway */ }
+      hideLoading();
+    }
+
     const nameInput = document.getElementById('preview-name') as HTMLInputElement;
     const roleInput = document.getElementById('preview-role') as HTMLInputElement;
     const companyInput = document.getElementById('preview-company') as HTMLInputElement;
@@ -2117,6 +2476,7 @@ body {
 
       if (data.error) {
         showToast('Enrichment failed: ' + data.error, true);
+        backToFindForm();
         return;
       }
 
@@ -2139,6 +2499,7 @@ body {
 
     } catch (e) {
       showToast('Enrichment failed', true);
+      backToFindForm();
     } finally {
       btn.classList.remove('loading');
       btn.disabled = false;
@@ -2301,6 +2662,8 @@ body {
       showToast('Lead saved!');
       document.getElementById('web-preview')!.classList.add('hidden');
       (document.getElementById('company-url') as HTMLInputElement).value = '';
+      syncFindButton();
+      backToFindForm();
       webEnrichedData = null;
       webCapturedImage = null;
     } catch (e) {
@@ -2321,41 +2684,22 @@ body {
     avatar?: string;
     quadrant: number;
   }) {
-    // Load current state from cloud
-    let state: State = { notes: [], nextZIndex: 1 };
-
-    try {
-      const res = await fetch(WORKER_URL, {
-        method: 'GET',
-        headers: { 'X-Sync-Password': syncPassword! },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        state = {
-          notes: Array.isArray(data.notes) ? data.notes : [],
-          nextZIndex: data.nextZIndex || 1,
-        };
-      }
-    } catch { /* use empty state */ }
-
-    // Create new note
     const colors = ['#fed7aa', '#fef08a', '#bbf7d0', '#93c5fd', '#c7d2fe', '#ddd6fe'];
-    const color = colors[data.quadrant] || '#fed7aa';
 
     let displayText = data.name;
     if (data.role) displayText += `\n${data.role}`;
     if (data.company && data.company !== data.name) displayText += `\n${data.company}`;
 
-    const note: Note = {
+    const note = {
       id: `note-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       text: displayText,
-      color,
+      color: colors[data.quadrant] || '#fed7aa',
       x: 50 + Math.random() * 200,
       y: 80 + Math.random() * 200,
       rotation: (Math.random() - 0.5) * 6,
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      zIndex: state.nextZIndex++,
+      zIndex: 1,            // the worker assigns the real one
       isLead: true,
       quadrant: data.quadrant,
       avatar: data.avatar,
@@ -2368,34 +2712,16 @@ body {
       linkedin: data.linkedin,
     };
 
-    state.notes.push(note);
-
-    // Save to cloud
-    try {
-      console.log('Saving state with', state.notes.length, 'notes');
-      const body = JSON.stringify(state);
-      console.log('Body size:', body.length, 'bytes');
-
-      const res = await fetch(WORKER_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Sync-Password': syncPassword!,
-        },
-        body,
-      });
-
-      const responseText = await res.text();
-      console.log('Save response:', res.status, responseText);
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${responseText}`);
-      }
-    } catch (e) {
-      console.error('Save error:', e);
-      throw e;
-    }
+    /* Send only the note. The worker merges it into the project, so nothing
+       else in the blob can be clobbered and there is no 150KB round trip. */
+    const res = await fetch(`${WORKER_URL}/append-note`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Sync-Password': syncPassword! },
+      body: JSON.stringify(note),
+    });
+    if (!res.ok) throw new Error(`Save failed: HTTP ${res.status} ${await res.text()}`);
   }
+
 
   // Toast
 
@@ -2456,7 +2782,7 @@ body {
   });
 
   // Board dot clicks
-  document.querySelectorAll('.board-dot').forEach(dot => {
+  document.querySelectorAll('.board-dot[data-board]').forEach(dot => {
     dot.addEventListener('click', async () => {
       const board = parseInt((dot as HTMLElement).dataset.board || '0');
 
@@ -2468,9 +2794,9 @@ body {
 
       // Select this board
       selectedBoardView = board;
-      document.querySelectorAll('.board-dot').forEach(d => d.classList.remove('active'));
+      document.querySelectorAll('.board-dot[data-board]').forEach(d => d.classList.remove('active'));
       dot.classList.add('active');
-      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('back-to-search')?.classList.remove('active');
 
       // Hide mode content, show board view
       document.querySelectorAll('.mode-content').forEach(c => c.classList.remove('active'));

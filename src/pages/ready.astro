@@ -1,0 +1,874 @@
+---
+// Ready To Go - State Optimisation App
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Ready To Go</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Screens */
+    .screen {
+      display: none;
+      flex-direction: column;
+      padding: 24px;
+      min-height: 100vh;
+    }
+    .screen.active { display: flex; }
+
+    /* Screen 1: State Check */
+    .state-screen {
+      justify-content: center;
+      align-items: center;
+      gap: 48px;
+    }
+
+    .state-question {
+      font-size: 28px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .state-slider-container {
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .state-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      font-size: 14px;
+      color: #94a3b8;
+    }
+
+    .state-value {
+      font-size: 72px;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 24px;
+      transition: color 0.3s;
+    }
+
+    .state-value.low { color: #64748b; }
+    .state-value.medium { color: #f59e0b; }
+    .state-value.high { color: #22c55e; }
+
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: #1e293b;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #3b82f6;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
+    }
+
+    .continue-btn {
+      padding: 16px 48px;
+      font-size: 18px;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .continue-btn.primary {
+      background: #3b82f6;
+      color: white;
+    }
+    .continue-btn.primary:hover {
+      background: #2563eb;
+      transform: scale(1.02);
+    }
+
+    .continue-btn.fixing {
+      background: #ef4444;
+      color: white;
+    }
+    .continue-btn.fixing:hover {
+      background: #dc2626;
+    }
+
+    /* Screen 2: Trigger Selection */
+    .trigger-screen {
+      justify-content: center;
+      gap: 32px;
+    }
+
+    .trigger-header {
+      text-align: center;
+    }
+
+    .trigger-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .trigger-subtitle {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .trigger-options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .trigger-btn {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      background: #1e293b;
+      border: 2px solid #334155;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: left;
+    }
+
+    .trigger-btn:hover {
+      border-color: #3b82f6;
+      background: #1e3a5f;
+    }
+
+    .trigger-btn.recommended {
+      border-color: #22c55e;
+      background: linear-gradient(135deg, #1e293b 0%, #14532d 100%);
+    }
+
+    .trigger-icon {
+      font-size: 28px;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f172a;
+      border-radius: 12px;
+    }
+
+    .trigger-text {
+      flex: 1;
+    }
+
+    .trigger-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .trigger-stat {
+      font-size: 12px;
+      color: #22c55e;
+    }
+
+    .trigger-badge {
+      font-size: 10px;
+      padding: 4px 8px;
+      background: #22c55e;
+      color: #0f172a;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    /* Screen 3: Mission */
+    .mission-screen {
+      justify-content: center;
+      gap: 24px;
+    }
+
+    .mission-number {
+      font-size: 12px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .mission-boss {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      background: #1e293b;
+      border-radius: 16px;
+    }
+
+    .boss-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .boss-info { flex: 1; }
+
+    .boss-name {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .boss-company {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .boss-difficulty {
+      display: flex;
+      gap: 4px;
+    }
+
+    .difficulty-star { color: #f59e0b; }
+    .difficulty-star.empty { color: #334155; }
+
+    .mission-intel {
+      padding: 20px;
+      background: #1e293b;
+      border-radius: 16px;
+      border-left: 4px solid #f59e0b;
+    }
+
+    .intel-label {
+      font-size: 11px;
+      color: #f59e0b;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .intel-text {
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .mission-objective {
+      padding: 20px;
+      background: linear-gradient(135deg, #1e293b 0%, #1e3a5f 100%);
+      border-radius: 16px;
+      border: 2px solid #3b82f6;
+    }
+
+    .objective-label {
+      font-size: 11px;
+      color: #3b82f6;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .objective-text {
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .mission-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .mission-btn {
+      flex: 1;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mission-btn.skip {
+      background: #334155;
+      color: #94a3b8;
+    }
+
+    .mission-btn.go {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+    }
+
+    .mission-btn.go:hover {
+      transform: scale(1.02);
+    }
+
+    /* Screen 4: Reflection */
+    .reflect-screen {
+      justify-content: center;
+      align-items: center;
+      gap: 48px;
+    }
+
+    .reflect-question {
+      font-size: 24px;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .reflect-change {
+      text-align: center;
+    }
+
+    .change-arrow {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .change-values {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      font-size: 36px;
+      font-weight: 700;
+    }
+
+    .change-before { color: #64748b; }
+    .change-arrow-icon { color: #94a3b8; font-size: 24px; }
+    .change-after { color: #22c55e; }
+    .change-after.down { color: #ef4444; }
+
+    .change-delta {
+      font-size: 18px;
+      margin-top: 12px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      display: inline-block;
+    }
+
+    .change-delta.up {
+      background: #14532d;
+      color: #22c55e;
+    }
+
+    .change-delta.down {
+      background: #450a0a;
+      color: #ef4444;
+    }
+
+    .reflect-done {
+      padding: 16px 48px;
+      font-size: 18px;
+      font-weight: 600;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    /* No missions state */
+    .no-missions {
+      text-align: center;
+      padding: 48px 24px;
+    }
+
+    .no-missions-icon {
+      font-size: 64px;
+      margin-bottom: 24px;
+    }
+
+    .no-missions-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .no-missions-text {
+      color: #94a3b8;
+      margin-bottom: 24px;
+    }
+
+    /* Project selector */
+    .project-bar {
+      padding: 16px 24px;
+      background: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .project-name {
+      font-size: 14px;
+      color: #94a3b8;
+    }
+
+    .project-btn {
+      padding: 8px 12px;
+      font-size: 12px;
+      background: #334155;
+      color: #f8fafc;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Project Bar -->
+    <div class="project-bar">
+      <span class="project-name" id="project-name">No project connected</span>
+      <button class="project-btn" id="connect-btn">Connect</button>
+    </div>
+
+    <!-- Screen 1: State Check -->
+    <div class="screen state-screen active" id="screen-state">
+      <h1 class="state-question">How do you feel?</h1>
+
+      <div class="state-slider-container">
+        <div class="state-value low" id="state-value">3</div>
+        <input type="range" id="state-slider" min="1" max="10" value="3">
+        <div class="state-labels">
+          <span>Flat</span>
+          <span>Fired up</span>
+        </div>
+      </div>
+
+      <button class="continue-btn fixing" id="state-continue">
+        Let's fix that
+      </button>
+    </div>
+
+    <!-- Screen 2: Trigger Selection -->
+    <div class="screen trigger-screen" id="screen-trigger">
+      <div class="trigger-header">
+        <h2 class="trigger-title">Choose your trigger</h2>
+        <p class="trigger-subtitle">What's most likely to get you moving?</p>
+      </div>
+
+      <div class="trigger-options" id="trigger-options">
+        <button class="trigger-btn recommended" data-trigger="call">
+          <span class="trigger-icon">📞</span>
+          <div class="trigger-text">
+            <div class="trigger-name">Call someone</div>
+            <div class="trigger-stat">+4.2 avg energy boost</div>
+          </div>
+          <span class="trigger-badge">Best for you</span>
+        </button>
+
+        <button class="trigger-btn" data-trigger="prospect">
+          <span class="trigger-icon">🎯</span>
+          <div class="trigger-text">
+            <div class="trigger-name">Hunt a new prospect</div>
+            <div class="trigger-stat">+3.1 avg energy boost</div>
+          </div>
+        </button>
+
+        <button class="trigger-btn" data-trigger="challenge">
+          <span class="trigger-icon">⚔️</span>
+          <div class="trigger-text">
+            <div class="trigger-name">Challenge a sceptic</div>
+            <div class="trigger-stat">+2.8 avg energy boost</div>
+          </div>
+        </button>
+
+        <button class="trigger-btn" data-trigger="email">
+          <span class="trigger-icon">✉️</span>
+          <div class="trigger-text">
+            <div class="trigger-name">Send a bold email</div>
+            <div class="trigger-stat">+2.1 avg energy boost</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Screen 3: Mission -->
+    <div class="screen mission-screen" id="screen-mission">
+      <div class="mission-number">Mission #<span id="mission-number">1</span></div>
+
+      <div class="mission-boss">
+        <div class="boss-avatar" id="boss-avatar">BK</div>
+        <div class="boss-info">
+          <div class="boss-name" id="boss-name">Billy Kim</div>
+          <div class="boss-company" id="boss-company">Acme Corp</div>
+        </div>
+        <div class="boss-difficulty">
+          <span class="difficulty-star">★</span>
+          <span class="difficulty-star">★</span>
+          <span class="difficulty-star">★</span>
+          <span class="difficulty-star empty">★</span>
+          <span class="difficulty-star empty">★</span>
+        </div>
+      </div>
+
+      <div class="mission-intel">
+        <div class="intel-label">Known Weakness</div>
+        <div class="intel-text" id="intel-text">Still manually handling their current process. Likely frustrated but hasn't prioritised fixing it.</div>
+      </div>
+
+      <div class="mission-objective">
+        <div class="objective-label">Objective</div>
+        <div class="objective-text" id="objective-text">Get them to admit their current process is frustrating.</div>
+      </div>
+
+      <div class="mission-actions">
+        <button class="mission-btn skip" id="mission-skip">Skip</button>
+        <button class="mission-btn go" id="mission-go">Let's go →</button>
+      </div>
+    </div>
+
+    <!-- Screen 4: Reflection -->
+    <div class="screen reflect-screen" id="screen-reflect">
+      <h2 class="reflect-question">How energised are you now?</h2>
+
+      <div class="state-slider-container">
+        <div class="state-value high" id="reflect-value">7</div>
+        <input type="range" id="reflect-slider" min="1" max="10" value="7">
+        <div class="state-labels">
+          <span>Flat</span>
+          <span>Fired up</span>
+        </div>
+      </div>
+
+      <div class="reflect-change">
+        <div class="change-values">
+          <span class="change-before" id="change-before">3</span>
+          <span class="change-arrow-icon">→</span>
+          <span class="change-after" id="change-after">7</span>
+        </div>
+        <div class="change-delta up" id="change-delta">+4 energy</div>
+      </div>
+
+      <button class="reflect-done" id="reflect-done">Done</button>
+    </div>
+  </div>
+
+<script>
+  const WORKER_URL = 'https://levitate-sync.ben-6a6.workers.dev';
+  const SYNC_PASSWORD_KEY = 'stiki-sync-password';
+  const READY_STATE_KEY = 'ready-state-history';
+
+  let currentScreen = 'state';
+  let startingState = 3;
+  let selectedTrigger = '';
+  let currentMission: any = null;
+  let leads: any[] = [];
+  let missionCount = 0;
+
+  // State history for learning
+  interface StateEntry {
+    trigger: string;
+    before: number;
+    after: number;
+    timestamp: number;
+  }
+
+  function getStateHistory(): StateEntry[] {
+    try {
+      return JSON.parse(localStorage.getItem(READY_STATE_KEY) || '[]');
+    } catch { return []; }
+  }
+
+  function saveStateEntry(entry: StateEntry) {
+    const history = getStateHistory();
+    history.push(entry);
+    // Keep last 100 entries
+    if (history.length > 100) history.shift();
+    localStorage.setItem(READY_STATE_KEY, JSON.stringify(history));
+  }
+
+  function getTriggerStats() {
+    const history = getStateHistory();
+    const stats: Record<string, { total: number; count: number }> = {};
+
+    history.forEach(entry => {
+      if (!stats[entry.trigger]) stats[entry.trigger] = { total: 0, count: 0 };
+      stats[entry.trigger].total += (entry.after - entry.before);
+      stats[entry.trigger].count++;
+    });
+
+    return Object.entries(stats).map(([trigger, data]) => ({
+      trigger,
+      avg: data.count > 0 ? (data.total / data.count).toFixed(1) : '0.0',
+      count: data.count
+    })).sort((a, b) => parseFloat(b.avg) - parseFloat(a.avg));
+  }
+
+  function getSyncPassword() {
+    return localStorage.getItem(SYNC_PASSWORD_KEY);
+  }
+
+  function showScreen(screenId: string) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(`screen-${screenId}`)?.classList.add('active');
+    currentScreen = screenId;
+  }
+
+  function updateStateDisplay(value: number, elementId: string) {
+    const el = document.getElementById(elementId);
+    if (el) {
+      el.textContent = String(value);
+      el.classList.remove('low', 'medium', 'high');
+      if (value <= 4) el.classList.add('low');
+      else if (value <= 7) el.classList.add('medium');
+      else el.classList.add('high');
+    }
+  }
+
+  function updateContinueButton(value: number) {
+    const btn = document.getElementById('state-continue') as HTMLButtonElement;
+    if (value >= 7) {
+      btn.textContent = "I'm ready - give me a mission";
+      btn.classList.remove('fixing');
+      btn.classList.add('primary');
+    } else {
+      btn.textContent = "Let's fix that";
+      btn.classList.remove('primary');
+      btn.classList.add('fixing');
+    }
+  }
+
+  async function loadLeads() {
+    const password = getSyncPassword();
+    if (!password) return;
+
+    try {
+      const res = await fetch(`${WORKER_URL}?t=${Date.now()}`, {
+        headers: { 'X-Sync-Password': password }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        leads = data.notes || [];
+
+        // Filter to leads that are "ready" (awakened from snooze or have activity)
+        leads = leads.filter((n: any) => n.isLead);
+      }
+    } catch (e) {
+      console.error('Failed to load leads:', e);
+    }
+  }
+
+  function pickMission(trigger: string) {
+    // Pick a lead based on the trigger type
+    let candidates = [...leads];
+
+    // Prioritise awakened leads (snooze expired)
+    const now = Date.now();
+    const awakened = candidates.filter(l => l.snoozeUntil && l.snoozeUntil <= now);
+
+    if (trigger === 'call') {
+      // Prefer leads with phone numbers and call snooze action
+      candidates = awakened.filter(l => l.phone && l.snoozeAction === 'call');
+      if (candidates.length === 0) candidates = leads.filter(l => l.phone);
+    } else if (trigger === 'email') {
+      candidates = awakened.filter(l => l.email && l.snoozeAction === 'email');
+      if (candidates.length === 0) candidates = leads.filter(l => l.email);
+    } else if (trigger === 'challenge') {
+      // Pick higher difficulty - leads with less activity
+      candidates = leads.filter(l => !l.activity || l.activity.length < 3);
+    }
+
+    if (candidates.length === 0) candidates = leads;
+    if (candidates.length === 0) return null;
+
+    // Random pick from candidates
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  function renderMission(lead: any) {
+    missionCount++;
+    currentMission = lead;
+
+    document.getElementById('mission-number')!.textContent = String(missionCount);
+
+    const initials = (lead.name || 'XX').split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
+    document.getElementById('boss-avatar')!.textContent = initials;
+    document.getElementById('boss-name')!.textContent = lead.name || 'Unknown';
+    document.getElementById('boss-company')!.textContent = lead.company || lead.role || '';
+
+    // Generate intel based on what we know
+    let intel = "No specific intel yet. Discover their pain point.";
+    if (lead.activity && lead.activity.length > 0) {
+      const lastActivity = lead.activity[lead.activity.length - 1];
+      intel = `Last contact: ${lastActivity.text || lastActivity.type}`;
+    }
+    document.getElementById('intel-text')!.textContent = intel;
+
+    // Generate objective based on trigger
+    let objective = "Make contact and find an opening.";
+    if (selectedTrigger === 'call') {
+      objective = "Get them talking about their current frustrations.";
+    } else if (selectedTrigger === 'email') {
+      objective = "Send something that demands a response.";
+    } else if (selectedTrigger === 'challenge') {
+      objective = "Challenge their current approach. Make them think.";
+    }
+    document.getElementById('objective-text')!.textContent = objective;
+  }
+
+  function updateReflection(before: number, after: number) {
+    document.getElementById('change-before')!.textContent = String(before);
+    document.getElementById('change-after')!.textContent = String(after);
+
+    const delta = after - before;
+    const deltaEl = document.getElementById('change-delta')!;
+    const afterEl = document.getElementById('change-after')!;
+
+    if (delta >= 0) {
+      deltaEl.textContent = `+${delta} energy`;
+      deltaEl.classList.remove('down');
+      deltaEl.classList.add('up');
+      afterEl.classList.remove('down');
+    } else {
+      deltaEl.textContent = `${delta} energy`;
+      deltaEl.classList.remove('up');
+      deltaEl.classList.add('down');
+      afterEl.classList.add('down');
+    }
+  }
+
+  // Event listeners
+  document.getElementById('state-slider')?.addEventListener('input', (e) => {
+    const value = parseInt((e.target as HTMLInputElement).value);
+    startingState = value;
+    updateStateDisplay(value, 'state-value');
+    updateContinueButton(value);
+  });
+
+  document.getElementById('state-continue')?.addEventListener('click', async () => {
+    await loadLeads();
+
+    if (startingState >= 7) {
+      // Already fired up - go straight to mission
+      selectedTrigger = 'direct';
+      const mission = pickMission(selectedTrigger);
+      if (mission) {
+        renderMission(mission);
+        showScreen('mission');
+      } else {
+        alert('No leads found. Connect to a project first.');
+      }
+    } else {
+      showScreen('trigger');
+    }
+  });
+
+  document.querySelectorAll('.trigger-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      selectedTrigger = (btn as HTMLElement).dataset.trigger || '';
+      const mission = pickMission(selectedTrigger);
+
+      if (mission) {
+        renderMission(mission);
+        showScreen('mission');
+      } else {
+        alert('No leads found for this trigger. Try another or add leads in Levitate.');
+      }
+    });
+  });
+
+  document.getElementById('mission-skip')?.addEventListener('click', () => {
+    const mission = pickMission(selectedTrigger);
+    if (mission) {
+      renderMission(mission);
+    } else {
+      alert('No more leads available.');
+    }
+  });
+
+  document.getElementById('mission-go')?.addEventListener('click', () => {
+    // Open contact method based on trigger
+    if (currentMission) {
+      if (selectedTrigger === 'call' && currentMission.phone) {
+        window.location.href = `tel:${currentMission.phone}`;
+      } else if (selectedTrigger === 'email' && currentMission.email) {
+        window.location.href = `mailto:${currentMission.email}`;
+      } else if (currentMission.linkedin) {
+        window.open(currentMission.linkedin.startsWith('http') ? currentMission.linkedin : `https://${currentMission.linkedin}`, '_blank');
+      }
+    }
+
+    // Go to reflection
+    (document.getElementById('reflect-slider') as HTMLInputElement).value = '7';
+    updateStateDisplay(7, 'reflect-value');
+    updateReflection(startingState, 7);
+    showScreen('reflect');
+  });
+
+  document.getElementById('reflect-slider')?.addEventListener('input', (e) => {
+    const value = parseInt((e.target as HTMLInputElement).value);
+    updateStateDisplay(value, 'reflect-value');
+    updateReflection(startingState, value);
+  });
+
+  document.getElementById('reflect-done')?.addEventListener('click', () => {
+    const afterValue = parseInt((document.getElementById('reflect-slider') as HTMLInputElement).value);
+
+    // Save state entry for learning
+    saveStateEntry({
+      trigger: selectedTrigger,
+      before: startingState,
+      after: afterValue,
+      timestamp: Date.now()
+    });
+
+    // Reset and go back to state screen
+    (document.getElementById('state-slider') as HTMLInputElement).value = String(afterValue);
+    startingState = afterValue;
+    updateStateDisplay(afterValue, 'state-value');
+    updateContinueButton(afterValue);
+    showScreen('state');
+  });
+
+  // Connect button
+  document.getElementById('connect-btn')?.addEventListener('click', () => {
+    const project = prompt('Enter project name:');
+    if (project && project.length >= 4) {
+      localStorage.setItem(SYNC_PASSWORD_KEY, project);
+      document.getElementById('project-name')!.textContent = project;
+      loadLeads();
+    }
+  });
+
+  // Init
+  const currentProject = getSyncPassword();
+  if (currentProject) {
+    document.getElementById('project-name')!.textContent = currentProject;
+    loadLeads();
+  }
+
+  updateStateDisplay(3, 'state-value');
+  updateContinueButton(3);
+</script>
+</body>
+</html>

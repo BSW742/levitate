@@ -278,6 +278,41 @@ export default {
       return json({ deleted: mine.length });
     }
 
+    /* Append a single note to a project, server-side.
+     * The PDA used to GET the whole blob, push a note onto it and PUT it
+     * back - which meant a ~150KB round trip on mobile, and, because it
+     * rebuilt the object as {notes, nextZIndex}, it silently destroyed
+     * goals, props, arrows, board titles and labels every time a lead was
+     * saved. Merging here preserves every key and sends only the note. */
+    if (url.pathname === '/append-note' && request.method === 'POST') {
+      let note: Record<string, unknown>;
+      try {
+        note = await request.json() as Record<string, unknown>;
+      } catch {
+        return json({ error: 'Body must be a JSON note' }, 400);
+      }
+      if (!note || typeof note !== 'object' || !note.id) {
+        return json({ error: 'Note must have an id' }, 400);
+      }
+
+      const existing = await env.BUCKET.get(filename);
+      const blob = existing ? await existing.json() as Record<string, any> : {};
+      const notes = Array.isArray(blob.notes) ? blob.notes : [];
+
+      if (notes.some((n: any) => n && n.id === note.id)) {
+        return json({ ok: true, duplicate: true, notes: notes.length });
+      }
+
+      const nextZIndex = typeof blob.nextZIndex === 'number' ? blob.nextZIndex : 1;
+      note.zIndex = nextZIndex;
+
+      const merged = { ...blob, notes: [...notes, note], nextZIndex: nextZIndex + 1 };
+      await env.BUCKET.put(filename, JSON.stringify(merged), {
+        httpMetadata: { contentType: 'application/json' },
+      });
+      return json({ ok: true, notes: merged.notes.length });
+    }
+
     if (request.method === 'GET') {
       // Load data
       const object = await env.BUCKET.get(filename);
@@ -442,10 +477,136 @@ Start your response with [ and end with ]`,
       }
     }
 
+    /* In-app web lookup, so the PDA can show results as a list instead of
+     * throwing the user out to Safari. Mirrors the search strategies in the
+     * /leads skill: LinkedIn profiles via Google's index, team pages,
+     * company directories. */
+    if (request.method === 'POST' && url.pathname === '/lookup') {
+      try {
+        const { kind, company, role, industry, location } = await request.json() as {
+          kind?: string; company?: string; role?: string; industry?: string; location?: string;
+        };
+
+        const where = location ? ` in ${location}` : '';
+        let ask = '';
+        if (kind === 'website') {
+          if (!company) return json({ results: [] });
+          ask = `Find the official website for the company "${company}"${where}, plus any obviously related official pages (contact page, team page). Return up to 5.`;
+        } else if (kind === 'people') {
+          ask = `Find real people who are ${role || 'senior decision makers'}${industry ? ` in the ${industry} industry` : ''}${where}. Search LinkedIn profiles via Google, company team and about pages, conference speaker lists and industry publications. Return up to 8 distinct people.`;
+        } else {
+          ask = `Find ${industry || 'businesses'} companies${where}. Use directories, industry association member lists and company websites. Return up to 8 distinct companies.`;
+        }
+
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+            'anthropic-beta': 'web-search-2025-03-05',
+          },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 2048,
+            tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 6 }],
+            messages: [{
+              role: 'user',
+              content: `${ask}
+
+Only include results you actually found in search results - never invent a name or a URL.
+
+Respond with ONLY a JSON array, nothing before or after:
+[{"title":"Name or company","subtitle":"Role, company, or short note","url":"https://..."}]
+
+Start your response with [ and end with ].`,
+            }],
+          }),
+        });
+
+        if (!res.ok) return json({ results: [], error: 'Search failed' }, 200);
+
+        const data = await res.json() as { content: Array<{ type: string; text?: string }> };
+        const blocks = data.content.filter(c => c.type === 'text');
+        const text = blocks.map(b => b.text || '').join('\n');
+        const a = text.indexOf('['), b = text.lastIndexOf(']');
+        if (a === -1 || b <= a) return json({ results: [] });
+
+        let results: Array<Record<string, string>> = [];
+        try { results = JSON.parse(text.slice(a, b + 1)); } catch { return json({ results: [] }); }
+
+        return json({
+          results: results
+            .filter(r => r && (r.title || r.url))
+            .slice(0, 10)
+            .map(r => ({ title: str(r.title), subtitle: str(r.subtitle), url: str(r.url) })),
+        });
+      } catch (e) {
+        return json({ results: [], error: String(e) });
+      }
+    }
+
+    /* The website lookup + n8n enrichment half of /scan, on its own, so the
+     * PDA can show the scanned profile immediately and fill these in after. */
+    if (request.method === 'POST' && url.pathname === '/enrich-profile') {
+      try {
+        const { name, company } = await request.json() as { name?: string; company?: string };
+        if (!company) return json({ website: '', phone: '', email: '' });
+
+        let website = '', phone = '', email = '';
+
+        const searchRes = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+            'anthropic-beta': 'web-search-2025-03-05',
+          },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 256,
+            tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 1 }],
+            messages: [{
+              role: 'user',
+              content: `What is the official website domain for the company "${company}"${name ? ` (employee: ${name})` : ''}? Reply with only the domain, e.g. acme.com`,
+            }],
+          }),
+        });
+
+        if (searchRes.ok) {
+          const r = await searchRes.json() as { content: Array<{ type: string; text?: string }> };
+          const text = r.content.filter(c => c.type === 'text').map(c => c.text || '').join(' ');
+          const m = text.match(/([a-z0-9-]+\.[a-z]{2,}(?:\.[a-z]{2,})?)/i);
+          if (m) {
+            const domain = m[1].replace(/^www\./, '');
+            website = `https://${domain}`;
+            try {
+              const n8n = await fetch(N8N_WEBHOOK, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': N8N_AUTH },
+                body: JSON.stringify({ company_name: company, website: domain, industry: '', email_address: '' }),
+              });
+              if (n8n.ok) {
+                const raw = await n8n.json() as Record<string, unknown>;
+                const d = (raw.output || raw) as Record<string, string>;
+                phone = d.phone || d.Phone || '';
+                email = d.email || d.Email || '';
+              }
+            } catch { /* enrichment is best effort */ }
+          }
+        }
+
+        return json({ website, phone, email });
+      } catch (e) {
+        return json({ website: '', phone: '', email: '', error: String(e) });
+      }
+    }
+
     if (request.method === 'POST' && url.pathname === '/scan') {
       // Scan LinkedIn screenshot with Claude Vision
       try {
-        const { image } = await request.json() as { image: string };
+        const { image, quick } = await request.json() as { image: string; quick?: boolean };
         if (!image) {
           return new Response(JSON.stringify({ error: 'No image provided' }), {
             status: 400,
@@ -513,6 +674,18 @@ Start your response with [ and end with ]`,
         let phone = '';
         let website = '';
         let email = '';
+        // quick mode: hand back the profile now, let the client ask for
+        // enrichment separately so the preview is not held up by two more
+        // network round trips
+        if (quick) {
+          return json({
+            name: profile.name || '',
+            role: profile.role || '',
+            company: profile.company || '',
+            phone: '', website: '', email: '',
+          });
+        }
+
         if (profile.company) {
           try {
             // First, find the website
@@ -600,20 +773,57 @@ Start your response with [ and end with ]`,
     }
 
     if (request.method === 'POST') {
-      // Save data
+      /* Whole-blob save, with two guards.
+       *
+       * The PDA once rebuilt state as {notes, nextZIndex} and PUT that over
+       * everything, destroying goals, props, arrows, titles and labels - while
+       * the sync indicator went green, because the request itself succeeded.
+       * A save is only honest if it cannot silently lose what it did not
+       * know about. */
       try {
-        const data = await request.json();
-        await env.BUCKET.put(filename, JSON.stringify(data), {
+        const incoming = await request.json() as Record<string, any>;
+        if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) {
+          return json({ error: 'Body must be a state object' }, 400);
+        }
+
+        const existing = await env.BUCKET.get(filename);
+        let merged: Record<string, any> = incoming;
+        const preserved: string[] = [];
+
+        if (existing) {
+          const prev = await existing.json() as Record<string, any>;
+
+          // Guard 1: a key the client never sent is a key it does not know
+          // about, not a deletion. Carry it over.
+          merged = { ...incoming };
+          for (const k of Object.keys(prev)) {
+            if (!(k in incoming)) { merged[k] = prev[k]; preserved.push(k); }
+          }
+
+          // Guard 2: refuse to empty a populated collection. Wiping a board
+          // is rare and deliberate; doing it by accident is not recoverable,
+          // because R2 keeps no history.
+          if (url.searchParams.get('force') !== '1') {
+            for (const k of ['notes', 'goals']) {
+              const before = Array.isArray(prev[k]) ? prev[k].length : 0;
+              const after = Array.isArray(merged[k]) ? merged[k].length : 0;
+              if (before >= 5 && after === 0) {
+                return json({
+                  error: `Refused: this save would delete all ${before} ${k}. If that is intended, repeat with ?force=1.`,
+                  guard: k,
+                  before,
+                }, 409);
+              }
+            }
+          }
+        }
+
+        await env.BUCKET.put(filename, JSON.stringify(merged), {
           httpMetadata: { contentType: 'application/json' },
         });
-        return new Response(JSON.stringify({ success: true, filename }), {
-          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-        });
+        return json({ success: true, filename, preserved });
       } catch (e) {
-        return new Response(JSON.stringify({ error: 'Failed to save' }), {
-          status: 500,
-          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
-        });
+        return json({ error: 'Failed to save' }, 500);
       }
     }
 

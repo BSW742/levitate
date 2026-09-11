@@ -131,56 +131,96 @@
         <span><kbd>N</kbd> new</span>
         <span><kbd>X</kbd> lead</span>
         <span><kbd>P</kbd> props</span>
+        <span><kbd>T</kbd> today</span>
         <span><kbd>Tab</kbd> goals</span>
       </div>
     </div>
 
     <!-- Settings Modal -->
     <div id="settings-modal" class="modal">
-      <div class="modal-content">
+      <div class="modal-content settings-content">
         <div class="modal-header">
           <h2>Settings</h2>
           <button class="modal-close">&times;</button>
         </div>
+        <div class="settings-layout">
+          <nav class="settings-nav">
+            <button class="settings-tab active" data-pane="project">Project</button>
+            <button class="settings-tab" data-pane="plays">Plays</button>
+            <button class="settings-tab" data-pane="templates">Templates</button>
+            <button class="settings-tab" data-pane="data">Data</button>
+            <button class="settings-tab" data-pane="admin">Admin</button>
+          </nav>
+
+          <div class="settings-panes">
+            <section class="settings-pane active" data-pane="project">
+              <h3>Project</h3>
+              <p class="setting-hint">Everything syncs under this name. It is also the password for the project.</p>
+              <div class="current-project"><span id="current-project-name">No project</span></div>
+              <label class="pane-label">Switch project</label>
+              <input type="text" id="switch-project-input" placeholder="e.g. litebooks-sales">
+              <div class="setting-actions">
+                <button id="switch-project-btn">Switch Project</button>
+              </div>
+              <div id="saved-projects-list" class="saved-projects-list"></div>
+            </section>
+
+            <section class="settings-pane" data-pane="plays">
+              <h3>Plays</h3>
+              <p class="setting-hint">A sequence of moves you run against a lead. Each offset counts from the previous step being done.</p>
+              <div id="plays-list" class="settings-list"></div>
+              <button id="add-play" class="add-template-btn">+ Add Play</button>
+            </section>
+
+            <section class="settings-pane" data-pane="templates">
+              <h3>Email templates</h3>
+              <p class="setting-hint">Used by the email steps in a play. Outlook adds your signature, so leave it out.</p>
+              <div id="email-templates-list" class="settings-list"></div>
+              <button id="add-email-template" class="add-template-btn">+ Add Template</button>
+            </section>
+
+            <section class="settings-pane" data-pane="data">
+              <h3>Data</h3>
+              <p class="setting-hint">Export writes a JSON copy of this project. Clear All cannot be undone.</p>
+              <div class="setting-actions">
+                <button id="export-data">Export</button>
+                <button id="import-data" class="secondary">Import</button>
+                <button id="clear-all-data" class="danger">Clear All</button>
+              </div>
+            </section>
+
+            <section class="settings-pane" data-pane="admin">
+              <h3>Admin</h3>
+              <p class="setting-hint">Inspect and manage every project stored in the cloud.</p>
+              <div class="setting-actions">
+                <button id="open-admin-btn">Open Admin Panel</button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Play Editor Modal -->
+    <div id="play-modal" class="modal">
+      <div class="modal-content play-modal-content">
+        <div class="modal-header">
+          <h2 id="play-modal-title">New Play</h2>
+          <button class="modal-close">&times;</button>
+        </div>
         <div class="modal-body">
-          <div class="setting-group">
-            <label>Current Project</label>
-            <div class="current-project">
-              <span id="current-project-name">No project</span>
-            </div>
+          <div class="field-group">
+            <label>Name</label>
+            <input type="text" id="play-name" placeholder="e.g. New subscription deal">
           </div>
-          <div class="setting-divider"></div>
-          <div class="setting-group">
-            <label>Switch Project</label>
-            <p class="setting-hint">Enter a project name or select from recent projects</p>
-            <input type="text" id="switch-project-input" placeholder="e.g. litebooks-sales">
-            <div class="setting-actions">
-              <button id="switch-project-btn">Switch Project</button>
-            </div>
-            <div id="saved-projects-list" class="saved-projects-list"></div>
+          <div class="field-group">
+            <label>Steps</label>
+            <div id="play-steps"></div>
+            <button id="play-add-step" class="add-template-btn">+ Add step</button>
           </div>
-          <div class="setting-divider"></div>
-          <div class="setting-group">
-            <label>Data</label>
-            <div class="setting-actions">
-              <button id="export-data">Export</button>
-              <button id="import-data" class="secondary">Import</button>
-              <button id="clear-all-data" class="danger">Clear All</button>
-            </div>
-          </div>
-          <div class="setting-divider"></div>
-          <div class="setting-group">
-            <label>Email Templates</label>
-            <p class="setting-hint">Create up to 3 email templates for quick outreach</p>
-            <div id="email-templates-list" class="email-templates-list"></div>
-            <button id="add-email-template" class="add-template-btn">+ Add Template</button>
-          </div>
-          <div class="setting-divider"></div>
-          <div class="setting-group">
-            <label>Admin</label>
-            <div class="setting-actions">
-              <button id="open-admin-btn">Open Admin Panel</button>
-            </div>
+          <div class="setting-actions">
+            <button id="play-save" class="primary">Save Play</button>
+            <button id="play-delete" class="danger">Delete</button>
           </div>
         </div>
       </div>
@@ -265,6 +305,15 @@ Best regards"></textarea>
           </button>
           <div class="header-spacer"></div>
           <div class="header-actions">
+            <div class="play-control">
+              <button id="detail-play" class="play-trigger" title="Sales play">
+                <span class="play-icon">&#9654;</span><span id="play-display">Play</span>
+              </button>
+              <div id="play-popover" class="play-popover"></div>
+            </div>
+            <button id="detail-today" class="today-toggle" title="Flag for today">
+              <span class="today-dot"></span><span>Today</span>
+            </button>
             <div class="header-snooze">
               <button id="snooze-trigger" class="snooze-trigger" title="Snooze with action">
                 <span class="snooze-icon">⏰</span>
@@ -1383,8 +1432,6 @@ body.multi-select-mode .sticky-note:hover {
 }
 .sticky-note-actions button:hover { background: rgba(0,0,0,0.1); }
 .sticky-note-actions .done-btn:hover { background: #22c55e; color: white; }
-.sticky-note-actions .delete-btn:hover { background: #ef4444; color: white; }
-.sticky-note-actions .detail-btn:hover { background: #3b82f6; color: white; }
 
 /* Color Picker */
 .color-picker {
@@ -2902,11 +2949,18 @@ body.multi-select-mode .sticky-note:hover {
   #goals-head { padding: 74px 16px 0; }
   #goals-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; padding: 14px 16px 32px; }
   .goal-card { padding: 20px; }
-  .goal-text { font-size: 17px; }
+  .goal-text { font-size: 17px; max-height: 42%; }
+  .goal-when-text { font-size: 13px; }
+  .goal-when { margin-top: 16px; }
   .goal-foot { margin-top: 12px; }
-  .goal-stiki { width: 25px; height: 25px; }
+  .goal-stiki { width: 28px; height: 28px; }
   .goal-stiki-n { font-size: 9px; margin: 0 7px 6px 0; }
-  #toolbar #mode-toggle .mode-btn { padding: 0 10px; font-size: 11.5px; }
+  #toolbar #mode-toggle a.mode-btn {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+#toolbar #mode-toggle .mode-btn { padding: 0 10px; font-size: 11.5px; }
   #project-badge { display: none; }
 }
 
@@ -3254,8 +3308,8 @@ body.goals-mode .board { display: none !important; }
 .goal-card:hover { box-shadow: 0 2px 4px rgba(18,16,14,0.05), 0 12px 24px -16px rgba(18,16,14,0.3); }
 
 .goal-text {
-  flex: 1;
-  min-height: 0;
+  flex: none;
+  max-height: 46%;
   overflow: auto;
   scrollbar-width: none;
   font-size: clamp(20px, 1.75vw, 29px);
@@ -3269,6 +3323,42 @@ body.goals-mode .board { display: none !important; }
   transition: color 0.45s ease;
 }
 .goal-text::-webkit-scrollbar { display: none; }
+/* the concrete definition of done - smaller than the headline, but still
+   substantial, because it is the part that makes the goal checkable */
+.goal-when {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: none;
+  margin-top: 26px;
+}
+.goal-when::-webkit-scrollbar { display: none; }
+.goal-when-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #c2beb8;
+  margin-bottom: 3px;
+}
+.goal-when-text {
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: #57534e;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.goal-when-text:empty::before {
+  content: 'What has to be true for this to be done?';
+  color: #d4d0ca;
+  font-weight: 400;
+}
+.goal-card.done .goal-when-text { color: #a8a29e; }
+.goal-card.done .goal-when-label { color: #d4d0ca; }
+
 .goal-text:empty::before {
   content: 'Name the goal';
   font-size: 16px;
@@ -3295,8 +3385,8 @@ body.goals-mode .board { display: none !important; }
 }
 .goal-stiki {
   position: relative;
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   flex: none;
   margin-left: -7px;
   padding: 0;
@@ -3332,6 +3422,14 @@ body.goals-mode .board { display: none !important; }
   background: rgba(18,16,14,0.16);
   clip-path: polygon(0 0, 100% 0, 0 100%);
 }
+.goal-stiki-more {
+  align-self: flex-end;
+  margin: 0 0 4px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #a8a29e;
+}
+
 .goal-stiki-n {
   font-size: 10px;
   font-weight: 700;
@@ -3384,6 +3482,151 @@ body.goals-mode .board { display: none !important; }
 }
 
 /* ---- The cross-out ---- */
+/* ---- Reordering: nothing here applies unless a card is actually moving ---- */
+body.goals-reordering { user-select: none; cursor: grabbing; }
+body.goals-reordering .goal-card { transition: none; }
+/* the board steps back so the held card reads as lifted off it */
+body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
+
+.goal-card.goal-dragging {
+  position: fixed;
+  margin: 0;
+  z-index: 500;
+  pointer-events: none;
+  opacity: 1;
+  transform: rotate(-2.2deg) scale(1.035);
+  box-shadow:
+    0 6px 14px rgba(18,16,14,0.10),
+    0 30px 60px -18px rgba(18,16,14,0.55);
+  cursor: grabbing;
+}
+
+/* where it will land */
+.goal-placeholder {
+  aspect-ratio: 1 / 1;
+  border-radius: 4px;
+  border: 2px dashed #c8c4be;
+  background: rgba(18,16,14,0.035);
+  animation: goal-slot-in 0.16s ease-out;
+}
+@keyframes goal-slot-in {
+  from { transform: scale(0.96); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+/* ---- Daily state: only the goals wanting something should catch the eye ---- */
+.goal-status {
+  position: relative;
+  z-index: 3;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #efedea;
+}
+.gs-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: 1px;
+}
+
+/* Handled: every remaining task is booked ahead. The one calm state that
+   has earned a bit of presence, because it is telling you something -
+   not merely the absence of work. */
+.goal-status.scheduled { border-top-color: transparent; padding-top: 8px; }
+.gs-banner {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  background: #f1efec;
+  box-shadow: inset 0 0 0 1px #e6e3de;
+}
+.gs-tick {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  flex: none;
+  border-radius: 50%;
+  background: #12100e;
+  color: #ffffff;
+}
+.gs-banner-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #12100e;
+}
+.gs-next {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: #a19b93;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* tasks exist but none are booked - stays quiet */
+.goal-status.ok { font-size: 11.5px; font-weight: 500; color: #bdb8b1; }
+.goal-status.ok .gs-dot { background: #dcd8d2; }
+
+/* stalled - invite a next action */
+.goal-status.empty { font-size: 12px; font-weight: 600; color: #8a847c; }
+.goal-status.empty .gs-dot {
+  background: transparent;
+  border: 1.5px dashed #b5b0a9;
+  width: 8px;
+  height: 8px;
+  margin-right: 7px;
+}
+
+/* the one that matters today */
+.goal-status.today .gs-head {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #12100e;
+}
+.goal-status.today .gs-dot { background: #12100e; }
+.goal-status.today .gs-task {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: #3f3b36;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.gs-more { margin-left: 7px; font-size: 11px; font-weight: 600; color: #b5b0a9; white-space: nowrap; }
+
+/* + is always there, but speaks up when a goal has no next action */
+.goal-add-task {
+  width: 30px;
+  height: 30px;
+  border: 1.5px solid transparent;
+  border-radius: 50%;
+  background: none;
+  color: #c8c4be;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.16s, background 0.16s, border-color 0.16s, transform 0.16s;
+}
+.goal-add-task:hover { color: #12100e; background: #f0efec; transform: scale(1.06); }
+.goal-card.state-empty .goal-add-task { color: #8a847c; border-color: #ded9d3; border-style: dashed; }
+.goal-card.state-empty .goal-add-task:hover { border-color: #12100e; border-style: solid; color: #12100e; }
+.goal-card.done .goal-add-task,
+.goal-card.done .goal-status { display: none; }
+
 .goal-cross {
   position: absolute;
   inset: 0;
@@ -3460,6 +3703,254 @@ body.goals-mode .board { display: none !important; }
   transition: border-color 0.18s, color 0.18s, background 0.18s;
 }
 .goal-add:hover { border-color: #b5b0a9; color: #78716c; background: #fffefb; }
+
+/* ---- Settings: a rail and one pane, so nothing scrolls ---- */
+.settings-content { max-width: 760px; }
+.settings-layout {
+  display: grid;
+  grid-template-columns: 156px minmax(0, 1fr);
+  min-height: 380px;
+}
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 12px 16px 16px;
+  border-right: 1px solid #f1f0ed;
+}
+.settings-tab {
+  text-align: left;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+}
+.settings-tab:hover { background: #f6f5f3; color: #4b5563; }
+.settings-tab.active { background: #12100e; color: #ffffff; }
+
+.settings-panes { padding: 20px 24px 24px; }
+.settings-pane { display: none; }
+.settings-pane.active { display: block; animation: settings-fade 0.16s ease-out; }
+@keyframes settings-fade { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+.settings-pane h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: #1f2937;
+}
+.settings-pane .setting-hint { margin-bottom: 16px; }
+.pane-label {
+  display: block;
+  margin: 18px 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+.settings-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.settings-list:empty { margin-bottom: 0; }
+
+@media (max-width: 640px) {
+  .settings-layout { grid-template-columns: 1fr; min-height: 0; }
+  .settings-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-right: none;
+    border-bottom: 1px solid #f1f0ed;
+    padding: 12px;
+  }
+  .settings-nav::-webkit-scrollbar { display: none; }
+  .settings-tab { white-space: nowrap; }
+  .settings-panes { padding: 16px; }
+}
+
+/* ---- Plays ---- */
+.play-control { position: relative; }
+.play-trigger {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  max-width: 210px;
+  padding: 0 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: border-color 0.15s, color 0.15s;
+}
+.play-trigger:hover { border-color: #9ca3af; color: #4b5563; }
+.play-trigger.on { border-color: #12100e; color: #12100e; }
+.play-icon { font-size: 9px; }
+#play-display { overflow: hidden; text-overflow: ellipsis; }
+
+.play-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 260px;
+  padding: 12px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+  z-index: 60;
+  text-align: left;
+}
+.play-popover.open { opacity: 1; visibility: visible; transform: translateY(0); }
+.play-pop-head {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+.play-pop-hint { font-size: 12px; color: #9ca3af; }
+.play-pick {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  text-align: left;
+}
+.play-pick:hover { background: #f3f4f6; }
+.play-pick span { font-weight: 500; color: #9ca3af; }
+
+.play-next { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+.play-next-icon { font-size: 17px; }
+.play-next strong { display: block; font-size: 13.5px; color: #1f2937; }
+.play-next em { display: block; font-size: 11.5px; font-style: normal; color: #9ca3af; margin-top: 1px; }
+.play-note {
+  margin: 0 0 12px;
+  padding: 9px 10px;
+  background: #f8f7f5;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #6b7280;
+}
+.play-pop-actions { display: flex; gap: 6px; }
+.play-pop-actions button {
+  flex: 1;
+  height: 32px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+}
+.play-pop-actions button:hover { border-color: #9ca3af; color: #374151; }
+.play-pop-actions .primary { background: #12100e; border-color: #12100e; color: white; }
+.play-pop-actions .primary:hover { background: #2b2723; color: white; }
+
+/* designer */
+.play-modal-content { max-width: 640px; }
+.play-step {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+.ps-note {
+  flex-basis: 100%;
+  height: 30px;
+  border: 1px solid #f1f0ed;
+  border-radius: 7px;
+  padding: 0 9px;
+  font-size: 12px;
+  color: #6b7280;
+  background: #fafaf9;
+}
+.ps-note:focus { outline: none; border-color: #d1d5db; background: white; }
+.ps-note::placeholder { color: #c8c4be; }
+.play-step select {
+  height: 34px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0 8px;
+  font-size: 12.5px;
+  background: white;
+  color: #374151;
+  min-width: 0;
+}
+.play-step .ps-type { flex: 1.3; }
+.play-step .ps-template { flex: 1; }
+.ps-when { font-size: 11.5px; color: #9ca3af; white-space: nowrap; display: flex; align-items: center; gap: 4px; }
+.ps-offset { width: 46px; height: 28px; border: 1px solid #e5e7eb; border-radius: 6px; text-align: center; font-size: 12px; }
+.ps-remove {
+  border: none; background: none; color: #d1d5db; font-size: 20px;
+  line-height: 1; cursor: pointer; padding: 0 2px; flex: none;
+}
+.ps-remove:hover { color: #ef4444; }
+.template-meta { font-size: 11.5px; color: #9ca3af; margin-left: auto; }
+
+/* ---- Today: a commitment you make, shown wherever the task appears ---- */
+.today-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.today-toggle:hover { border-color: #9ca3af; color: #4b5563; }
+.today-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid #d1d5db;
+  transition: background 0.15s, border-color 0.15s;
+}
+.today-toggle.on { background: #12100e; border-color: #12100e; color: #ffffff; }
+.today-toggle.on .today-dot { background: #ffffff; border-color: #ffffff; }
+
+.sticky-today-chip {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.72);
+  color: #fff;
+  flex: none;
+}
 
 /* ---- Goal marker on sticky notes: just the diamond, name on hover ---- */
 .sticky-note-meta-left {
@@ -3598,6 +4089,24 @@ body.goals-mode .board { display: none !important; }
     snoozeAction?: 'call' | 'email' | 'meeting' | 'linkedin' | 'web';
     images?: string[]; // Base64 encoded images for notes
     goalId?: string; // Optional link to a Goal
+    todayOn?: number; // flagged for today; only counts on the day it was set
+    playId?: string;  // play this lead is running
+    playStep?: number;// index of the step that is next
+  }
+
+  type StepType = 'email' | 'email_fup' | 'call' | 'f2f' | 'li_connect' | 'li_comment' | 'li_like' | 'text';
+
+  interface PlayStep {
+    type: StepType;
+    offsetDays: number;   // days after the PREVIOUS step is done (first step: after applying)
+    template?: string;    // email template name, email steps only
+    note?: string;
+  }
+
+  interface Play {
+    id: string;
+    name: string;
+    steps: PlayStep[];
   }
 
   interface EmailTemplate {
@@ -3641,6 +4150,7 @@ body.goals-mode .board { display: none !important; }
   interface Goal {
     id: string;
     text: string;
+    doneWhen?: string;   // concrete definition of done
     done: boolean;
     createdAt: number;
     completedAt?: number;
@@ -3655,6 +4165,7 @@ body.goals-mode .board { display: none !important; }
     nextZIndex: number;
     boardTitles?: string[];
     emailTemplates?: EmailTemplate[];
+    plays?: Play[];
     boardLabels?: BoardLabel[];
   }
 
@@ -3741,6 +4252,7 @@ body.goals-mode .board { display: none !important; }
   // Storage
   function save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    markViewsDirty();
     syncToCloud();
   }
 
@@ -3751,7 +4263,7 @@ body.goals-mode .board { display: none !important; }
   }
 
   function emptyState(): State {
-    return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES], props: [], arrows: [], goals: [], boardLabels: [] };
+    return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES], props: [], arrows: [], goals: [], boardLabels: [], plays: [] };
   }
 
   /* Any blob becoming `state` goes through here. Older projects predate
@@ -3767,6 +4279,7 @@ body.goals-mode .board { display: none !important; }
       props: Array.isArray(raw.props) ? raw.props : [],
       arrows: Array.isArray(raw.arrows) ? raw.arrows : [],
       goals: Array.isArray(raw.goals) ? raw.goals : [],
+      plays: Array.isArray(raw.plays) ? raw.plays : [],
       boardLabels: Array.isArray(raw.boardLabels) ? raw.boardLabels : [],
     };
   }
@@ -3774,11 +4287,50 @@ body.goals-mode .board { display: none !important; }
   /* Re-render whatever the user is actually looking at. render() only fills
      the .board elements, and those are display:none in Goals and List mode -
      so calling it alone leaves those views showing the previous project. */
-  function refreshView() {
-    if (viewMode === 'goals') renderGoals();
-    else if (viewMode === 'list') renderList();
-    else render();
-    updateMinimap();
+  const viewDirty = { tasks: true, goals: true, list: true };
+  function markViewsDirty() { viewDirty.tasks = viewDirty.goals = viewDirty.list = true; }
+
+  function refreshView(force = false) {
+    if (viewMode === 'goals') {
+      if (force || viewDirty.goals) { renderGoals(); viewDirty.goals = false; }
+    } else if (viewMode === 'list') {
+      if (force || viewDirty.list) { renderList(); viewDirty.list = false; }
+    } else {
+      if (force || viewDirty.tasks) { render(); viewDirty.tasks = false; }
+      updateMinimap();
+    }
+  }
+
+  /* Bring the cloud copy into the local one.
+     This used to name notes, boardTitles and goals by hand, so anything added
+     later - plays, email templates, props, arrows, board labels - was simply
+     never read, and a device would sit there insisting it had none. Keys are
+     discovered rather than listed, so a new one works without touching this. */
+  const ID_COLLECTIONS = ['notes', 'goals', 'props', 'arrows', 'boardLabels', 'plays'];
+
+  function mergeFromCloud(local: State, cloud: any): State {
+    const out: any = { ...local };
+
+    // adopt any key this client has never heard of
+    for (const k of Object.keys(cloud)) if (!(k in out)) out[k] = cloud[k];
+
+    // id-keyed collections: keep everything local, add what only the cloud has
+    for (const k of ID_COLLECTIONS) {
+      const mine = Array.isArray(out[k]) ? out[k] : [];
+      const theirs = Array.isArray(cloud[k]) ? cloud[k] : [];
+      const seen = new Set(mine.map((x: any) => x && x.id));
+      out[k] = [...mine, ...theirs.filter((x: any) => x && !seen.has(x.id))];
+    }
+
+    // templates are keyed by name rather than id
+    const mineT = Array.isArray(out.emailTemplates) ? out.emailTemplates : [];
+    const theirsT = Array.isArray(cloud.emailTemplates) ? cloud.emailTemplates : [];
+    const names = new Set(mineT.map((t: any) => t && t.name));
+    out.emailTemplates = [...mineT, ...theirsT.filter((t: any) => t && !names.has(t.name))];
+
+    if (cloud.boardTitles) out.boardTitles = cloud.boardTitles;
+    out.nextZIndex = Math.max(out.nextZIndex || 1, cloud.nextZIndex || 1);
+    return normalizeState(out);
   }
 
   function load(): State {
@@ -4775,6 +5327,7 @@ body.goals-mode .board { display: none !important; }
 
       const linkedGoal = note.goalId ? (state.goals || []).find(g => g.id === note.goalId) : null;
       const goalChipHtml = linkedGoal ? `<span class="sticky-goal-chip" title="Goal: ${escapeHtml(linkedGoal.text || 'Untitled goal')}">◆</span>` : '';
+      const todayChipHtml = isFlaggedToday(note) ? `<span class="sticky-today-chip" title="Flagged for today">TODAY</span>` : '';
 
       el.innerHTML = `
         ${avatarHtml}
@@ -4786,17 +5339,9 @@ body.goals-mode .board { display: none !important; }
           <span class="sticky-note-meta-left">
             <span class="sticky-note-date">${formatDate(note.createdAt)}</span>
             ${goalChipHtml}
+            ${todayChipHtml}
           </span>
           <div class="sticky-note-actions">
-            <button class="detail-btn" title="Details">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 19h20L12 2z"/></svg>
-            </button>
-            <button class="color-toggle" title="Change color">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-            </button>
-            <button class="delete-btn" title="Delete">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
             <button class="done-btn" title="Done!">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </button>
@@ -4868,22 +5413,7 @@ body.goals-mode .board { display: none !important; }
         el.classList.add('selected');
       });
 
-      // Actions
-      el.querySelector('.detail-btn')?.addEventListener('click', e => {
-        e.stopPropagation();
-        openDetailModal(note.id);
-      });
-
-      el.querySelector('.color-toggle')?.addEventListener('click', e => {
-        e.stopPropagation();
-        showColorPicker(note.id, e as MouseEvent);
-      });
-
-      el.querySelector('.delete-btn')?.addEventListener('click', e => {
-        e.stopPropagation();
-        deleteNote(note.id);
-      });
-
+      // Details, colour and delete all live in the detail view now
       el.querySelector('.done-btn')?.addEventListener('click', e => {
         e.stopPropagation();
         showConfetti(el);
@@ -4922,6 +5452,7 @@ body.goals-mode .board { display: none !important; }
     });
 
     updateMinimap();
+    viewDirty.tasks = false;
     if (viewMode === 'list') renderList();
   }
 
@@ -5061,6 +5592,10 @@ body.goals-mode .board { display: none !important; }
     }
     renderNoteImages(note);
     populateGoalSelect(note);
+
+    renderPlayControl(note);
+    detailTodayOn = isFlaggedToday(note) ? (note.todayOn as number) : undefined;
+    document.getElementById('detail-today')?.classList.toggle('on', !!detailTodayOn);
 
     // Populate lead view fields
     const avatar = document.getElementById('detail-avatar')!;
@@ -5218,8 +5753,28 @@ body.goals-mode .board { display: none !important; }
 
   function closeDetailModal() {
     document.getElementById('detail-modal')!.classList.remove('visible');
+
+    // A task added from a goal card but never written into is litter
+    if (pendingEmptyNoteId) {
+      const n = state.notes.find(x => x.id === pendingEmptyNoteId);
+      if (n && !(n.text || '').trim() && !n.images?.length && !n.activity?.length) {
+        state.notes = state.notes.filter(x => x.id !== pendingEmptyNoteId);
+        save();
+      }
+      pendingEmptyNoteId = null;
+      if (viewMode === 'goals') renderGoals();
+    } else if (viewMode === 'goals') {
+      renderGoals();   // status may have changed
+    }
+
     detailNoteId = null;
   }
+
+  let detailTodayOn: number | undefined;
+  document.getElementById('detail-today')?.addEventListener('click', () => {
+    detailTodayOn = detailTodayOn ? undefined : Date.now();
+    document.getElementById('detail-today')?.classList.toggle('on', !!detailTodayOn);
+  });
 
   function saveDetailModal() {
     if (!detailNoteId) return;
@@ -5262,6 +5817,7 @@ body.goals-mode .board { display: none !important; }
         activity: editingActivities,
         isLead: true,
         goalId,
+        todayOn: detailTodayOn,
         quadrant,
         color: colors[quadrant],
         snoozeUntil,
@@ -5276,6 +5832,7 @@ body.goals-mode .board { display: none !important; }
         activity: editingActivities,
         isLead: false,
         goalId,
+        todayOn: detailTodayOn,
         quadrant,
         color: colors[quadrant],
         snoozeUntil,
@@ -5327,6 +5884,47 @@ body.goals-mode .board { display: none !important; }
 
   // ============ GOALS ============
   const VIEW_MODE_KEY = 'stiki-view-mode';
+  const STEP_TYPES: { id: StepType; label: string; icon: string }[] = [
+    { id: 'email',      label: 'Email',                 icon: '✉️' },
+    { id: 'email_fup',  label: 'Email follow-up',       icon: '↩️' },
+    { id: 'call',       label: 'Call',                  icon: '📞' },
+    { id: 'f2f',        label: 'Face to face',          icon: '🤝' },
+    { id: 'li_connect', label: 'LI connection request', icon: '🔗' },
+    { id: 'li_comment', label: 'LI comment',            icon: '💬' },
+    { id: 'li_like',    label: 'LI like',               icon: '👍' },
+    { id: 'text',       label: 'Text',                  icon: '💬' },
+  ];
+  const stepLabel = (t: StepType) => STEP_TYPES.find(x => x.id === t)?.label || t;
+  const stepIcon  = (t: StepType) => STEP_TYPES.find(x => x.id === t)?.icon || '•';
+
+  function getPlays(): Play[] {
+    if (!state.plays) state.plays = [];
+    return state.plays;
+  }
+
+  const TODAY_BOARD = 0;   // default landing board for goal-created tasks - no special meaning
+
+  /* "Today" is a commitment, not a location. The flag stores the day it was
+     made, so yesterday's plan expires at midnight with no cleanup job. */
+  function isFlaggedToday(n: Note): boolean {
+    if (!n.todayOn) return false;
+    const d = new Date(n.todayOn), t = new Date();
+    return d.getFullYear() === t.getFullYear() && d.getMonth() === t.getMonth() && d.getDate() === t.getDate();
+  }
+  function isDueToday(n: Note): boolean {
+    return !!(n.snoozeUntil && n.snoozeUntil <= Date.now());
+  }
+  function countsAsToday(n: Note): boolean {
+    return isFlaggedToday(n) || isDueToday(n);
+  }
+  function toggleToday(id: string) {
+    const n = state.notes.find(x => x.id === id);
+    if (!n) return;
+    n.todayOn = isFlaggedToday(n) ? undefined : Date.now();
+    n.updatedAt = Date.now();
+    save();
+    refreshView(true);
+  }
   type ViewMode = 'tasks' | 'goals' | 'list';
   const VIEW_MODES: ViewMode[] = ['tasks', 'goals', 'list'];
   let viewMode: ViewMode = 'tasks';
@@ -5346,9 +5944,7 @@ body.goals-mode .board { display: none !important; }
     document.querySelectorAll('.mode-btn').forEach(b => {
       b.classList.toggle('active', (b as HTMLElement).dataset.mode === mode);
     });
-    if (mode === 'goals') renderGoals();
-    else if (mode === 'list') renderList();
-    else render();
+    refreshView();
   }
 
   function addGoal() {
@@ -5394,6 +5990,166 @@ body.goals-mode .board { display: none !important; }
     renderGoals();
   }
 
+  /*
+   * A goal's daily state falls out of its linked tasks - nothing is stored.
+   * "Today" means a task sitting on the Orange board (Ben's today board) or
+   * one whose snooze date has arrived. Because finishing a task deletes it,
+   * clearing today's work flips a goal back to up-to-date, or to needs-a-task
+   * if that was the last one, which is the prompt to name the next action.
+   */
+  function goalDailyState(goalId: string) {
+    const linked = state.notes.filter(n => n.goalId === goalId);
+    const now = Date.now();
+    const today = linked
+      .filter(countsAsToday)
+      .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));   // oldest first
+    // Genuinely handled: every remaining task is booked for a future date
+    const future = linked
+      .filter(n => n.snoozeUntil && n.snoozeUntil > now)
+      .sort((a, b) => (a.snoozeUntil || 0) - (b.snoozeUntil || 0));
+
+    return {
+      linked,
+      today,
+      future,
+      status: today.length ? 'today'
+        : future.length ? 'scheduled'      // banner-worthy
+        : linked.length ? 'ok'             // tasks exist but nothing is booked
+        : 'empty',
+    };
+  }
+
+  function noteHeadline(n: Note): string {
+    if (n.isLead) return n.name || (n.text || '').split('\n')[0] || 'Unnamed lead';
+    return (n.text || '').split('\n').map(l => l.trim()).find(Boolean) || 'Untitled task';
+  }
+
+  // The + on a goal card: a blank task on the today board, already linked
+  let pendingEmptyNoteId: string | null = null;
+  function addTaskToGoal(goalId: string) {
+    const onBoard = state.notes.filter(n => (n.quadrant ?? 0) === TODAY_BOARD).length;
+    const note: Note = {
+      id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      text: '',
+      color: BOARD_COLORS[TODAY_BOARD],
+      x: 40 + (onBoard % 5) * 200,
+      y: 80 + Math.floor(onBoard / 5) * 175,
+      rotation: (Math.random() - 0.5) * 6,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      zIndex: state.nextZIndex++,
+      isLead: false,
+      quadrant: TODAY_BOARD,
+      goalId,
+      todayOn: Date.now(),   // added from a goal, so it is today by definition
+    };
+    state.notes.push(note);
+    save();
+    pendingEmptyNoteId = note.id;   // binned on close if nothing gets typed
+    openDetailModal(note.id);
+  }
+
+  /* Reorder goals by dragging - first is highest priority.
+   * Mirrors the sticky-note rule: land on a letter and you edit, start
+   * anywhere else and you drag. The card is lifted out of flow and a dashed
+   * slot shows where it will land. Nothing is added to a resting card, so
+   * the board looks untouched until something is actually moving. */
+  let goalDragEl: HTMLElement | null = null;
+  let goalPlaceholder: HTMLElement | null = null;
+  let goalGrab = { x: 0, y: 0 };
+  let goalDragFrom = { x: 0, y: 0 };
+  let goalDragging = false;
+  const GOAL_DRAG_THRESHOLD = 6;
+
+  document.getElementById('goals-grid')?.addEventListener('mousedown', (e) => {
+    const ev = e as MouseEvent;
+    if (ev.button !== 0) return;
+    const target = ev.target as HTMLElement;
+    const card = target.closest('.goal-card') as HTMLElement | null;
+    if (!card) return;
+    if (target.closest('button')) return;               // controls and mini stickies
+
+    const editable = [...card.querySelectorAll('[data-field]')] as HTMLElement[];
+    if (editable.some(el => pointOnGlyph(el, ev.clientX, ev.clientY))) return;   // editing wins
+
+    // stop the browser starting a text selection before we know it is a drag
+    ev.preventDefault();
+    goalDragEl = card;
+    goalDragFrom = { x: ev.clientX, y: ev.clientY };
+    goalDragging = false;
+  });
+
+  function liftGoalCard(card: HTMLElement, clientX: number, clientY: number) {
+    const rect = card.getBoundingClientRect();
+    goalGrab = { x: clientX - rect.left, y: clientY - rect.top };
+
+    goalPlaceholder = document.createElement('div');
+    goalPlaceholder.className = 'goal-placeholder';
+    card.parentElement!.insertBefore(goalPlaceholder, card);
+
+    card.style.width = `${rect.width}px`;
+    card.style.height = `${rect.height}px`;
+    card.style.left = `${rect.left}px`;
+    card.style.top = `${rect.top}px`;
+    card.classList.add('goal-dragging');
+    document.body.classList.add('goals-reordering');
+  }
+
+  document.addEventListener('mousemove', (e) => {
+    if (!goalDragEl) return;
+
+    if (!goalDragging) {
+      if (Math.abs(e.clientX - goalDragFrom.x) < GOAL_DRAG_THRESHOLD &&
+          Math.abs(e.clientY - goalDragFrom.y) < GOAL_DRAG_THRESHOLD) return;
+      goalDragging = true;
+      (document.activeElement as HTMLElement)?.blur();
+      window.getSelection()?.removeAllRanges();
+      liftGoalCard(goalDragEl, goalDragFrom.x, goalDragFrom.y);
+    }
+    e.preventDefault();
+
+    goalDragEl.style.left = `${e.clientX - goalGrab.x}px`;
+    goalDragEl.style.top = `${e.clientY - goalGrab.y}px`;
+
+    // the lifted card has pointer-events:none, so this finds what is beneath it
+    const under = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)
+      ?.closest('.goal-card') as HTMLElement | null;
+    if (!under || under === goalDragEl || !goalPlaceholder) return;
+
+    if (goalPlaceholder.compareDocumentPosition(under) & Node.DOCUMENT_POSITION_FOLLOWING) {
+      under.after(goalPlaceholder);
+    } else {
+      under.before(goalPlaceholder);
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!goalDragEl) return;
+    const card = goalDragEl;
+    const wasDragging = goalDragging;
+    goalDragEl = null;
+    goalDragging = false;
+
+    if (!wasDragging) return;
+
+    card.classList.remove('goal-dragging');
+    card.style.cssText = '';
+    document.body.classList.remove('goals-reordering');
+    goalPlaceholder?.replaceWith(card);
+    goalPlaceholder = null;
+
+    // DOM order is the new priority order
+    const grid = document.getElementById('goals-grid');
+    if (!grid) return;
+    const order = [...grid.querySelectorAll('.goal-card')].map(el => (el as HTMLElement).dataset.id);
+    const byId = new Map(getGoals().map(g => [g.id, g]));
+    const reordered = order.map(id => byId.get(id!)).filter(Boolean) as Goal[];
+    getGoals().forEach(g => { if (!reordered.includes(g)) reordered.push(g); });
+    state.goals = reordered;
+    save();
+    viewDirty.goals = false;   // the DOM is already correct, no need to redraw
+  });
+
   function renderGoals() {
     const grid = document.getElementById('goals-grid');
     const count = document.getElementById('goals-count');
@@ -5408,26 +6164,49 @@ body.goals-mode .board { display: none !important; }
     const titles = state.boardTitles || DEFAULT_TITLES;
 
     grid.innerHTML = goals.map(g => {
-      // One mini sticky per board that actually holds tasks for this goal
-      const perBoard = new Map<number, number>();
-      state.notes.forEach(n => {
-        if (n.goalId !== g.id) return;
-        const q = n.quadrant ?? 0;
-        perBoard.set(q, (perBoard.get(q) || 0) + 1);
-      });
-      const boardsHtml = perBoard.size ? `<div class="goal-stikis">` + [...perBoard.entries()]
-        .sort((a, b) => a[0] - b[0])
-        .map(([q, n], idx) => `<button class="goal-stiki" data-goal-board="${g.id}:${q}"
-            style="--sc:${BOARD_COLORS[q]}; --st:${idx % 2 ? 4 : -5}deg"
-            title="${n} task${n === 1 ? '' : 's'} on ${escapeHtml(titles[q] || DEFAULT_TITLES[q])}"
-            aria-label="${n} task${n === 1 ? '' : 's'} on ${escapeHtml(titles[q] || DEFAULT_TITLES[q])}"
-          ><span class="goal-stiki-n">${n}</span></button>`).join('') + `</div>` : '';
+      const daily = goalDailyState(g.id);
+      const statusHtml = g.done || daily.status === 'today' ? '' : (
+        daily.status === 'scheduled' ? `
+          <div class="goal-status scheduled">
+            <div class="gs-banner">
+              <span class="gs-tick">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+              <span class="gs-banner-label">Up to date</span>
+              <span class="gs-next">${escapeHtml(formatDate(daily.future[0].snoozeUntil!))}${daily.future.length > 1 ? ` · ${daily.future.length} booked` : ''}</span>
+            </div>
+          </div>`
+        : daily.status === 'ok'
+          ? `<div class="goal-status ok"><span class="gs-dot"></span>Nothing booked</div>`
+          : `<div class="goal-status empty"><span class="gs-dot"></span>Add a task</div>`
+      );
+
+      /* Today is shown by the little stickies, not by words. Everything else a
+         goal has going on lives in the Tasks boards or the List view. */
+      const MAX_STIKIS = 6;
+      const shown = daily.today.slice(0, MAX_STIKIS);
+      const hidden = daily.today.length - shown.length;
+      const boardsHtml = shown.length ? `<div class="goal-stikis" title="${daily.today.length} for today">` + shown
+        .map((n, idx) => `<button class="goal-stiki" data-goal-task="${n.id}"
+            style="--sc:${n.color || BOARD_COLORS[n.quadrant ?? 0]}; --st:${idx % 2 ? 4 : -5}deg"
+            title="${escapeHtml(noteHeadline(n))}"
+            aria-label="${escapeHtml(noteHeadline(n))}"></button>`).join('')
+        + (hidden > 0 ? `<span class="goal-stiki-more">+${hidden}</span>` : '')
+        + `</div>` : '';
 
       return `
-        <div class="goal-card ${g.done ? 'done settled' : ''}" data-id="${g.id}">
-          <div class="goal-text" contenteditable="true" spellcheck="false">${escapeHtml(g.text)}</div>
+        <div class="goal-card ${g.done ? 'done settled' : ''} state-${daily.status}" data-id="${g.id}">
+          <div class="goal-text" contenteditable="true" spellcheck="false" data-field="text">${escapeHtml(g.text)}</div>
+          <div class="goal-when">
+            <div class="goal-when-label">Completed when</div>
+            <div class="goal-when-text" contenteditable="true" spellcheck="false" data-field="doneWhen">${escapeHtml(g.doneWhen || '')}</div>
+          </div>
+          ${statusHtml}
           <div class="goal-foot">
             <div class="goal-controls">
+              <button class="goal-add-task" title="Add a task for today" aria-label="Add a task">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
               <button class="goal-check" title="${g.done ? 'Reopen' : 'Mark complete'}" aria-label="Mark complete">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
               </button>
@@ -5452,17 +6231,20 @@ body.goals-mode .board { display: none !important; }
     grid.querySelectorAll('.goal-card').forEach(card => {
       const id = (card as HTMLElement).dataset.id!;
 
-      const text = card.querySelector('.goal-text') as HTMLElement;
-      text.addEventListener('blur', () => {
-        const goal = getGoals().find(g => g.id === id);
-        if (!goal) return;
-        const val = (text.innerText || '').trim();
-        if (goal.text !== val) { goal.text = val; save(); }
-      });
-      text.addEventListener('keydown', (e) => {
-        if ((e as KeyboardEvent).key === 'Escape') text.blur();
+      card.querySelectorAll('[data-field]').forEach(el => {
+        const field = (el as HTMLElement).dataset.field as 'text' | 'doneWhen';
+        el.addEventListener('blur', () => {
+          const goal = getGoals().find(g => g.id === id);
+          if (!goal) return;
+          const val = ((el as HTMLElement).innerText || '').trim();
+          if (goal[field] !== val) { (goal as any)[field] = val; save(); }
+        });
+        el.addEventListener('keydown', (e) => {
+          if ((e as KeyboardEvent).key === 'Escape') (el as HTMLElement).blur();
+        });
       });
 
+      card.querySelector('.goal-add-task')?.addEventListener('click', () => addTaskToGoal(id));
       card.querySelector('.goal-check')?.addEventListener('click', () => toggleGoal(id));
       card.querySelector('.goal-delete')?.addEventListener('click', () => {
         const goal = getGoals().find(g => g.id === id);
@@ -5472,12 +6254,12 @@ body.goals-mode .board { display: none !important; }
     });
 
     // Jump straight to that goal's tasks on that board
-    grid.querySelectorAll('[data-goal-board]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const [goalId, qs] = ((btn as HTMLElement).dataset.goalBoard || '').split(':');
-        const q = parseInt(qs, 10);
-        const first = state.notes.find(n => n.goalId === goalId && (n.quadrant ?? 0) === q);
+    grid.querySelectorAll('[data-goal-task]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const first = state.notes.find(n => n.id === (btn as HTMLElement).dataset.goalTask);
         if (!first) return;
+        const q = first.quadrant ?? 0;
         setViewMode('tasks');
         switchQuadrant(q);
         setTimeout(() => {
@@ -5580,6 +6362,291 @@ body.goals-mode .board { display: none !important; }
       });
     } catch { /* it will simply replay next time */ }
   }
+
+  document.querySelectorAll('.settings-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const pane = (tab as HTMLElement).dataset.pane;
+      document.querySelectorAll('.settings-tab').forEach(t => t.classList.toggle('active', t === tab));
+      document.querySelectorAll('.settings-pane').forEach(p =>
+        p.classList.toggle('active', (p as HTMLElement).dataset.pane === pane));
+    });
+  });
+
+  // ============ PLAYS ============
+  /* A play answers one question: what is the next move, and when. It never
+     tracks deal status - that is the road to a pipeline field that lies.
+     Steps drive snoozeUntil/snoozeAction, so a due step already shows up as
+     today's work on the lead's goal without any extra plumbing. */
+
+  function playOf(n: Note): Play | undefined {
+    return n.playId ? getPlays().find(p => p.id === n.playId) : undefined;
+  }
+
+  function currentStep(n: Note): PlayStep | undefined {
+    const play = playOf(n);
+    if (!play) return undefined;
+    return play.steps[n.playStep ?? 0];
+  }
+
+  function applyPlay(noteId: string, playId: string) {
+    const n = state.notes.find(x => x.id === noteId);
+    const play = getPlays().find(p => p.id === playId);
+    if (!n || !play || !play.steps.length) return;
+    n.playId = playId;
+    n.playStep = 0;
+    scheduleStep(n, play.steps[0], true);
+    addPlayActivity(n, `Started play: ${play.name}`);
+    save();
+    if (detailNoteId === noteId) renderPlayControl(n);
+  }
+
+  // first step lands today; later ones sit N days after the previous was done
+  function scheduleStep(n: Note, step: PlayStep, isFirst: boolean) {
+    const days = isFirst ? 0 : step.offsetDays;
+    const due = new Date();
+    due.setHours(0, 0, 0, 0);
+    due.setDate(due.getDate() + days);
+    n.snoozeUntil = due.getTime();
+    n.snoozeAction = stepToSnoozeAction(step.type);
+    if (days === 0) n.todayOn = Date.now();
+    n.updatedAt = Date.now();
+  }
+
+  function stepToSnoozeAction(t: StepType): 'call' | 'email' | 'meeting' | 'linkedin' | 'web' {
+    if (t === 'call' || t === 'text') return 'call';
+    if (t === 'email' || t === 'email_fup') return 'email';
+    if (t === 'f2f') return 'meeting';
+    return 'linkedin';
+  }
+
+  function addPlayActivity(n: Note, text: string, type: Activity['type'] = 'note') {
+    n.activity = n.activity || [];
+    n.activity.push({ id: `act-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, timestamp: Date.now(), type, text });
+  }
+
+  function advancePlay(n: Note, logged: string | null) {
+    const play = playOf(n);
+    if (!play) return;
+    if (logged) addPlayActivity(n, logged, stepToSnoozeAction(play.steps[n.playStep ?? 0].type) as Activity['type']);
+    const next = (n.playStep ?? 0) + 1;
+    if (next >= play.steps.length) {
+      addPlayActivity(n, `Play complete: ${play.name}`);
+      delete n.playId;
+      delete n.playStep;
+      n.snoozeUntil = undefined;
+      n.snoozeAction = undefined;
+    } else {
+      n.playStep = next;
+      scheduleStep(n, play.steps[next], false);
+    }
+    n.updatedAt = Date.now();
+    save();
+    renderPlayControl(n);
+  }
+
+  function stopPlay(n: Note) {
+    const play = playOf(n);
+    if (play) addPlayActivity(n, `Stopped play: ${play.name}`);
+    delete n.playId;
+    delete n.playStep;
+    save();
+    renderPlayControl(n);
+  }
+
+  /* Perform the step. Email opens an Outlook draft - we never send anything,
+     and we add no signature, because Outlook appends its own. */
+  function doStep(n: Note, step: PlayStep) {
+    const tpl = (state.emailTemplates || []).find(t => t.name === step.template);
+    const first = (n.name || '').trim().split(/\s+/)[0] || '';
+    const fill = (v: string) => v
+      .replace(/\[name\]/gi, first)
+      .replace(/\[company\]/gi, n.company || '')
+      .replace(/\[role\]/gi, n.role || '');
+
+    switch (step.type) {
+      case 'email':
+      case 'email_fup': {
+        if (!n.email) { alert('This lead has no email address.'); return; }
+        let subject = tpl ? fill(tpl.subject) : '';
+        if (step.type === 'email_fup' && subject && !/^re:/i.test(subject)) subject = `RE: ${subject}`;
+        const body = tpl ? fill(tpl.body) : '';
+        window.location.href = `mailto:${encodeURIComponent(n.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        break;
+      }
+      case 'call':
+        if (n.phone) window.location.href = `tel:${n.phone.replace(/\s+/g, '')}`;
+        break;
+      case 'text':
+        if (n.phone) window.location.href = `sms:${n.phone.replace(/\s+/g, '')}`;
+        break;
+      case 'li_connect':
+      case 'li_comment':
+      case 'li_like': {
+        const li = n.linkedin
+          ? (n.linkedin.startsWith('http') ? n.linkedin : `https://${n.linkedin}`)
+          : `https://www.google.com/search?q=${encodeURIComponent(`${n.name || ''} ${n.company || ''} linkedin`)}`;
+        window.open(li, '_blank', 'noopener');
+        break;
+      }
+      case 'f2f':
+        break;   // nothing to launch - it is a reminder
+    }
+    advancePlay(n, `${stepLabel(step.type)}${step.template ? ` (${step.template})` : ''}`);
+  }
+
+  function renderPlayControl(n: Note | undefined) {
+    const trigger = document.getElementById('detail-play');
+    const display = document.getElementById('play-display');
+    const pop = document.getElementById('play-popover');
+    if (!trigger || !display || !pop || !n) return;
+
+    const play = playOf(n);
+    const step = currentStep(n);
+    trigger.classList.toggle('on', !!play);
+    display.textContent = play ? `${play.name} · ${(n.playStep ?? 0) + 1}/${play.steps.length}` : 'Play';
+
+    if (!play || !step) {
+      const plays = getPlays();
+      pop.innerHTML = plays.length ? `
+        <div class="play-pop-head">Start a play</div>
+        ${plays.map(p => `<button class="play-pick" data-play="${p.id}">${escapeHtml(p.name)} <span>${p.steps.length} steps</span></button>`).join('')}
+      ` : `<div class="play-pop-head">No plays yet</div><p class="play-pop-hint">Create one in Settings.</p>`;
+      pop.querySelectorAll('[data-play]').forEach(b => b.addEventListener('click', () => {
+        applyPlay(n.id, (b as HTMLElement).dataset.play!);
+        pop.classList.remove('open');
+      }));
+    } else {
+      const due = n.snoozeUntil ? formatDate(n.snoozeUntil) : 'now';
+      pop.innerHTML = `
+        <div class="play-pop-head">Next</div>
+        <div class="play-next"><span class="play-next-icon">${stepIcon(step.type)}</span>
+          <span><strong>${stepLabel(step.type)}</strong><em>${due}${step.template ? ` · ${escapeHtml(step.template)}` : ''}</em></span>
+        </div>
+        ${step.note ? `<div class="play-note">${escapeHtml(step.note)}</div>` : ''}
+        <div class="play-pop-actions">
+          <button class="play-do primary">Do it</button>
+          <button class="play-skip">Skip</button>
+          <button class="play-stop">Stop play</button>
+        </div>`;
+      pop.querySelector('.play-do')?.addEventListener('click', () => { doStep(n, step); pop.classList.remove('open'); });
+      pop.querySelector('.play-skip')?.addEventListener('click', () => { advancePlay(n, `Skipped: ${stepLabel(step.type)}`); });
+      pop.querySelector('.play-stop')?.addEventListener('click', () => { stopPlay(n); pop.classList.remove('open'); });
+    }
+  }
+
+  document.getElementById('detail-play')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('play-popover')?.classList.toggle('open');
+  });
+  document.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    if (!t.closest('.play-control')) document.getElementById('play-popover')?.classList.remove('open');
+  });
+
+
+  let editingPlay: Play | null = null;
+
+  function renderPlaysList() {
+    const box = document.getElementById('plays-list');
+    if (!box) return;
+    const plays = getPlays();
+    box.innerHTML = plays.length ? plays.map(p => `
+      <div class="template-item" data-play="${p.id}">
+        <span class="template-name">${escapeHtml(p.name || 'Untitled play')}</span>
+        <span class="template-meta">${p.steps.length} step${p.steps.length === 1 ? '' : 's'}</span>
+      </div>`).join('') : '<p class="setting-hint">No plays yet.</p>';
+
+    box.querySelectorAll('[data-play]').forEach(el => {
+      el.addEventListener('click', () => openPlayModal((el as HTMLElement).dataset.play!));
+    });
+  }
+
+  function openPlayModal(id?: string) {
+    const plays = getPlays();
+    editingPlay = id
+      ? JSON.parse(JSON.stringify(plays.find(p => p.id === id))) as Play
+      : { id: `play-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, name: '', steps: [] };
+
+    (document.getElementById('play-modal-title') as HTMLElement).textContent = id ? 'Edit Play' : 'New Play';
+    (document.getElementById('play-name') as HTMLInputElement).value = editingPlay.name;
+    (document.getElementById('play-delete') as HTMLElement).style.display = id ? '' : 'none';
+    renderPlaySteps();
+    document.getElementById('play-modal')!.classList.add('visible');
+  }
+
+  function renderPlaySteps() {
+    const box = document.getElementById('play-steps');
+    if (!box || !editingPlay) return;
+    const templates = state.emailTemplates || [];
+
+    box.innerHTML = editingPlay.steps.map((st, i) => `
+      <div class="play-step" data-i="${i}">
+        <select class="ps-type">
+          ${STEP_TYPES.map(t => `<option value="${t.id}" ${t.id === st.type ? 'selected' : ''}>${t.icon} ${t.label}</option>`).join('')}
+        </select>
+        <span class="ps-when">
+          ${i === 0 ? 'when applied' : `+<input type="number" class="ps-offset" min="0" max="365" value="${st.offsetDays}"> days after`}
+        </span>
+        <select class="ps-template" ${st.type === 'email' || st.type === 'email_fup' ? '' : 'style="display:none"'}>
+          <option value="">No template</option>
+          ${templates.map(t => `<option value="${escapeHtml(t.name)}" ${t.name === st.template ? 'selected' : ''}>${escapeHtml(t.name)}</option>`).join('')}
+        </select>
+        <button class="ps-remove" title="Remove step">&times;</button>
+        <input type="text" class="ps-note" placeholder="Why this step, or what to say" value="${escapeHtml(st.note || '')}">
+      </div>`).join('') || '<p class="setting-hint">No steps yet.</p>';
+
+    box.querySelectorAll('.play-step').forEach(row => {
+      const i = parseInt((row as HTMLElement).dataset.i!, 10);
+      row.querySelector('.ps-type')?.addEventListener('change', (e) => {
+        editingPlay!.steps[i].type = (e.target as HTMLSelectElement).value as StepType;
+        renderPlaySteps();
+      });
+      row.querySelector('.ps-offset')?.addEventListener('change', (e) => {
+        editingPlay!.steps[i].offsetDays = Math.max(0, parseInt((e.target as HTMLInputElement).value, 10) || 0);
+      });
+      row.querySelector('.ps-template')?.addEventListener('change', (e) => {
+        editingPlay!.steps[i].template = (e.target as HTMLSelectElement).value || undefined;
+      });
+      row.querySelector('.ps-note')?.addEventListener('change', (e) => {
+        editingPlay!.steps[i].note = (e.target as HTMLInputElement).value.trim() || undefined;
+      });
+      row.querySelector('.ps-remove')?.addEventListener('click', () => {
+        editingPlay!.steps.splice(i, 1);
+        renderPlaySteps();
+      });
+    });
+  }
+
+  document.getElementById('add-play')?.addEventListener('click', () => openPlayModal());
+  document.getElementById('play-add-step')?.addEventListener('click', () => {
+    editingPlay?.steps.push({ type: 'email', offsetDays: editingPlay.steps.length ? 3 : 0 });
+    renderPlaySteps();
+  });
+  document.getElementById('play-save')?.addEventListener('click', () => {
+    if (!editingPlay) return;
+    editingPlay.name = (document.getElementById('play-name') as HTMLInputElement).value.trim() || 'Untitled play';
+    const plays = getPlays();
+    const i = plays.findIndex(p => p.id === editingPlay!.id);
+    if (i >= 0) plays[i] = editingPlay; else plays.push(editingPlay);
+    save();
+    renderPlaysList();
+    document.getElementById('play-modal')!.classList.remove('visible');
+    editingPlay = null;
+  });
+  document.getElementById('play-delete')?.addEventListener('click', () => {
+    if (!editingPlay || !confirm(`Delete "${editingPlay.name}"?`)) return;
+    state.plays = getPlays().filter(p => p.id !== editingPlay!.id);
+    state.notes.forEach(n => { if (n.playId === editingPlay!.id) { delete n.playId; delete n.playStep; } });
+    save();
+    renderPlaysList();
+    document.getElementById('play-modal')!.classList.remove('visible');
+    editingPlay = null;
+  });
+  document.querySelectorAll('#play-modal .modal-close').forEach(b =>
+    b.addEventListener('click', () => {
+      document.getElementById('play-modal')!.classList.remove('visible');
+      editingPlay = null;
+    }));
 
   // ============ LIST VIEW ============
   const LIST_FILTER_KEY = 'stiki-list-filter';
@@ -5745,6 +6812,8 @@ body.goals-mode .board { display: none !important; }
       });
     });
 
+    viewDirty.list = false;
+
     root.querySelectorAll('.list-head').forEach(head => {
       head.addEventListener('click', () => {
         setViewMode('tasks');
@@ -5769,7 +6838,9 @@ body.goals-mode .board { display: none !important; }
   // Mode toggle wiring
   document.querySelectorAll('.mode-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      setViewMode(((btn as HTMLElement).dataset.mode as ViewMode) || 'tasks');
+      const m = (btn as HTMLElement).dataset.mode;
+      if (!m) return;   // the Leads segment is a link out to /pda
+      setViewMode(m as ViewMode);
     });
   });
 
@@ -5936,13 +7007,15 @@ body.goals-mode .board { display: none !important; }
 
   // Keyboard shortcuts
   document.addEventListener('keydown', e => {
-    if (document.activeElement?.closest('.sticky-note-content') ||
-        document.activeElement?.closest('.goal-text') ||
-        document.activeElement?.closest('.board-tape') ||
-        document.activeElement?.closest('.board-label-text') ||
-        document.activeElement?.closest('.device-label') ||
-        document.activeElement?.tagName === 'INPUT' ||
-        document.activeElement?.tagName === 'TEXTAREA') return;
+    /* Never let a shortcut fire while the user is typing. This used to
+       whitelist specific classes, so a newly added editable field (the goal
+       "Completed when" box) fell through and every "n" created a new goal.
+       isContentEditable covers every one of them, now and later. */
+    const active = document.activeElement as HTMLElement | null;
+    if (active?.isContentEditable ||
+        active?.tagName === 'INPUT' ||
+        active?.tagName === 'TEXTAREA' ||
+        active?.closest('[contenteditable="true"]')) return;
 
     // Tab toggles Tasks / Goals
     if (e.key === 'Tab' && !e.metaKey && !e.ctrlKey && !e.altKey) {
@@ -5955,6 +7028,12 @@ body.goals-mode .board { display: none !important; }
       return;
     }
     if (viewMode === 'list') return;
+
+    if ((e.key === 't' || e.key === 'T') && selectedId) {
+      e.preventDefault();
+      toggleToday(selectedId);
+      return;
+    }
 
     if (e.key === 'n' || e.key === 'N') {
       document.getElementById('fab-add-btn')?.click();
@@ -6133,6 +7212,8 @@ body.goals-mode .board { display: none !important; }
     settingsModal.classList.add('visible');
     updateCurrentProjectDisplay();
     renderSavedProjects();
+    renderTemplatesList();
+    renderPlaysList();
     (document.getElementById('switch-project-input') as HTMLInputElement).value = '';
   });
   settingsModal.querySelector('.modal-close')?.addEventListener('click', () => {
@@ -6564,6 +7645,7 @@ body.goals-mode .board { display: none !important; }
     templateModal.classList.remove('visible');
     settingsModal.classList.add('visible');
     renderTemplatesList();
+    renderPlaysList();
   });
 
   document.getElementById('delete-template')?.addEventListener('click', async () => {
@@ -6643,9 +7725,6 @@ body.goals-mode .board { display: none !important; }
   });
 
   // Initialize templates list when settings opens
-  document.getElementById('settings-btn')?.addEventListener('click', () => {
-    renderTemplatesList();
-  });
 
   // Send email button in contact popover
   // Contact action buttons
@@ -7020,28 +8099,17 @@ body.goals-mode .board { display: none !important; }
   async function init() {
     state = load();
     const rawCloud = await syncFromCloud();
-    const cloudData = normalizeState(rawCloud);
-    if (rawCloud) {   // merge whenever the cloud had anything, not only notes
-      // Merge: keep local notes + add any cloud notes not in local
-      const localIds = new Set(state.notes.map(n => n.id));
-      const newFromCloud = cloudData.notes.filter(n => !localIds.has(n.id));
-      if (newFromCloud.length > 0) {
-        state.notes.push(...newFromCloud);
-        state.nextZIndex = Math.max(state.nextZIndex, cloudData.nextZIndex || 1);
-      }
-      // Merge board titles from cloud if present
-      if (cloudData.boardTitles) {
-        state.boardTitles = cloudData.boardTitles;
-      }
-      // Merge goals: keep local + add any cloud goals not held locally
-      if (cloudData.goals && cloudData.goals.length) {
-        const localGoalIds = new Set(getGoals().map(g => g.id));
-        state.goals = [...getGoals(), ...cloudData.goals.filter(g => !localGoalIds.has(g.id))];
-      }
+    if (rawCloud) {
+      state = mergeFromCloud(state, rawCloud);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
+
     const savedMode = localStorage.getItem(VIEW_MODE_KEY);
-    setViewMode(VIEW_MODES.includes(savedMode as ViewMode) ? savedMode as ViewMode : 'tasks');
+    const wanted = VIEW_MODES.includes(urlView as ViewMode)
+      ? urlView as ViewMode
+      : (VIEW_MODES.includes(savedMode as ViewMode) ? savedMode as ViewMode : 'tasks');
+    setViewMode(wanted);
+    if (urlView) history.replaceState(null, '', location.pathname);
 
     refreshView();   // setViewMode draws the right one; this keeps it explicit
     updateSyncIndicator();
