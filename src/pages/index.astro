@@ -31,11 +31,11 @@
       <!-- Top-right toolbar -->
       <div id="toolbar">
         <div id="mode-toggle">
-          <button class="mode-btn mode-icon" data-mode="list" title="List" aria-label="List view">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
-          </button>
-          <button class="mode-btn" data-mode="goals">Goals</button>
-          <button class="mode-btn active" data-mode="tasks">Tasks</button>
+          <button class="mode-btn active" data-mode="goals">Goals</button>
+          <button class="mode-btn" data-mode="people">People</button>
+          <button class="mode-btn" data-mode="plays">Plays</button>
+          <button class="mode-btn" data-mode="tasks">Tasks</button>
+          <button class="mode-btn" data-mode="deals">Deals</button>
         </div>
         <div id="project-badge" title="Current project">No project</div>
         <div id="sync-indicator" title="Cloud sync">
@@ -73,7 +73,41 @@
       <div id="board-4" class="board" data-q="4"></div>
       <div id="board-5" class="board" data-q="5"></div>
 
-      <!-- List View -->
+      <!-- Deals View -->
+      <div id="deals-view">
+        <div id="deals-bar">
+          <span id="deals-count" class="people-count"></span>
+          <button id="add-deal" class="deal-new">+ New deal</button>
+        </div>
+        <div id="deals-inner"></div>
+      </div>
+
+      <!-- People View -->
+      <div id="people-view">
+        <div id="people-bar">
+          <span id="people-count" class="people-count"></span>
+          <div class="people-queue-add">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.4 20.5h-3.6v-5.6c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.9v5.7H9.4V9h3.4v1.6h.05c.5-.9 1.6-1.9 3.4-1.9 3.6 0 4.3 2.4 4.3 5.5v6.3zM5.3 7.4a2.1 2.1 0 110-4.2 2.1 2.1 0 010 4.2zM7.1 20.5H3.6V9h3.5v11.5z"/></svg>
+            <input type="url" id="queue-url" placeholder="Paste a LinkedIn URL to queue" autocomplete="off">
+          </div>
+          <div class="people-search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+            <input type="search" id="people-search" placeholder="Search people" autocomplete="off" spellcheck="false">
+          </div>
+        </div>
+        <div id="people-inner"></div>
+        <button id="add-person" title="Add a person">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          <span>Add person</span>
+        </button>
+      </div>
+
+      <!-- Plays View -->
+      <div id="plays-view">
+        <div id="plays-inner"></div>
+      </div>
+
+      <!-- List View (a mode inside Tasks) -->
       <div id="list-view">
         <div id="list-inner"></div>
       </div>
@@ -197,6 +231,77 @@
               </div>
             </section>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deal Editor Modal -->
+    <div id="deal-modal" class="modal">
+      <div class="modal-content deal-modal-content">
+        <div class="deal-modal-head">
+          <h2 id="deal-modal-title">New Deal</h2>
+          <button class="modal-close">&times;</button>
+        </div>
+
+        <div class="deal-form">
+          <label class="dl">
+            <span>Client or work</span>
+            <input type="text" id="deal-title" placeholder="Freedom Accounting — workflow build">
+          </label>
+
+          <div class="dl-pair">
+            <label class="dl dl-money">
+              <span>Capex — one off</span>
+              <div class="dl-money-wrap"><i>$</i><input type="number" id="deal-capex" placeholder="0" min="0" step="500"></div>
+            </label>
+            <label class="dl dl-money">
+              <span>Ongoing — per month</span>
+              <div class="dl-money-wrap"><i>$</i><input type="number" id="deal-ongoing" placeholder="0" min="0" step="50"></div>
+            </label>
+          </div>
+
+          <label class="dl">
+            <span>Quoted on</span>
+            <input type="date" id="deal-sent">
+          </label>
+
+          <div class="dl-rule"><span>Who it's for</span></div>
+
+          <div class="dl-pair">
+            <label class="dl">
+              <span>Person</span>
+              <select id="deal-person"></select>
+            </label>
+            <label class="dl">
+              <span>Goal</span>
+              <select id="deal-goal"></select>
+            </label>
+          </div>
+
+          <div class="dl-rule"><span>The way in</span></div>
+
+          <label class="dl">
+            <span>Quote URL</span>
+            <input type="url" id="deal-url" placeholder="https://quote.bridgepoint.co.nz/...">
+          </label>
+
+          <div class="dl-pair">
+            <label class="dl">
+              <span>Username</span>
+              <input type="text" id="deal-username" autocomplete="off" placeholder="Username">
+            </label>
+            <label class="dl">
+              <span>Password</span>
+              <input type="text" id="deal-password" autocomplete="off" placeholder="Password">
+            </label>
+          </div>
+
+          <p class="dl-note">Saved with the rest of your project, unencrypted. Fine for a quote portal — nothing more sensitive than that.</p>
+        </div>
+
+        <div class="deal-modal-foot">
+          <button id="deal-delete" class="dl-delete">Delete</button>
+          <button id="deal-save" class="dl-save">Save deal</button>
         </div>
       </div>
     </div>
@@ -444,12 +549,18 @@ Best regards"></textarea>
               <input type="email" id="detail-email" placeholder="Email" class="popover-input">
             </div>
             <div class="lead-contact-row">
-              <button class="popover-action-icon linkedin" id="action-linkedin" title="Open LinkedIn"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></button>
-              <input type="url" id="detail-linkedin" placeholder="LinkedIn URL" class="popover-input">
+              <button class="popover-action-icon linkedin" id="action-linkedin" title="Open LinkedIn, or search for them if empty"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></button>
+              <input type="url" id="detail-linkedin" placeholder="LinkedIn URL — or click the icon to find them" class="popover-input">
             </div>
             <div class="lead-contact-row">
               <button class="popover-action-icon website" id="action-website" title="Open website"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg></button>
               <input type="url" id="detail-website" placeholder="Website" class="popover-input">
+            </div>
+            <div class="li-activity">
+              <span class="li-act-label">Last post</span>
+              <span id="li-act-value" class="li-act-value">—</span>
+              <button id="li-act-check" class="li-act-btn" title="Paste or upload a screenshot of their LinkedIn activity">Check</button>
+              <input type="file" id="li-act-file" accept="image/*" style="display:none">
             </div>
               </div>
             </div>
@@ -1365,7 +1476,6 @@ body.multi-select-mode .sticky-note:hover {
   color: rgba(107, 114, 128, 0.8);
 }
 
-.sticky-note.lead { padding-top: 50px; }
 .lead-avatar {
   position: absolute;
   top: -20px;
@@ -3772,6 +3882,460 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
   .settings-panes { padding: 16px; }
 }
 
+/* ---- Deals ----------------------------------------------------------
+   Light, like the rest of Stiki. What makes this feel like the money is
+   not darkness - it is the scale of the numbers, the space around them,
+   and one warm accent reserved for what you have won. ---- */
+#deals-view {
+  position: absolute; inset: 0; display: none; overflow: auto;
+  background: #f7f5f1;
+}
+#deals-view.active { display: block; }
+body.deals-mode #minimap, body.deals-mode #hints,
+body.deals-mode #props-palette, body.deals-mode #new-note-fab { display: none !important; }
+body.deals-mode .board { display: none !important; }
+
+#deals-bar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  max-width: 1340px; margin: 0 auto; padding: 78px 30px 18px;
+  background: linear-gradient(#f7f5f1 72%, rgba(247,245,241,0));
+}
+#deals-count { display: flex; gap: 34px; }
+.dc-stat { display: flex; flex-direction: column; gap: 1px; }
+.dc-stat i {
+  font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: .13em;
+  text-transform: uppercase; color: #b5b0a9;
+}
+.dc-stat b { font-size: 22px; font-weight: 700; letter-spacing: -.025em; color: #12100e; font-variant-numeric: tabular-nums; }
+.dc-stat u { text-decoration: none; font-size: 12px; font-weight: 600; color: #a19b93; font-variant-numeric: tabular-nums; }
+.dc-stat.won b { color: #a3801f; }
+.dc-stat.won u { color: #a3801f; opacity: .75; }
+
+.deal-new {
+  height: 36px; padding: 0 16px; border-radius: 999px;
+  border: none; background: #12100e; color: #fff;
+  font-size: 12.5px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 2px 6px rgba(18,16,14,.14); transition: transform .16s, box-shadow .16s;
+}
+.deal-new:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(18,16,14,.22); }
+
+#deals-inner { max-width: 1340px; margin: 0 auto; padding: 0 30px 70px; }
+.deal-section { margin-bottom: 34px; }
+.deal-section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding-bottom: 11px; margin-bottom: 16px; border-bottom: 1px solid #e6e2da;
+}
+.deal-section-head h3 {
+  margin: 0; font-size: 11px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: #8a847c;
+}
+.deal-section-head span { font-size: 12px; color: #b5b0a9; font-variant-numeric: tabular-nums; }
+.deal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(292px, 1fr)); gap: 18px; }
+
+.deal {
+  position: relative;
+  display: flex; flex-direction: column;
+  padding: 20px 20px 14px;
+  border-radius: 14px;
+  background: #fffefb;
+  border: 1px solid #e9e5dd;
+  box-shadow: 0 1px 2px rgba(18,16,14,.04), 0 14px 30px -20px rgba(18,16,14,.3);
+  transition: transform .2s, box-shadow .2s;
+}
+.deal:hover { transform: translateY(-3px); box-shadow: 0 2px 5px rgba(18,16,14,.05), 0 22px 44px -20px rgba(18,16,14,.4); }
+.deal.won { background: #fffdf5; border-color: #e8d9a8; box-shadow: 0 1px 2px rgba(18,16,14,.04), 0 14px 30px -20px rgba(163,128,31,.4); }
+.deal.lost { opacity: .5; }
+.deal.lost .deal-value { color: #a19b93; text-decoration: line-through; text-decoration-thickness: 2px; }
+
+.deal-seal {
+  position: absolute; top: 16px; right: 16px;
+  font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase;
+  color: #a3801f; border: 1px solid rgba(163,128,31,.35); border-radius: 999px; padding: 3px 9px;
+}
+.deal-head { display: flex; gap: 11px; align-items: flex-start; }
+.deal-face {
+  width: 36px; height: 36px; flex: none; border-radius: 50%; overflow: hidden;
+  background: #f1efec; color: #8a847c; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+}
+.deal-face img { width: 100%; height: 100%; object-fit: cover; }
+.deal-who { min-width: 0; padding-right: 38px; }
+.deal-who h3 { margin: 0; font-size: 14.5px; font-weight: 700; color: #12100e; letter-spacing: -.01em; line-height: 1.25; }
+.deal-who p { margin: 3px 0 0; font-size: 12px; color: #a19b93; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.deal-money { margin: 18px 0 16px; }
+.deal-value {
+  font-size: 34px; font-weight: 700; letter-spacing: -.03em;
+  color: #12100e; font-variant-numeric: tabular-nums; line-height: 1.05;
+}
+.deal-value.muted { color: #c8c4be; }
+.deal-ongoing {
+  margin-top: 6px;
+  font-size: 15px; font-weight: 600; color: #57534e;
+  font-variant-numeric: tabular-nums;
+}
+.deal-ongoing em { font-style: normal; font-weight: 500; color: #a19b93; font-size: 13px; }
+.deal-ongoing.lead { font-size: 30px; font-weight: 700; letter-spacing: -.03em; color: #12100e; margin-top: 0; }
+.deal-ongoing.lead em { font-size: 16px; }
+.deal.won .deal-value, .deal.won .deal-ongoing.lead { color: #a3801f; }
+.deal.won .deal-ongoing { color: #8a6f22; }
+
+.deal-open {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  width: 100%; height: 42px; border: none; border-radius: 10px;
+  background: #12100e; color: #fff;
+  font-size: 13px; font-weight: 800; cursor: pointer;
+  transition: background .16s, transform .16s;
+}
+.deal-open:hover { background: #2b2723; transform: translateY(-1px); }
+.deal.won .deal-open { background: #a3801f; }
+.deal.won .deal-open:hover { background: #b8922a; }
+.deal-nolink {
+  height: 42px; display: flex; align-items: center; justify-content: center;
+  border: 1px dashed #ded9d0; border-radius: 10px; color: #b5b0a9; font-size: 12px;
+}
+
+.deal-creds { display: flex; gap: 7px; margin-top: 10px; }
+.deal-creds .cred {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px;
+  height: 30px; padding: 0 10px; border-radius: 8px;
+  border: 1px solid #ebe7df; background: #faf9f6;
+  color: #78716c; font-size: 11.5px; cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  transition: border-color .14s, color .14s, background .14s;
+}
+.deal-creds .cred:hover { border-color: #12100e; color: #12100e; background: #fff; }
+.deal-creds .cred i {
+  font-style: normal; font-size: 8.5px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: #b5b0a9; flex: none;
+}
+
+.deal-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-top: 14px; padding-top: 11px; border-top: 1px solid #f0ece4;
+  font-size: 11px; color: #b5b0a9;
+}
+.deal-host { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.deal-meta { display: flex; align-items: center; gap: 7px; flex: none; }
+.deal-goal { color: #8a847c; }
+
+.deal-actions { display: flex; gap: 6px; margin-top: 11px; opacity: 0; transition: opacity .18s; }
+.deal:hover .deal-actions, .deal:focus-within .deal-actions { opacity: 1; }
+.deal-actions button {
+  flex: 1; height: 27px; border-radius: 7px;
+  border: 1px solid #e6e2da; background: #fff; color: #8a847c;
+  font-size: 11px; font-weight: 700; cursor: pointer; transition: all .14s;
+}
+.deal-actions button:hover { border-color: #12100e; color: #12100e; }
+.deal-actions button[data-won]:hover { border-color: #a3801f; color: #a3801f; }
+
+.deals-empty { padding: 110px 0; text-align: center; }
+.deals-empty p { margin: 0 0 8px; color: #78716c; font-size: 16px; font-weight: 600; }
+.deals-empty span { color: #b5b0a9; font-size: 13px; }
+
+/* ---- Deal editor ---- */
+.deal-modal-content { max-width: 580px; padding: 0; overflow: visible; }
+.deal-modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 24px 28px 18px;
+}
+.deal-modal-head h2 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -.02em; color: #12100e; }
+.deal-modal-head .modal-close { border: none; background: none; font-size: 26px; line-height: 1; color: #c8c4be; cursor: pointer; padding: 0 2px; }
+.deal-modal-head .modal-close:hover { color: #12100e; }
+
+.deal-form { padding: 0 28px 4px; max-height: 62vh; overflow: auto; }
+.dl { display: block; margin-bottom: 16px; }
+.dl > span {
+  display: block; margin-bottom: 7px;
+  font-size: 10.5px; font-weight: 800; letter-spacing: .09em;
+  text-transform: uppercase; color: #a8a29e;
+}
+.dl input, .dl select {
+  width: 100%; height: 44px;
+  padding: 0 13px;
+  border: 1px solid #e5e1d9; border-radius: 10px;
+  background: #fffefb; color: #12100e;
+  font-size: 14px; font-family: inherit;
+  outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.dl input:hover, .dl select:hover { border-color: #d4cfc5; }
+.dl input:focus, .dl select:focus { border-color: #12100e; box-shadow: 0 0 0 3px rgba(18,16,14,.07); }
+.dl input::placeholder { color: #c8c4be; }
+.dl select { cursor: pointer; appearance: none; background-image: none; }
+
+.dl-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.dl-money-wrap { position: relative; }
+.dl-money-wrap i {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  font-style: normal; font-size: 17px; font-weight: 600; color: #b5b0a9; pointer-events: none;
+}
+.dl-money input { padding-left: 30px; font-size: 19px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+
+.dl-rule { display: flex; align-items: center; gap: 12px; margin: 22px 0 16px; }
+.dl-rule span {
+  font-size: 10px; font-weight: 800; letter-spacing: .13em;
+  text-transform: uppercase; color: #b5b0a9; white-space: nowrap;
+}
+.dl-rule::after { content: ''; flex: 1; height: 1px; background: #ece8e0; }
+
+.dl-note { margin: 4px 0 0; font-size: 11.5px; line-height: 1.5; color: #b5b0a9; }
+
+.deal-modal-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 18px 28px 24px; margin-top: 10px;
+  border-top: 1px solid #f0ece4;
+}
+.dl-delete {
+  height: 40px; padding: 0 16px; border-radius: 10px;
+  border: 1px solid transparent; background: none; color: #b5b0a9;
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.dl-delete:hover { border-color: #f0c4c4; color: #dc2626; background: #fef6f6; }
+.dl-save {
+  height: 44px; padding: 0 28px; border-radius: 10px;
+  border: none; background: #12100e; color: #fff;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 2px 6px rgba(18,16,14,.16); transition: transform .15s, box-shadow .15s;
+}
+.dl-save:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(18,16,14,.24); }
+
+@media (max-width: 700px) {
+  #deals-bar { padding: 74px 16px 14px; }
+  #deals-inner { padding: 0 16px 60px; }
+  .deal-grid { grid-template-columns: 1fr; }
+  .dl-pair { grid-template-columns: 1fr; }
+  .deal-form { padding: 0 18px 4px; }
+  .deal-modal-head, .deal-modal-foot { padding-left: 18px; padding-right: 18px; }
+}
+
+/* ---- People: one roster, everyone, no board navigation ---- */
+#people-view { position: absolute; inset: 0; display: none; overflow: auto; background: #f6f5f3; }
+#people-view.active { display: block; }
+body.people-mode .board,
+body.people-mode #minimap,
+body.people-mode #hints,
+body.people-mode #props-palette { display: none !important; }
+body.people-mode #new-note-fab { display: none !important; }
+
+#add-person {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 44px;
+  padding: 0 18px 0 15px;
+  border: none;
+  border-radius: 999px;
+  background: #12100e;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(18,16,14,0.18), 0 14px 30px -12px rgba(18,16,14,0.5);
+  transition: transform 0.16s, box-shadow 0.16s;
+}
+#add-person:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(18,16,14,0.22), 0 20px 38px -14px rgba(18,16,14,0.6); }
+
+#people-bar {
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 78px 28px 16px;
+  background: linear-gradient(#f6f5f3 72%, rgba(246,245,243,0));
+}
+.people-queue-add {
+  display: flex; align-items: center; gap: 8px;
+  width: 250px; height: 36px; padding: 0 12px;
+  background: #fff; border: 1px solid #e7e5e0; border-radius: 999px;
+  color: #b5b0a9; transition: border-color .15s;
+}
+.people-queue-add:focus-within { border-color: #0a66c2; color: #0a66c2; }
+.people-queue-add input {
+  flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+  font-size: 13px; color: #12100e;
+}
+.people-queue-add input::placeholder { color: #b5b0a9; }
+
+.queue-section { margin-bottom: 34px; }
+.queue-dot { background: #0a66c2; }
+.queue-hint { margin: -6px 0 12px; font-size: 12px; color: #a8a29e; }
+.queue-rows { display: flex; flex-direction: column; gap: 6px; }
+.queue-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; border-radius: 10px;
+  background: #fffefb; border: 1px dashed #d8d3ca;
+}
+.queue-name { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; color: #57534e; text-transform: capitalize; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.queue-open { font-size: 12px; font-weight: 600; color: #0a66c2; text-decoration: none; flex: none; }
+.queue-open:hover { text-decoration: underline; }
+.queue-del { flex: none; border: none; background: none; font-size: 19px; line-height: 1; color: #c8c4be; cursor: pointer; padding: 0 2px; }
+.queue-del:hover { color: #dc2626; }
+
+.people-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 260px;
+  height: 36px;
+  padding: 0 12px;
+  background: #fff;
+  border: 1px solid #e7e5e0;
+  border-radius: 999px;
+  color: #b5b0a9;
+  transition: border-color .15s;
+}
+.people-search:focus-within { border-color: #12100e; color: #78716c; }
+.people-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  color: #12100e;
+}
+.people-search input::placeholder { color: #b5b0a9; }
+.people-search input::-webkit-search-cancel-button { cursor: pointer; }
+
+#people-inner { max-width: 1500px; margin: 0 auto; padding: 0 28px 56px; }
+.people-count { flex: none; font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #a8a29e; }
+.people-section { margin-bottom: 30px; }
+.people-board { display: flex; align-items: center; gap: 10px; padding: 0 2px 9px; border-bottom: 1px solid #e4e2dd; margin-bottom: 14px; }
+.people-board h3 { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #78716c; }
+.people-n { margin-left: auto; font-size: 11px; font-weight: 600; color: #b5b0a9; font-variant-numeric: tabular-nums; }
+.pe-dot { width: 9px; height: 9px; border-radius: 2px; flex: none; box-shadow: inset 0 0 0 1px rgba(18,16,14,.1); }
+.people-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); gap: 14px; }
+.people-empty { padding: 100px 0; text-align: center; color: #a8a29e; font-size: 14px; }
+
+.person {
+  background: #fff;
+  border: 1px solid #e7e5e0;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow .18s, transform .18s;
+  box-shadow: 0 1px 2px rgba(18,16,14,.04);
+}
+.person:hover { transform: translateY(-2px); box-shadow: 0 2px 5px rgba(18,16,14,.06), 0 14px 26px -16px rgba(18,16,14,.4); }
+.person.is-due { border-color: #12100e; }
+.person-head { display: flex; gap: 11px; padding: 14px 14px 9px; align-items: flex-start; }
+.person-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 11px 9px; }
+.li-activity { display: flex; align-items: center; gap: 9px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #f2f0ec; }
+.li-act-label { font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #b5b0a9; flex: none; }
+.li-act-value { flex: 1; min-width: 0; font-size: 12.5px; color: #a19b93; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.li-act-value.fresh { color: #15803d; font-weight: 600; }
+.li-act-value.ok { color: #57534e; }
+.li-act-btn { flex: none; height: 26px; padding: 0 11px; border: 1px solid #e2dfd9; border-radius: 7px; background: #fff; font-size: 11.5px; font-weight: 600; color: #57534e; cursor: pointer; }
+.li-act-btn:hover { border-color: #12100e; color: #12100e; }
+.person-post { font-size: 10px; font-weight: 700; color: #b5b0a9; white-space: nowrap; }
+.person-post.fresh { color: #15803d; }
+
+.person-goal { font-size: 10px; color: rgba(0,0,0,.32); }
+
+/* ---- A lead card, wherever it appears ---- */
+.lead-face {
+  width: 44px; height: 44px; flex: none;
+  border-radius: 50%; overflow: hidden;
+  background: #f1efec; color: #8a847c;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700;
+}
+.lead-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lead-who { min-width: 0; }
+.lead-card-name { font-size: 13.5px; font-weight: 700; color: #12100e; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lead-card-role { font-size: 11.5px; color: #57534e; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lead-card-co   { font-size: 11.5px; color: #a19b93; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lead-card-contacts { display: flex; gap: 1px; }
+.lead-card-contacts a {
+  width: 24px; height: 24px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: #c2bdb6; transition: color .14s, background .14s;
+}
+.lead-card-contacts a:hover { color: #12100e; background: #f2f0ec; }
+.lead-card-contacts svg { width: 13px; height: 13px; }
+
+/* is this person being worked, and how far in */
+.lead-rail {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 6px 10px;
+  background: #faf9f7; border-top: 1px solid #f1efec;
+  font-size: 10px; font-weight: 700; letter-spacing: .05em; color: #a19b93;
+}
+.lead-rail.due { background: #12100e; border-top-color: #12100e; color: #fff; }
+.lead-rail.empty { color: #c8c4be; text-transform: uppercase; }
+.rail-pips { display: flex; gap: 3px; }
+.rail-pips i { width: 8px; height: 4px; border-radius: 1px; background: #e2dfd9; }
+.rail-pips i.done { background: #a19b93; }
+.rail-pips i.now { background: #12100e; }
+.lead-rail.due .rail-pips i { background: rgba(255,255,255,.28); }
+.lead-rail.due .rail-pips i.done { background: rgba(255,255,255,.6); }
+.lead-rail.due .rail-pips i.now { background: #fff; }
+.rail-count { font-variant-numeric: tabular-nums; }
+
+/* ---- Board lens ---- */
+body.goals-mode #board-tools, body.plays-mode #board-tools { display: none !important; }
+
+/* ---- Plays view ---- */
+#plays-view { position: absolute; inset: 0; display: none; overflow: auto; background: #f6f5f3; }
+#plays-view.active { display: block; }
+body.plays-mode #minimap, body.plays-mode #new-note-fab, body.plays-mode #hints, body.plays-mode #props-palette { display: none !important; }
+body.plays-mode .board { display: none !important; }
+#plays-inner { max-width: 860px; margin: 0 auto; padding: 84px 28px 64px; }
+.pl-head { margin-bottom: 20px; }
+.pl-count { font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #a8a29e; }
+.pl-section { margin-bottom: 26px; }
+.pl-section h3 { margin: 0 0 9px; font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #78716c; }
+.pl-rows { background: #fffefb; border: 1px solid #e9e7e2; border-radius: 10px; overflow: hidden; }
+.pl-row { display: flex; align-items: center; gap: 13px; padding: 13px 15px; border-top: 1px solid #f2f0ec; cursor: pointer; }
+.pl-row:first-child { border-top: none; }
+.pl-row:hover { background: #faf9f6; }
+.pl-row.overdue { box-shadow: inset 3px 0 0 #b45309; }
+.pl-icon { font-size: 19px; flex: none; }
+.pl-main { flex: 1; min-width: 0; }
+.pl-step { font-size: 14px; font-weight: 700; color: #12100e; display: flex; align-items: center; gap: 7px; }
+.pl-tpl { font-size: 10.5px; font-weight: 600; color: #8a847c; background: #f2f1ed; border-radius: 999px; padding: 2px 8px; }
+.pl-who { font-size: 12.5px; color: #78716c; margin-top: 1px; }
+.pl-note { font-size: 11.5px; line-height: 1.4; color: #a19b93; margin-top: 5px; }
+.pl-when { font-size: 11.5px; color: #b5b0a9; font-variant-numeric: tabular-nums; }
+.pl-actions { display: flex; gap: 6px; flex: none; }
+.pl-actions button { height: 30px; padding: 0 13px; border-radius: 8px; border: 1px solid #e2dfd9; background: #fff; font-size: 12px; font-weight: 700; color: #57534e; cursor: pointer; }
+.pl-actions .pl-do { background: #12100e; border-color: #12100e; color: #fff; }
+.pl-actions .pl-do:hover { background: #2b2723; }
+.pl-actions .pl-skip:hover { border-color: #b5b0a9; }
+.pl-row.quiet { cursor: pointer; opacity: .72; }
+.pl-upcoming .pl-rows { background: transparent; border-style: dashed; }
+.pl-empty { padding: 44px 0; text-align: center; color: #a8a29e; font-size: 14px; }
+.pl-idle { margin-top: 8px; font-size: 12px; color: #b5b0a9; }
+
+/* a face on a goal means a person to contact today */
+.goal-face {
+  width: 34px; height: 34px; flex: none; margin-left: -7px;
+  border: 2px solid #fffefb; border-radius: 50%; overflow: hidden;
+  background: #eceae5; color: #78716c; cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  filter: drop-shadow(1px 1.5px 1.5px rgba(18,16,14,.18));
+  transition: transform .18s;
+}
+.goal-face:first-child { margin-left: 0; }
+.goal-face img { width: 100%; height: 100%; object-fit: cover; }
+.goal-face:hover { transform: translateY(-3px) scale(1.1); z-index: 1; }
+
+
+
 /* ---- Plays ---- */
 .play-control { position: relative; }
 .play-trigger {
@@ -4090,8 +4654,13 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
     images?: string[]; // Base64 encoded images for notes
     goalId?: string; // Optional link to a Goal
     todayOn?: number; // flagged for today; only counts on the day it was set
-    playId?: string;  // play this lead is running
-    playStep?: number;// index of the step that is next
+    // On a LEAD: the play it is running, and which step is open
+    playId?: string;
+    playStep?: number;
+    playDueAt?: number;
+    lastPostAt?: number;    // when they last posted on LinkedIn, read from a screenshot
+    lastPostNote?: string;  // when the open step is due. Separate from snoozeUntil:
+                         // snooze is you saying "later", this is the play scheduling
   }
 
   type StepType = 'email' | 'email_fup' | 'call' | 'f2f' | 'li_connect' | 'li_comment' | 'li_like' | 'text';
@@ -4107,6 +4676,25 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
     id: string;
     name: string;
     steps: PlayStep[];
+  }
+
+  /* A quote is a hosted document behind credentials. The hard part is not the
+     number, it is getting back into it - so a deal is really a key. */
+  interface Deal {
+    id: string;
+    title: string;         // the client, or the work
+    personId?: string;     // who it is for
+    goalId?: string;       // which outcome it feeds
+    capex?: number;      // one-off: build, setup, implementation
+    ongoing?: number;    // per month: the part that feeds a recurring goal
+    value?: number;      // legacy single figure, read as capex
+    url?: string;
+    username?: string;
+    password?: string;
+    sentAt?: number;
+    wonAt?: number;
+    lostAt?: number;
+    notes?: string;
   }
 
   interface EmailTemplate {
@@ -4166,6 +4754,9 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
     boardTitles?: string[];
     emailTemplates?: EmailTemplate[];
     plays?: Play[];
+    deals?: Deal[];
+    // ids of things deleted here, so a delete survives a merge from another device
+    tombs?: { id: string; at: number }[];
     boardLabels?: BoardLabel[];
   }
 
@@ -4262,8 +4853,24 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
     save();
   }
 
+  /* Merging by id alone cannot express a deletion: the other device simply
+     has no row for it, which is indistinguishable from never having seen it.
+     So a delete leaves a marker, and the merge honours it. Kept for 90 days,
+     which is far longer than any device stays offline. */
+  const TOMB_TTL = 90 * 86400000;
+
+  function tombstone(...ids: string[]) {
+    if (!state.tombs) state.tombs = [];
+    const now = Date.now();
+    ids.filter(Boolean).forEach(id => {
+      state.tombs = state.tombs!.filter(t => t.id !== id);
+      state.tombs!.push({ id, at: now });
+    });
+    state.tombs = state.tombs.filter(t => now - t.at < TOMB_TTL);
+  }
+
   function emptyState(): State {
-    return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES], props: [], arrows: [], goals: [], boardLabels: [], plays: [] };
+    return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES], props: [], arrows: [], goals: [], boardLabels: [], plays: [], deals: [], tombs: [] };
   }
 
   /* Any blob becoming `state` goes through here. Older projects predate
@@ -4280,6 +4887,8 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
       arrows: Array.isArray(raw.arrows) ? raw.arrows : [],
       goals: Array.isArray(raw.goals) ? raw.goals : [],
       plays: Array.isArray(raw.plays) ? raw.plays : [],
+      deals: Array.isArray(raw.deals) ? raw.deals : [],
+      tombs: Array.isArray(raw.tombs) ? raw.tombs : [],
       boardLabels: Array.isArray(raw.boardLabels) ? raw.boardLabels : [],
     };
   }
@@ -4295,6 +4904,12 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
       if (force || viewDirty.goals) { renderGoals(); viewDirty.goals = false; }
     } else if (viewMode === 'list') {
       if (force || viewDirty.list) { renderList(); viewDirty.list = false; }
+    } else if (viewMode === 'plays') {
+      renderPlaysView();
+    } else if (viewMode === 'deals') {
+      renderDeals();
+    } else if (viewMode === 'people') {
+      renderPeople();
     } else {
       if (force || viewDirty.tasks) { render(); viewDirty.tasks = false; }
       updateMinimap();
@@ -4306,7 +4921,7 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
      later - plays, email templates, props, arrows, board labels - was simply
      never read, and a device would sit there insisting it had none. Keys are
      discovered rather than listed, so a new one works without touching this. */
-  const ID_COLLECTIONS = ['notes', 'goals', 'props', 'arrows', 'boardLabels', 'plays'];
+  const ID_COLLECTIONS = ['notes', 'goals', 'props', 'arrows', 'boardLabels', 'plays', 'deals'];
 
   function mergeFromCloud(local: State, cloud: any): State {
     const out: any = { ...local };
@@ -4314,12 +4929,49 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
     // adopt any key this client has never heard of
     for (const k of Object.keys(cloud)) if (!(k in out)) out[k] = cloud[k];
 
-    // id-keyed collections: keep everything local, add what only the cloud has
+    /* id-keyed collections: take whichever copy was touched last. This used
+       to keep the local one unconditionally, which meant an edit made on
+       another device - hydrating someone on the phone, say - could never
+       reach this browser, even after a reload. */
+    // when the cloud copy was last written - lets us tell "deleted" from "not yet synced"
+    const cloudSavedAt: number = typeof cloud.savedAt === 'number' ? cloud.savedAt : 0;
+
+    // deletions from either side, newest marker wins
+    const tombs = new Map<string, number>();
+    [...(Array.isArray(out.tombs) ? out.tombs : []), ...(Array.isArray(cloud.tombs) ? cloud.tombs : [])]
+      .forEach((t: any) => {
+        if (!t || !t.id) return;
+        if (!tombs.has(t.id) || t.at > tombs.get(t.id)!) tombs.set(t.id, t.at);
+      });
+    const now = Date.now();
+    out.tombs = [...tombs.entries()]
+      .filter(([, at]) => now - at < TOMB_TTL)
+      .map(([id, at]) => ({ id, at }));
+
     for (const k of ID_COLLECTIONS) {
       const mine = Array.isArray(out[k]) ? out[k] : [];
       const theirs = Array.isArray(cloud[k]) ? cloud[k] : [];
-      const seen = new Set(mine.map((x: any) => x && x.id));
-      out[k] = [...mine, ...theirs.filter((x: any) => x && !seen.has(x.id))];
+      const map = new Map<string, any>(mine.filter((x: any) => x && x.id).map((x: any) => [x.id, x]));
+      theirs.forEach((t: any) => {
+        if (!t || !t.id) return;
+        const m = map.get(t.id);
+        if (!m || (t.updatedAt || 0) > (m.updatedAt || 0)) map.set(t.id, t);
+      });
+      /* Two ways an item can be gone.
+         1. An explicit tombstone, which beats any copy not touched since.
+         2. It is simply absent from a cloud copy that was written AFTER this
+            item was last touched. That means some other device removed it -
+            "absent from a newer cloud" is a deletion, whereas "absent from an
+            older cloud" just means the cloud has not caught up yet. Without
+            this, any client that deletes without writing a tombstone leaves
+            ghosts on every other device, forever. */
+      const cloudIds = new Set(theirs.filter((x: any) => x && x.id).map((x: any) => x.id));
+      out[k] = [...map.values()].filter((x: any) => {
+        const at = tombs.get(x.id);
+        if (at !== undefined && (x.updatedAt || 0) <= at) return false;
+        if (!cloudIds.has(x.id) && cloudSavedAt && (x.updatedAt || 0) < cloudSavedAt) return false;
+        return true;
+      });
     }
 
     // templates are keyed by name rather than id
@@ -4461,6 +5113,7 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
   function deleteNote(id: string) {
     const note = state.notes.find(n => n.id === id);
     if (note) lastDeleted = { ...note };
+    tombstone(id);
     state.notes = state.notes.filter(n => n.id !== id);
     if (selectedId === id) selectedId = null;
     save();
@@ -5279,6 +5932,7 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
     renderProps();
 
     state.notes.forEach(note => {
+      if (note.isLead) return;   // people have their own boards
       const quadrant = note.quadrant ?? 0;
       const board = document.getElementById(`board-${quadrant}`);
       if (!board) return;
@@ -5295,7 +5949,7 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
         top: ${note.y}px;
         background: ${note.color};
         z-index: ${note.zIndex};
-        transform: rotate(${note.rotation}deg);
+        transform: rotate(${note.isLead ? 0 : note.rotation}deg);
       `;
 
       const avatarHtml = note.isLead ? `
@@ -5329,6 +5983,44 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
       const goalChipHtml = linkedGoal ? `<span class="sticky-goal-chip" title="Goal: ${escapeHtml(linkedGoal.text || 'Untitled goal')}">◆</span>` : '';
       const todayChipHtml = isFlaggedToday(note) ? `<span class="sticky-today-chip" title="Flagged for today">TODAY</span>` : '';
 
+      if (note.isLead) {
+        const play = playOf(note);
+        const total = play ? play.steps.length : 0;
+        const at = (note.playStep ?? 0);
+        const due = playDueToday(note);
+        const railHtml = play ? `
+          <div class="lead-rail ${due ? 'due' : ''}" title="${escapeHtml(play.name)} — step ${at + 1} of ${total}">
+            <span class="rail-pips">${Array.from({ length: total }, (_, i) =>
+              `<i class="${i < at ? 'done' : i === at ? 'now' : ''}"></i>`).join('')}</span>
+            <span class="rail-count">${at + 1}/${total}</span>
+          </div>` : `<div class="lead-rail empty" title="No play running">No play</div>`;
+
+        const contacts = [
+          note.phone ? `<a href="tel:${escapeHtml(note.phone.replace(/\s+/g, ''))}" title="${escapeHtml(note.phone)}" data-stop>${ACTIVITY_ICONS.call}</a>` : '',
+          note.email ? `<a href="mailto:${escapeHtml(note.email)}" title="${escapeHtml(note.email)}" data-stop>${ACTIVITY_ICONS.email}</a>` : '',
+          note.linkedin ? `<a href="${escapeHtml(note.linkedin.startsWith('http') ? note.linkedin : 'https://' + note.linkedin)}" target="_blank" rel="noopener" title="LinkedIn" data-stop>${ACTIVITY_ICONS.linkedin}</a>` : '',
+          note.website ? `<a href="${escapeHtml(note.website.startsWith('http') ? note.website : 'https://' + note.website)}" target="_blank" rel="noopener" title="Website" data-stop>${ACTIVITY_ICONS.web}</a>` : '',
+        ].join('');
+
+        el.innerHTML = `
+          ${snoozeBadgeHtml}
+          <div class="lead-card-head">
+            <div class="lead-face">${note.avatar
+              ? `<img src="${note.avatar}" alt="">`
+              : `<span>${escapeHtml(initials(note.name || noteHeadline(note)))}</span>`}</div>
+            <div class="lead-who">
+              <div class="lead-card-name">${escapeHtml(note.name || noteHeadline(note))}</div>
+              ${note.role ? `<div class="lead-card-role">${escapeHtml(note.role)}</div>` : ''}
+              ${note.company ? `<div class="lead-card-co">${escapeHtml(note.company)}</div>` : ''}
+            </div>
+          </div>
+          <div class="lead-card-foot">
+            <div class="lead-card-contacts">${contacts}</div>
+            ${goalChipHtml}
+          </div>
+          ${railHtml}
+        `;
+      } else {
       el.innerHTML = `
         ${avatarHtml}
         ${snoozeBadgeHtml}
@@ -5342,16 +6034,17 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
             ${todayChipHtml}
           </span>
           <div class="sticky-note-actions">
-            <button class="done-btn" title="Done!">
+            ${note.isLead ? '' : `<button class="done-btn" title="Done!">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            </button>
+            </button>`}
           </div>
         </div>
       `;
+      }
 
       // Content editing
-      const content = el.querySelector('.sticky-note-content') as HTMLElement;
-      content.addEventListener('focus', () => {
+      const content = el.querySelector('.sticky-note-content') as HTMLElement | null;
+      content?.addEventListener('focus', () => {
         el.classList.add('editing');
         selectedId = note.id;
         document.querySelectorAll('.sticky-note.selected').forEach(n => {
@@ -5359,25 +6052,26 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
         });
         el.classList.add('selected');
       });
-      content.addEventListener('blur', () => {
+      content?.addEventListener('blur', () => {
         el.classList.remove('editing');
         updateNote(note.id, { text: content.innerText });
       });
-      content.addEventListener('keydown', e => {
+      content?.addEventListener('keydown', e => {
         if (e.key === 'Escape') content.blur();
       });
 
       // Drag / Multi-select
       el.addEventListener('mousedown', e => {
         if ((e.target as HTMLElement).closest('.lead-avatar') ||
+            (e.target as HTMLElement).closest('[data-stop]') ||
             (e.target as HTMLElement).closest('button')) return;
 
         // Straight onto a letter: let the browser drop the caret there, no drag
-        if (!multiSelectMode && pointOnGlyph(content, e.clientX, e.clientY)) return;
+        if (!multiSelectMode && content && pointOnGlyph(content, e.clientX, e.clientY)) return;
 
         // Anywhere else: suppress the caret, drop any edit in progress, take the card
         e.preventDefault();
-        if (document.activeElement === content) {
+        if (content && document.activeElement === content) {
           content.blur();
           el.classList.remove('editing');
         }
@@ -5431,7 +6125,7 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
             (e.target as HTMLElement).closest('button')) return;
         e.stopPropagation();
         e.preventDefault();
-        if (document.activeElement === content) {
+        if (content && document.activeElement === content) {
           content.blur();
           el.classList.remove('editing');
         }
@@ -5442,6 +6136,7 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
       // Show a text cursor only over the letters, so the two zones are legible
       el.addEventListener('mousemove', e => {
         if (isDragging || multiSelectMode) return;
+        if (!content) return;
         const onGlyph = pointOnGlyph(content, e.clientX, e.clientY);
         if (onGlyph !== content.classList.contains('on-glyph')) {
           content.classList.toggle('on-glyph', onGlyph);
@@ -5594,6 +6289,7 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
     populateGoalSelect(note);
 
     renderPlayControl(note);
+    renderLastPost(note);
     detailTodayOn = isFlaggedToday(note) ? (note.todayOn as number) : undefined;
     document.getElementById('detail-today')?.classList.toggle('on', !!detailTodayOn);
 
@@ -5758,6 +6454,7 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
     if (pendingEmptyNoteId) {
       const n = state.notes.find(x => x.id === pendingEmptyNoteId);
       if (n && !(n.text || '').trim() && !n.images?.length && !n.activity?.length) {
+        tombstone(pendingEmptyNoteId);
         state.notes = state.notes.filter(x => x.id !== pendingEmptyNoteId);
         save();
       }
@@ -5855,7 +6552,11 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
     const titles = state.boardTitles || DEFAULT_TITLES;
     const keys = ['O', 'Y', 'G', 'B', 'I', 'V'];
 
-    state.notes.forEach(note => {
+    const mapped = viewMode === 'people'
+      ? state.notes.filter(n => n.isLead)
+      : state.notes.filter(n => !n.isLead);
+
+    mapped.forEach(note => {
       const q = note.quadrant ?? 0;
       const btn = document.querySelector(`.quadrant-btn[data-q="${q}"]`);
       if (!btn) return;
@@ -5925,8 +6626,9 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
     save();
     refreshView(true);
   }
-  type ViewMode = 'tasks' | 'goals' | 'list';
-  const VIEW_MODES: ViewMode[] = ['tasks', 'goals', 'list'];
+  type ViewMode = 'goals' | 'people' | 'plays' | 'tasks' | 'list' | 'deals';
+  // list still works, it just no longer earns a place in the nav
+  const VIEW_MODES: ViewMode[] = ['goals', 'people', 'plays', 'tasks', 'deals'];
   let viewMode: ViewMode = 'tasks';
 
   function getGoals(): Goal[] {
@@ -5939,6 +6641,13 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
     localStorage.setItem(VIEW_MODE_KEY, mode);
     document.body.classList.toggle('goals-mode', mode === 'goals');
     document.body.classList.toggle('list-mode', mode === 'list');
+    document.body.classList.toggle('plays-mode', mode === 'plays');
+    document.body.classList.toggle('people-mode', mode === 'people');
+    document.body.classList.toggle('deals-mode', mode === 'deals');
+    document.getElementById('deals-view')?.classList.toggle('active', mode === 'deals');
+    document.getElementById('people-view')?.classList.toggle('active', mode === 'people');
+
+    document.getElementById('plays-view')?.classList.toggle('active', mode === 'plays');
     document.getElementById('goals-view')?.classList.toggle('active', mode === 'goals');
     document.getElementById('list-view')?.classList.toggle('active', mode === 'list');
     document.querySelectorAll('.mode-btn').forEach(b => {
@@ -5983,6 +6692,7 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
 
 
   function deleteGoal(id: string) {
+    tombstone(id);
     state.goals = getGoals().filter(g => g.id !== id);
     // Unlink any tasks pointing at this goal
     state.notes.forEach(n => { if (n.goalId === id) delete n.goalId; });
@@ -6000,8 +6710,9 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
   function goalDailyState(goalId: string) {
     const linked = state.notes.filter(n => n.goalId === goalId);
     const now = Date.now();
+    // "today" regardless of origin: a task you flagged, or a lead with a step due
     const today = linked
-      .filter(countsAsToday)
+      .filter(n => (n.isLead ? playDueToday(n) : countsAsToday(n)))
       .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));   // oldest first
     // Genuinely handled: every remaining task is booked for a future date
     const future = linked
@@ -6187,10 +6898,13 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
       const shown = daily.today.slice(0, MAX_STIKIS);
       const hidden = daily.today.length - shown.length;
       const boardsHtml = shown.length ? `<div class="goal-stikis" title="${daily.today.length} for today">` + shown
-        .map((n, idx) => `<button class="goal-stiki" data-goal-task="${n.id}"
-            style="--sc:${n.color || BOARD_COLORS[n.quadrant ?? 0]}; --st:${idx % 2 ? 4 : -5}deg"
-            title="${escapeHtml(noteHeadline(n))}"
-            aria-label="${escapeHtml(noteHeadline(n))}"></button>`).join('')
+        .map((n, idx) => n.isLead
+          ? `<button class="goal-face" data-goal-task="${n.id}" title="${escapeHtml(noteHeadline(n))}" aria-label="${escapeHtml(noteHeadline(n))}">${
+              n.avatar ? `<img src="${n.avatar}" alt="">` : `<span>${escapeHtml(initials(n.name || noteHeadline(n)))}</span>`}</button>`
+          : `<button class="goal-stiki" data-goal-task="${n.id}"
+              style="--sc:${n.color || BOARD_COLORS[n.quadrant ?? 0]}; --st:${idx % 2 ? 4 : -5}deg"
+              title="${escapeHtml(noteHeadline(n))}"
+              aria-label="${escapeHtml(noteHeadline(n))}"></button>`).join('')
         + (hidden > 0 ? `<span class="goal-stiki-more">+${hidden}</span>` : '')
         + `</div>` : '';
 
@@ -6269,6 +6983,71 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
         }, 60);
       });
     });
+  }
+
+  /* The short-lived experiment where a play created a task card. Those tasks
+     are not work you wrote, so remove them and put the schedule back on the
+     lead where the play lives. */
+  /* A person with nothing in them at all is not a person - it is a card the
+     old + button created and never filled. Strict test: no name, no text, no
+     contact detail, no photo, no history, no play. Only junk can match. */
+  function removeEmptyLeads() {
+    const junk = state.notes.filter(n =>
+      n.isLead &&
+      !(n.name || '').trim() &&
+      !(n.text || '').trim() &&
+      !n.company && !n.role && !n.email && !n.phone && !n.linkedin && !n.website &&
+      !n.avatar && !n.playId &&
+      !(n.activity && n.activity.length) &&
+      !(n.images && n.images.length));
+    if (!junk.length) return;
+    const ids = new Set(junk.map(n => n.id));
+    tombstone(...ids);
+    state.notes = state.notes.filter(n => !ids.has(n.id));
+    console.log(`[stiki] removed ${ids.size} empty lead card(s)`);
+    save();
+    refreshView(true);
+  }
+
+  function migratePlayTasks() {
+    const generated = state.notes.filter(n => (n as any).stepType && (n as any).leadId);
+    if (!generated.length) return;
+    const ids = new Set(generated.map(n => n.id));
+    generated.forEach(t => {
+      const lead = state.notes.find(n => n.id === (t as any).leadId);
+      if (lead && lead.playId && !lead.playDueAt) {
+        lead.playDueAt = t.todayOn ? startOfToday() : (t.snoozeUntil || startOfToday());
+      }
+    });
+    tombstone(...ids);
+    state.notes = state.notes.filter(n => !ids.has(n.id));
+    console.log(`[stiki] removed ${ids.size} generated play task(s)`);
+    save();
+    refreshView(true);
+  }
+
+  /* Changes made elsewhere - the PDA hydrating someone, the agent adding a
+     lead - only reach this tab if we go and look. Held off while you are
+     dragging or have a card open, so nothing moves under your hands. */
+  function stateSignature(): string {
+    return state.notes.length + '|' + state.notes.reduce((t, n) => t + (n.updatedAt || 0), 0)
+      + '|' + (state.goals?.length || 0) + '|' + (state.deals?.length || 0);
+  }
+
+  async function pullFromCloud() {
+    if (!getSyncPassword()) return;
+    if (isDragging || goalDragging || multiSelectMode) return;
+    if (document.getElementById('detail-modal')?.classList.contains('visible')) return;
+    if (document.activeElement?.isContentEditable) return;
+
+    const raw = await syncFromCloud();
+    if (!raw) return;
+    const before = stateSignature();
+    state = mergeFromCloud(state, raw);
+    if (stateSignature() === before) return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    refreshView(true);
+    console.log('[stiki] pulled changes from the cloud');
   }
 
   // ============ AGENT LEAD INBOX ============
@@ -6384,32 +7163,7 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
 
   function currentStep(n: Note): PlayStep | undefined {
     const play = playOf(n);
-    if (!play) return undefined;
-    return play.steps[n.playStep ?? 0];
-  }
-
-  function applyPlay(noteId: string, playId: string) {
-    const n = state.notes.find(x => x.id === noteId);
-    const play = getPlays().find(p => p.id === playId);
-    if (!n || !play || !play.steps.length) return;
-    n.playId = playId;
-    n.playStep = 0;
-    scheduleStep(n, play.steps[0], true);
-    addPlayActivity(n, `Started play: ${play.name}`);
-    save();
-    if (detailNoteId === noteId) renderPlayControl(n);
-  }
-
-  // first step lands today; later ones sit N days after the previous was done
-  function scheduleStep(n: Note, step: PlayStep, isFirst: boolean) {
-    const days = isFirst ? 0 : step.offsetDays;
-    const due = new Date();
-    due.setHours(0, 0, 0, 0);
-    due.setDate(due.getDate() + days);
-    n.snoozeUntil = due.getTime();
-    n.snoozeAction = stepToSnoozeAction(step.type);
-    if (days === 0) n.todayOn = Date.now();
-    n.updatedAt = Date.now();
+    return play ? play.steps[n.playStep ?? 0] : undefined;
   }
 
   function stepToSnoozeAction(t: StepType): 'call' | 'email' | 'meeting' | 'linkedin' | 'web' {
@@ -6424,81 +7178,133 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
     n.activity.push({ id: `act-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, timestamp: Date.now(), type, text });
   }
 
-  function advancePlay(n: Note, logged: string | null) {
-    const play = playOf(n);
+  function startOfToday(): number {
+    const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime();
+  }
+  function endOfToday(): number { return startOfToday() + 86400000 - 1; }
+
+  function playDueToday(n: Note): boolean {
+    return !!(n.playId && n.playDueAt && n.playDueAt <= endOfToday());
+  }
+
+  function leadsWithStepDue(): Note[] {
+    return state.notes
+      .filter(n => n.isLead && playDueToday(n) && currentStep(n))
+      .sort((a, b) => (a.playDueAt || 0) - (b.playDueAt || 0));
+  }
+
+  function schedulePlayStep(lead: Note, step: PlayStep, isFirst: boolean) {
+    const due = new Date();
+    due.setHours(0, 0, 0, 0);
+    due.setDate(due.getDate() + (isFirst ? 0 : step.offsetDays));
+    lead.playDueAt = due.getTime();
+    lead.updatedAt = Date.now();
+  }
+
+  function applyPlay(leadId: string, playId: string) {
+    const lead = state.notes.find(x => x.id === leadId);
+    const play = getPlays().find(p => p.id === playId);
+    if (!lead || !play || !play.steps.length) return;
+    lead.playId = playId;
+    lead.playStep = 0;
+    schedulePlayStep(lead, play.steps[0], true);
+    addPlayActivity(lead, `Started play: ${play.name}`);
+    save();
+    refreshView(true);
+    if (detailNoteId === leadId) renderPlayControl(lead);
+  }
+
+  function advancePlay(lead: Note, logged: string | null) {
+    const play = playOf(lead);
     if (!play) return;
-    if (logged) addPlayActivity(n, logged, stepToSnoozeAction(play.steps[n.playStep ?? 0].type) as Activity['type']);
-    const next = (n.playStep ?? 0) + 1;
+    const idx = lead.playStep ?? 0;
+    if (logged) addPlayActivity(lead, logged, stepToSnoozeAction(play.steps[idx].type) as Activity['type']);
+    const next = idx + 1;
     if (next >= play.steps.length) {
-      addPlayActivity(n, `Play complete: ${play.name}`);
-      delete n.playId;
-      delete n.playStep;
-      n.snoozeUntil = undefined;
-      n.snoozeAction = undefined;
+      addPlayActivity(lead, `Play complete: ${play.name}`);
+      delete lead.playId;
+      delete lead.playStep;
+      delete lead.playDueAt;
     } else {
-      n.playStep = next;
-      scheduleStep(n, play.steps[next], false);
+      lead.playStep = next;
+      schedulePlayStep(lead, play.steps[next], false);
     }
-    n.updatedAt = Date.now();
+    lead.updatedAt = Date.now();
     save();
-    renderPlayControl(n);
+    refreshView(true);
+    if (detailNoteId === lead.id) renderPlayControl(lead);
   }
 
-  function stopPlay(n: Note) {
-    const play = playOf(n);
-    if (play) addPlayActivity(n, `Stopped play: ${play.name}`);
-    delete n.playId;
-    delete n.playStep;
+  function stopPlay(lead: Note) {
+    const play = playOf(lead);
+    if (play) addPlayActivity(lead, `Stopped play: ${play.name}`);
+    delete lead.playId;
+    delete lead.playStep;
+    delete lead.playDueAt;
     save();
-    renderPlayControl(n);
+    refreshView(true);
+    renderPlayControl(lead);
   }
 
-  /* Perform the step. Email opens an Outlook draft - we never send anything,
-     and we add no signature, because Outlook appends its own. */
-  function doStep(n: Note, step: PlayStep) {
-    const tpl = (state.emailTemplates || []).find(t => t.name === step.template);
-    const first = (n.name || '').trim().split(/\s+/)[0] || '';
+  /* Perform the step against the lead. Email opens an Outlook draft - we
+     never send, and add no signature, because Outlook appends its own. */
+  function performStep(lead: Note, type: StepType, template?: string): boolean {
+    const tpl = (state.emailTemplates || []).find(t => t.name === template);
+    const first = (lead.name || '').trim().split(/\s+/)[0] || '';
     const fill = (v: string) => v
       .replace(/\[name\]/gi, first)
-      .replace(/\[company\]/gi, n.company || '')
-      .replace(/\[role\]/gi, n.role || '');
+      .replace(/\[company\]/gi, lead.company || '')
+      .replace(/\[role\]/gi, lead.role || '');
 
-    switch (step.type) {
+    switch (type) {
       case 'email':
       case 'email_fup': {
-        if (!n.email) { alert('This lead has no email address.'); return; }
+        if (!lead.email) { alert('This lead has no email address.'); return false; }
         let subject = tpl ? fill(tpl.subject) : '';
-        if (step.type === 'email_fup' && subject && !/^re:/i.test(subject)) subject = `RE: ${subject}`;
-        const body = tpl ? fill(tpl.body) : '';
-        window.location.href = `mailto:${encodeURIComponent(n.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        if (type === 'email_fup' && subject && !/^re:/i.test(subject)) subject = `RE: ${subject}`;
+        window.location.href = `mailto:${encodeURIComponent(lead.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(tpl ? fill(tpl.body) : '')}`;
         break;
       }
-      case 'call':
-        if (n.phone) window.location.href = `tel:${n.phone.replace(/\s+/g, '')}`;
-        break;
-      case 'text':
-        if (n.phone) window.location.href = `sms:${n.phone.replace(/\s+/g, '')}`;
-        break;
+      case 'call':  if (lead.phone) window.location.href = `tel:${lead.phone.replace(/\s+/g, '')}`; break;
+      case 'text':  if (lead.phone) window.location.href = `sms:${lead.phone.replace(/\s+/g, '')}`; break;
       case 'li_connect':
       case 'li_comment':
       case 'li_like': {
-        const li = n.linkedin
-          ? (n.linkedin.startsWith('http') ? n.linkedin : `https://${n.linkedin}`)
-          : `https://www.google.com/search?q=${encodeURIComponent(`${n.name || ''} ${n.company || ''} linkedin`)}`;
+        const li = lead.linkedin
+          ? (lead.linkedin.startsWith('http') ? lead.linkedin : `https://${lead.linkedin}`)
+          : `https://www.google.com/search?q=${encodeURIComponent(`${lead.name || ''} ${lead.company || ''} linkedin`)}`;
         window.open(li, '_blank', 'noopener');
         break;
       }
-      case 'f2f':
-        break;   // nothing to launch - it is a reminder
+      case 'f2f': break;   // a reminder, nothing to launch
     }
-    advancePlay(n, `${stepLabel(step.type)}${step.template ? ` (${step.template})` : ''}`);
+    return true;
+  }
+
+  function doPlayStep(leadId: string) {
+    const lead = state.notes.find(n => n.id === leadId);
+    const step = lead ? currentStep(lead) : undefined;
+    if (!lead || !step) return;
+    if (!performStep(lead, step.type, step.template)) return;
+    advancePlay(lead, `${stepLabel(step.type)}${step.template ? ` (${step.template})` : ''}`);
+  }
+
+  function skipPlayStep(leadId: string) {
+    const lead = state.notes.find(n => n.id === leadId);
+    const step = lead ? currentStep(lead) : undefined;
+    if (!lead || !step) return;
+    advancePlay(lead, `Skipped: ${stepLabel(step.type)}`);
   }
 
   function renderPlayControl(n: Note | undefined) {
     const trigger = document.getElementById('detail-play');
     const display = document.getElementById('play-display');
     const pop = document.getElementById('play-popover');
-    if (!trigger || !display || !pop || !n) return;
+    if (!trigger || !display || !pop) return;
+
+    // plays are for people
+    (trigger.parentElement as HTMLElement).style.display = n && n.isLead ? '' : 'none';
+    if (!n || !n.isLead) return;
 
     const play = playOf(n);
     const step = currentStep(n);
@@ -6515,23 +7321,24 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
         applyPlay(n.id, (b as HTMLElement).dataset.play!);
         pop.classList.remove('open');
       }));
-    } else {
-      const due = n.snoozeUntil ? formatDate(n.snoozeUntil) : 'now';
-      pop.innerHTML = `
-        <div class="play-pop-head">Next</div>
-        <div class="play-next"><span class="play-next-icon">${stepIcon(step.type)}</span>
-          <span><strong>${stepLabel(step.type)}</strong><em>${due}${step.template ? ` · ${escapeHtml(step.template)}` : ''}</em></span>
-        </div>
-        ${step.note ? `<div class="play-note">${escapeHtml(step.note)}</div>` : ''}
-        <div class="play-pop-actions">
-          <button class="play-do primary">Do it</button>
-          <button class="play-skip">Skip</button>
-          <button class="play-stop">Stop play</button>
-        </div>`;
-      pop.querySelector('.play-do')?.addEventListener('click', () => { doStep(n, step); pop.classList.remove('open'); });
-      pop.querySelector('.play-skip')?.addEventListener('click', () => { advancePlay(n, `Skipped: ${stepLabel(step.type)}`); });
-      pop.querySelector('.play-stop')?.addEventListener('click', () => { stopPlay(n); pop.classList.remove('open'); });
+      return;
     }
+
+    const due = n.playDueAt ? formatDate(n.playDueAt) : 'today';
+    pop.innerHTML = `
+      <div class="play-pop-head">Next</div>
+      <div class="play-next"><span class="play-next-icon">${stepIcon(step.type)}</span>
+        <span><strong>${stepLabel(step.type)}</strong><em>${due}${step.template ? ` · ${escapeHtml(step.template)}` : ''}</em></span>
+      </div>
+      ${step.note ? `<div class="play-note">${escapeHtml(step.note)}</div>` : ''}
+      <div class="play-pop-actions">
+        <button class="play-do primary">Do it</button>
+        <button class="play-skip">Skip</button>
+        <button class="play-stop">Stop play</button>
+      </div>`;
+    pop.querySelector('.play-do')?.addEventListener('click', () => { doPlayStep(n.id); pop.classList.remove('open'); });
+    pop.querySelector('.play-skip')?.addEventListener('click', () => { skipPlayStep(n.id); });
+    pop.querySelector('.play-stop')?.addEventListener('click', () => { stopPlay(n); pop.classList.remove('open'); });
   }
 
   document.getElementById('detail-play')?.addEventListener('click', (e) => {
@@ -6648,6 +7455,617 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
       editingPlay = null;
     }));
 
+  // ============ LINKEDIN ACTIVITY ============
+  /* LinkedIn answers every automated request with a 999, so the only lawful
+     way to know when someone last posted is your own logged-in browser:
+     screenshot their activity, paste it here, and Claude Vision reads the
+     relative age LinkedIn already prints next to the post. */
+  const AGO_UNITS: Record<string, number> = {
+    m: 60000, h: 3600000, d: 86400000, w: 604800000, mo: 2592000000, yr: 31536000000,
+  };
+
+  function agoToTimestamp(ago: string): number | undefined {
+    const m = (ago || '').trim().toLowerCase().match(/^(\d+)\s*(mo|yr|[mhdw])/);
+    if (!m) return undefined;
+    const unit = AGO_UNITS[m[2]];
+    return unit ? Date.now() - parseInt(m[1], 10) * unit : undefined;
+  }
+
+  function describeAge(ts: number): string {
+    const d = Math.floor((Date.now() - ts) / 86400000);
+    if (d <= 0) return 'today';
+    if (d === 1) return 'yesterday';
+    if (d < 7) return `${d}d ago`;
+    if (d < 31) return `${Math.floor(d / 7)}w ago`;
+    if (d < 365) return `${Math.floor(d / 30)}mo ago`;
+    return `${Math.floor(d / 365)}yr ago`;
+  }
+
+  function shrinkImage(dataUrl: string, maxEdge = 1400, quality = 0.75): Promise<string> {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
+        if (scale === 1 && dataUrl.length < 700000) return resolve(dataUrl);
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * scale);
+        c.height = Math.round(img.height * scale);
+        const ctx = c.getContext('2d');
+        if (!ctx) return resolve(dataUrl);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
+  }
+
+  function renderLastPost(n: Note | undefined) {
+    const el = document.getElementById('li-act-value');
+    if (!el) return;
+    if (!n?.lastPostAt) { el.textContent = '—'; el.className = 'li-act-value'; return; }
+    const days = Math.floor((Date.now() - n.lastPostAt) / 86400000);
+    el.textContent = describeAge(n.lastPostAt) + (n.lastPostNote ? ` · ${n.lastPostNote}` : '');
+    el.className = `li-act-value ${days <= 7 ? 'fresh' : days <= 30 ? 'ok' : 'stale'}`;
+  }
+
+  async function readActivityShot(dataUrl: string) {
+    if (!detailNoteId) return;
+    const note = state.notes.find(n => n.id === detailNoteId);
+    const el = document.getElementById('li-act-value');
+    if (!note || !el) return;
+    el.textContent = 'Reading...';
+    el.className = 'li-act-value';
+    try {
+      const img = await shrinkImage(dataUrl);
+      const res = await fetch(`${WORKER_URL}/scan-activity`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Sync-Password': getSyncPassword() || '' },
+        body: JSON.stringify({ image: img }),
+      });
+      const d = await res.json();
+      const ts = d.ago ? agoToTimestamp(d.ago) : undefined;
+      if (!ts) { el.textContent = 'No post found in that image'; return; }
+      note.lastPostAt = ts;
+      note.lastPostNote = [d.kind && d.kind !== 'post' ? d.kind : '', d.topic].filter(Boolean).join(' · ').slice(0, 80);
+      note.updatedAt = Date.now();
+      addPlayActivity(note, `Last LinkedIn ${d.kind || 'post'} ${d.ago}${d.topic ? ` - ${d.topic}` : ''}`, 'linkedin');
+      save();
+      renderLastPost(note);
+      renderActivities();
+    } catch {
+      el.textContent = 'Could not read that image';
+    }
+  }
+
+  function handleActivityFile(f: File) {
+    const r = new FileReader();
+    r.onload = ev => readActivityShot(ev.target?.result as string);
+    r.readAsDataURL(f);
+  }
+
+  document.getElementById('li-act-check')?.addEventListener('click', () => document.getElementById('li-act-file')?.click());
+  document.getElementById('li-act-file')?.addEventListener('change', (e) => {
+    const input = e.target as HTMLInputElement;
+    if (input.files?.[0]) handleActivityFile(input.files[0]);
+    input.value = '';
+  });
+  // paste a screenshot straight into an open lead
+  document.addEventListener('paste', (e) => {
+    if (!detailNoteId) return;
+    if (!document.getElementById('detail-modal')?.classList.contains('visible')) return;
+    const item = [...((e as ClipboardEvent).clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
+    const f = item?.getAsFile();
+    if (!f) return;
+    e.preventDefault();
+    handleActivityFile(f);
+  });
+
+  // ============ DEALS ============
+  /* Where the work gets quoted. Every quote lives behind a URL and a login,
+     so the card is a key first and a record second: one action opens the
+     quote with the password already on your clipboard. */
+  function getDeals(): Deal[] {
+    if (!state.deals) state.deals = [];
+    return state.deals;
+  }
+
+  const money = (v?: number) => v
+    ? '$' + Math.round(v).toLocaleString('en-NZ')
+    : '—';
+
+  const capexOf = (d: Deal) => d.capex ?? d.value ?? 0;   // legacy deals carried one figure
+  const ongoingOf = (d: Deal) => d.ongoing ?? 0;
+
+  /* Two totals, because they are different money: a one-off build and the
+     monthly line that actually moves a recurring revenue goal. */
+  function dealTotals(list: Deal[]) {
+    return {
+      capex: list.reduce((t, d) => t + capexOf(d), 0),
+      ongoing: list.reduce((t, d) => t + ongoingOf(d), 0),
+    };
+  }
+  function totalsHtml(list: Deal[]) {
+    const t = dealTotals(list);
+    return `${t.capex ? money(t.capex) : ''}${t.capex && t.ongoing ? ' + ' : ''}${t.ongoing ? money(t.ongoing) + '/mo' : ''}` || '—';
+  }
+
+  function dealState(d: Deal): 'won' | 'lost' | 'quoted' {
+    return d.wonAt ? 'won' : d.lostAt ? 'lost' : 'quoted';
+  }
+
+  let editingDeal: Deal | null = null;
+
+  function openDealModal(id?: string) {
+    const deals = getDeals();
+    editingDeal = id
+      ? JSON.parse(JSON.stringify(deals.find(d => d.id === id))) as Deal
+      : { id: `deal-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, title: '', sentAt: Date.now() };
+
+    const v = (el: string, val: string) => { (document.getElementById(el) as HTMLInputElement).value = val; };
+    (document.getElementById('deal-modal-title') as HTMLElement).textContent = id ? 'Edit Deal' : 'New Deal';
+    v('deal-title', editingDeal.title || '');
+    v('deal-capex', capexOf(editingDeal) ? String(capexOf(editingDeal)) : '');
+    v('deal-ongoing', editingDeal.ongoing != null ? String(editingDeal.ongoing) : '');
+    v('deal-url', editingDeal.url || '');
+    v('deal-username', editingDeal.username || '');
+    v('deal-password', editingDeal.password || '');
+    v('deal-sent', editingDeal.sentAt ? new Date(editingDeal.sentAt).toISOString().slice(0, 10) : '');
+
+    const people = state.notes.filter(n => n.isLead).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    (document.getElementById('deal-person') as HTMLSelectElement).innerHTML =
+      `<option value="">No person</option>` + people.map(p =>
+        `<option value="${p.id}" ${p.id === editingDeal!.personId ? 'selected' : ''}>${escapeHtml(p.name || noteHeadline(p))}${p.company ? ` — ${escapeHtml(p.company)}` : ''}</option>`).join('');
+    (document.getElementById('deal-goal') as HTMLSelectElement).innerHTML =
+      `<option value="">No goal</option>` + getGoals().map(g =>
+        `<option value="${g.id}" ${g.id === editingDeal!.goalId ? 'selected' : ''}>${escapeHtml((g.text || 'Untitled goal').split('\n')[0])}</option>`).join('');
+
+    (document.getElementById('deal-delete') as HTMLElement).style.display = id ? '' : 'none';
+    document.getElementById('deal-modal')!.classList.add('visible');
+  }
+
+  document.getElementById('add-deal')?.addEventListener('click', () => openDealModal());
+  document.querySelectorAll('#deal-modal .modal-close').forEach(b =>
+    b.addEventListener('click', () => { document.getElementById('deal-modal')!.classList.remove('visible'); editingDeal = null; }));
+
+  document.getElementById('deal-save')?.addEventListener('click', () => {
+    if (!editingDeal) return;
+    const g = (el: string) => (document.getElementById(el) as HTMLInputElement).value.trim();
+    editingDeal.title = g('deal-title') || 'Untitled deal';
+    const cx = parseFloat(g('deal-capex')); const og = parseFloat(g('deal-ongoing'));
+    editingDeal.capex = isNaN(cx) ? undefined : cx;
+    editingDeal.ongoing = isNaN(og) ? undefined : og;
+    delete editingDeal.value;   // folded into capex
+    editingDeal.url = g('deal-url') || undefined;
+    editingDeal.username = g('deal-username') || undefined;
+    editingDeal.password = g('deal-password') || undefined;
+    editingDeal.personId = (document.getElementById('deal-person') as HTMLSelectElement).value || undefined;
+    editingDeal.goalId = (document.getElementById('deal-goal') as HTMLSelectElement).value || undefined;
+    const sent = g('deal-sent');
+    editingDeal.sentAt = sent ? new Date(sent + 'T00:00:00').getTime() : undefined;
+
+    const deals = getDeals();
+    const i = deals.findIndex(d => d.id === editingDeal!.id);
+    if (i >= 0) deals[i] = editingDeal; else deals.push(editingDeal);
+    save();
+    document.getElementById('deal-modal')!.classList.remove('visible');
+    editingDeal = null;
+    renderDeals();
+  });
+
+  document.getElementById('deal-delete')?.addEventListener('click', () => {
+    if (!editingDeal || !confirm(`Delete "${editingDeal.title}"?`)) return;
+    tombstone(editingDeal.id);
+    state.deals = getDeals().filter(d => d.id !== editingDeal!.id);
+    save();
+    document.getElementById('deal-modal')!.classList.remove('visible');
+    editingDeal = null;
+    renderDeals();
+  });
+
+  function setDealOutcome(id: string, outcome: 'won' | 'lost' | 'quoted') {
+    const d = getDeals().find(x => x.id === id);
+    if (!d) return;
+    d.wonAt = outcome === 'won' ? Date.now() : undefined;
+    d.lostAt = outcome === 'lost' ? Date.now() : undefined;
+    const person = d.personId ? state.notes.find(n => n.id === d.personId) : undefined;
+    if (person) addPlayActivity(person, outcome === 'quoted' ? `Back to quoted: ${d.title}` : `Quote ${outcome}: ${d.title} (${totalsHtml([d])})`);
+    save();
+    renderDeals();
+  }
+
+  /* The point of the whole view: get into the quote without hunting for a
+     password. Copy first, then open, so the paste is ready when the login is. */
+  async function openQuote(id: string) {
+    const d = getDeals().find(x => x.id === id);
+    if (!d?.url) return;
+    if (d.password) { try { await navigator.clipboard.writeText(d.password); } catch { /* no clipboard, just open */ } }
+    window.open(d.url.startsWith('http') ? d.url : `https://${d.url}`, '_blank', 'noopener');
+    const el = document.querySelector(`.deal[data-id="${id}"] .deal-open span`) as HTMLElement;
+    if (el && d.password) { el.textContent = 'Password copied'; setTimeout(() => { el.textContent = 'Open quote'; }, 2200); }
+  }
+
+  function dealCardHtml(d: Deal): string {
+    const person = d.personId ? state.notes.find(n => n.id === d.personId) : undefined;
+    const goal = d.goalId ? getGoals().find(g => g.id === d.goalId) : undefined;
+    const st = dealState(d);
+    const host = (() => { try { return new URL(d.url!.startsWith('http') ? d.url! : `https://${d.url}`).hostname.replace(/^www\./, ''); } catch { return d.url || ''; } })();
+
+    return `
+      <article class="deal ${st}" data-id="${d.id}">
+        ${st === 'won' ? `<span class="deal-seal">Won</span>` : ''}
+        <header class="deal-head">
+          ${person ? `<span class="deal-face">${person.avatar
+            ? `<img src="${person.avatar}" alt="">`
+            : `<span>${escapeHtml(initials(person.name || noteHeadline(person)))}</span>`}</span>` : ''}
+          <div class="deal-who">
+            <h3>${escapeHtml(d.title)}</h3>
+            ${person ? `<p>${escapeHtml(person.name || noteHeadline(person))}${person.company ? ` · ${escapeHtml(person.company)}` : ''}</p>` : ''}
+          </div>
+        </header>
+
+        <div class="deal-money">
+          ${capexOf(d) ? `<div class="deal-value">${money(capexOf(d))}</div>` : ''}
+          ${ongoingOf(d) ? `<div class="deal-ongoing ${capexOf(d) ? '' : 'lead'}">${capexOf(d) ? '+ ' : ''}${money(ongoingOf(d))}<em>/month</em></div>` : ''}
+          ${!capexOf(d) && !ongoingOf(d) ? `<div class="deal-value muted">—</div>` : ''}
+        </div>
+
+        ${d.url ? `
+          <button class="deal-open" data-open="${d.id}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 7h3a5 5 0 010 10h-3M9 17H6A5 5 0 016 7h3"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            <span>Open quote</span>
+          </button>` : `<div class="deal-nolink">No quote link yet</div>`}
+
+        ${(d.username || d.password) ? `
+          <div class="deal-creds">
+            ${d.username ? `<button class="cred" data-copy="${escapeHtml(d.username)}" title="Copy username"><i>user</i>${escapeHtml(d.username)}</button>` : ''}
+            ${d.password ? `<button class="cred" data-copy="${escapeHtml(d.password)}" title="Copy password"><i>pass</i>••••••••</button>` : ''}
+          </div>` : ''}
+
+        <footer class="deal-foot">
+          <span class="deal-host">${escapeHtml(host)}</span>
+          <span class="deal-meta">
+            ${goal ? `<span class="deal-goal" title="Goal: ${escapeHtml(goal.text || 'Untitled goal')}">◆</span>` : ''}
+            ${d.sentAt ? formatDate(d.sentAt) : ''}
+          </span>
+        </footer>
+
+        <div class="deal-actions">
+          <button data-edit="${d.id}">Edit</button>
+          ${st === 'quoted'
+            ? `<button data-won="${d.id}">Won</button><button data-lost="${d.id}">Lost</button>`
+            : `<button data-live="${d.id}">Back to quoted</button>`}
+        </div>
+      </article>`;
+  }
+
+  function renderDeals() {
+    const root = document.getElementById('deals-inner');
+    const countEl = document.getElementById('deals-count');
+    if (!root) return;
+    const deals = getDeals();
+
+    const quoted = deals.filter(d => dealState(d) === 'quoted');
+    const won = deals.filter(d => dealState(d) === 'won');
+    const lost = deals.filter(d => dealState(d) === 'lost');
+
+
+    if (countEl) {
+      const q = dealTotals(quoted), w = dealTotals(won);
+      countEl.innerHTML = deals.length ? `
+        <span class="dc-stat"><i>Quoted</i><b>${money(q.capex)}</b>${q.ongoing ? `<u>+${money(q.ongoing)}/mo</u>` : ''}</span>
+        <span class="dc-stat won"><i>Won</i><b>${money(w.capex)}</b>${w.ongoing ? `<u>+${money(w.ongoing)}/mo</u>` : ''}</span>` : '';
+    }
+
+    if (!deals.length) {
+      root.innerHTML = `<div class="deals-empty"><p>No deals yet.</p><span>A deal is a quote you have sent — its value, who it is for, and the way back into it.</span></div>`;
+      return;
+    }
+
+    const section = (title: string, list: Deal[], cls = '') => list.length ? `
+      <section class="deal-section ${cls}">
+        <header class="deal-section-head"><h3>${title}</h3><span>${list.length} · ${totalsHtml(list)}</span></header>
+        <div class="deal-grid">${list.map(dealCardHtml).join('')}</div>
+      </section>` : '';
+
+    root.innerHTML = section('Quoted', quoted) + section('Won', won, 'is-won') + section('Lost', lost, 'is-lost');
+
+    root.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => openQuote((b as HTMLElement).dataset.open!)));
+    root.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openDealModal((b as HTMLElement).dataset.edit!)));
+    root.querySelectorAll('[data-won]').forEach(b => b.addEventListener('click', () => setDealOutcome((b as HTMLElement).dataset.won!, 'won')));
+    root.querySelectorAll('[data-lost]').forEach(b => b.addEventListener('click', () => setDealOutcome((b as HTMLElement).dataset.lost!, 'lost')));
+    root.querySelectorAll('[data-live]').forEach(b => b.addEventListener('click', () => setDealOutcome((b as HTMLElement).dataset.live!, 'quoted')));
+    root.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', async () => {
+      const el = b as HTMLElement;
+      try {
+        await navigator.clipboard.writeText(el.dataset.copy!);
+        const was = el.innerHTML;
+        el.innerHTML = '<i>ok</i>copied';
+        setTimeout(() => { el.innerHTML = was; }, 1400);
+      } catch { /* clipboard unavailable */ }
+    }));
+  }
+
+  // ============ PEOPLE ============
+  /* The same six boards, holding only lead cards. Because the view is
+     homogeneous there is nothing to tell apart, so no lens and no competing
+     card languages. Laid out as a uniform grid rather than a scatter - a
+     roster, not a whiteboard - and ordered by what needs you, so the board
+     answers "where am I at" without being arranged by hand. */
+  function leadCardHtml(n: Note): string {
+    const play = playOf(n);
+    const total = play ? play.steps.length : 0;
+    const at = n.playStep ?? 0;
+    const due = playDueToday(n);
+    const step = currentStep(n);
+
+    const rail = play ? `
+      <div class="lead-rail ${due ? 'due' : ''}">
+        <span class="rail-pips">${Array.from({ length: total }, (_, i) =>
+          `<i class="${i < at ? 'done' : i === at ? 'now' : ''}"></i>`).join('')}</span>
+        <span class="rail-count">${due && step ? `${stepIcon(step.type)} ${escapeHtml(stepLabel(step.type))}` : `${at + 1}/${total}`}</span>
+      </div>` : `<div class="lead-rail empty">No play</div>`;
+
+    const contacts = [
+      n.phone ? `<a href="tel:${escapeHtml(n.phone.replace(/\s+/g, ''))}" title="${escapeHtml(n.phone)}" data-stop>${ACTIVITY_ICONS.call}</a>` : '',
+      n.email ? `<a href="mailto:${escapeHtml(n.email)}" title="${escapeHtml(n.email)}" data-stop>${ACTIVITY_ICONS.email}</a>` : '',
+      n.linkedin ? `<a href="${escapeHtml(n.linkedin.startsWith('http') ? n.linkedin : 'https://' + n.linkedin)}" target="_blank" rel="noopener" title="LinkedIn" data-stop>${ACTIVITY_ICONS.linkedin}</a>` : '',
+      n.website ? `<a href="${escapeHtml(n.website.startsWith('http') ? n.website : 'https://' + n.website)}" target="_blank" rel="noopener" title="Website" data-stop>${ACTIVITY_ICONS.web}</a>` : '',
+    ].join('');
+
+    const goal = n.goalId ? getGoals().find(g => g.id === n.goalId) : null;
+
+    return `
+      <div class="person ${due ? 'is-due' : ''}" data-id="${n.id}">
+        <div class="person-head">
+          <div class="lead-face">${n.avatar
+            ? `<img src="${n.avatar}" alt="">`
+            : `<span>${escapeHtml(initials(n.name || noteHeadline(n)))}</span>`}</div>
+          <div class="lead-who">
+            <div class="lead-card-name">${escapeHtml(n.name || noteHeadline(n))}</div>
+            ${n.role ? `<div class="lead-card-role">${escapeHtml(n.role)}</div>` : ''}
+            ${n.company ? `<div class="lead-card-co">${escapeHtml(n.company)}</div>` : ''}
+          </div>
+        </div>
+        <div class="person-foot">
+          <div class="lead-card-contacts">${contacts}</div>
+          ${n.lastPostAt ? `<span class="person-post ${Math.floor((Date.now() - n.lastPostAt) / 86400000) <= 7 ? 'fresh' : ''}" title="Last LinkedIn post${n.lastPostNote ? ': ' + escapeHtml(n.lastPostNote) : ''}">${describeAge(n.lastPostAt)}</span>` : ''}
+          ${goal ? `<span class="person-goal" title="Goal: ${escapeHtml(goal.text || 'Untitled goal')}">◆</span>` : ''}
+        </div>
+        ${rail}
+      </div>`;
+  }
+
+  document.getElementById('add-person')?.addEventListener('click', () => {
+    const q = state.notes.some(n => n.isLead) ? (state.notes.find(n => n.isLead)!.quadrant ?? 0) : 0;
+    const person: Note = {
+      id: `lead-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      text: '', color: BOARD_COLORS[q], x: 60, y: 80, rotation: 0,
+      createdAt: Date.now(), updatedAt: Date.now(), zIndex: state.nextZIndex++,
+      isLead: true, quadrant: q, name: '', activity: [],
+    };
+    state.notes.push(person);
+    save();
+    refreshView(true);
+    openDetailModal(person.id);
+  });
+
+  let peopleQuery = '';
+
+  function matchesPerson(n: Note, q: string): boolean {
+    if (!q) return true;
+    return [n.name, n.role, n.company, n.email].some(v => (v || '').toLowerCase().includes(q));
+  }
+
+  document.getElementById('people-search')?.addEventListener('input', (e) => {
+    peopleQuery = (e.target as HTMLInputElement).value;
+    renderPeople();
+  });
+  document.getElementById('people-search')?.addEventListener('keydown', (e) => {
+    if ((e as KeyboardEvent).key === 'Escape') {
+      peopleQuery = '';
+      (e.target as HTMLInputElement).value = '';
+      renderPeople();
+    }
+  });
+
+  /* Someone added with nothing but a LinkedIn URL is waiting to be hydrated -
+     the photo is a phone job, so desktop queues and the PDA finishes it. */
+  function isQueued(n: Note): boolean {
+    return !!n.isLead && /linkedin\.com\/in\//i.test(n.linkedin || '') && !(n.name || '').trim();
+  }
+
+  function queueSlug(n: Note): string {
+    const m = (n.linkedin || '').match(/\/in\/([^/?#]+)/);
+    return m ? decodeURIComponent(m[1]).replace(/-[a-z0-9]{6,}$/i, '').replace(/-/g, ' ') : (n.linkedin || '');
+  }
+
+  document.getElementById('queue-url')?.addEventListener('keydown', (e) => {
+    if ((e as KeyboardEvent).key !== 'Enter') return;
+    const input = e.target as HTMLInputElement;
+    const url = input.value.trim();
+    if (!url) return;
+    if (!/linkedin\.com\/in\//i.test(url)) { alert('That does not look like a LinkedIn profile URL.'); return; }
+    if (state.notes.some(n => n.isLead && (n.linkedin || '').replace(/\/+$/, '') === url.replace(/\/+$/, ''))) {
+      alert('That profile is already here.'); input.value = ''; return;
+    }
+    const q = state.notes.filter(n => n.isLead).length ? (state.notes.find(n => n.isLead)!.quadrant ?? 0) : 0;
+    state.notes.push({
+      id: `lead-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      text: '', color: BOARD_COLORS[q], x: 60, y: 80, rotation: 0,
+      createdAt: Date.now(), updatedAt: Date.now(), zIndex: state.nextZIndex++,
+      isLead: true, quadrant: q, name: '', linkedin: url, activity: [],
+    });
+    save();
+    input.value = '';
+    renderPeople();
+  });
+
+  function renderPeople() {
+    const root = document.getElementById('people-inner');
+    const countEl = document.getElementById('people-count');
+    if (!root) return;
+    const titles = state.boardTitles || DEFAULT_TITLES;
+
+    const all = state.notes.filter(n => n.isLead);
+    const q = peopleQuery.trim().toLowerCase();
+    const leads = all.filter(n => matchesPerson(n, q));
+
+    if (countEl) {
+      const due = leads.filter(playDueToday).length;
+      const waiting = all.filter(isQueued).length;
+      countEl.textContent = q
+        ? `${leads.length} of ${all.length}`
+        : `${all.length - waiting} ${all.length - waiting === 1 ? 'person' : 'people'}${due ? ` · ${due} due` : ''}${waiting ? ` · ${waiting} to hydrate` : ''}`;
+    }
+
+    if (!all.length) { root.innerHTML = `<div class="people-empty">No people yet.</div>`; return; }
+    if (!leads.length) { root.innerHTML = `<div class="people-empty">Nobody matches "${escapeHtml(peopleQuery)}".</div>`; return; }
+
+    const queued = leads.filter(isQueued);
+    const placed = leads.filter(n => !isQueued(n));
+
+    const byBoard = new Map<number, Note[]>();
+    placed.forEach(n => {
+      const q = n.quadrant ?? 0;
+      if (!byBoard.has(q)) byBoard.set(q, []);
+      byBoard.get(q)!.push(n);
+    });
+
+    const queueHtml = queued.length ? `
+      <section class="people-section queue-section">
+        <header class="people-board">
+          <span class="pe-dot queue-dot"></span>
+          <h3>Waiting to hydrate</h3>
+          <span class="people-n">${queued.length}</span>
+        </header>
+        <p class="queue-hint">Open Hydrate on your phone to finish these off — it fills in who they are and grabs a photo.</p>
+        <div class="queue-rows">${queued.map(n => `
+          <div class="queue-row" data-id="${n.id}">
+            <span class="queue-name">${escapeHtml(queueSlug(n))}</span>
+            <a class="queue-open" href="${escapeHtml(n.linkedin!)}" target="_blank" rel="noopener" data-stop title="Open profile">View</a>
+            <button class="queue-del" data-del="${n.id}" title="Remove">&times;</button>
+          </div>`).join('')}</div>
+      </section>` : '';
+
+    // what needs you first, then who is booked, then who nobody is working
+    const rank = (n: Note) => playDueToday(n) ? 0 : n.playId ? 1 : 2;
+
+    root.innerHTML = queueHtml + [...byBoard.entries()].sort((a, b) => a[0] - b[0]).map(([q, list]) => {
+        list.sort((a, c) => {
+          const d = rank(a) - rank(c);
+          if (d) return d;
+          if (a.playDueAt && c.playDueAt) return a.playDueAt - c.playDueAt;
+          return (a.name || '').localeCompare(c.name || '');
+        });
+        return `
+          <section class="people-section">
+            <header class="people-board">
+              <span class="pe-dot" style="background:${BOARD_COLORS[q]}"></span>
+              <h3>${escapeHtml(titles[q] || DEFAULT_TITLES[q])}</h3>
+              <span class="people-n">${list.length}</span>
+            </header>
+            <div class="people-grid">${list.map(leadCardHtml).join('')}</div>
+          </section>`;
+      }).join('');
+
+    root.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = (b as HTMLElement).dataset.del!;
+      tombstone(id);
+      state.notes = state.notes.filter(n => n.id !== id);
+      save();
+      renderPeople();
+    }));
+
+    root.querySelectorAll('.person').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('[data-stop]')) return;
+        openDetailModal((card as HTMLElement).dataset.id!);
+      });
+    });
+  }
+
+  // ============ PLAYS VIEW ============
+  /* Today's sequence work, grouped by play - the play is the unit you are
+     learning about. Everything here is one click from done. */
+  function renderPlaysView() {
+    const root = document.getElementById('plays-inner');
+    if (!root) return;
+
+    const due = leadsWithStepDue();
+    const upcoming = state.notes
+      .filter(n => n.isLead && n.playId && n.playDueAt && n.playDueAt > endOfToday() && currentStep(n))
+      .sort((a, b) => (a.playDueAt || 0) - (b.playDueAt || 0))
+      .slice(0, 8);
+    const idle = state.notes.filter(n => n.isLead && !n.playId).length;
+
+    const byPlay = new Map<string, Note[]>();
+    due.forEach(l => {
+      const key = l.playId!;
+      if (!byPlay.has(key)) byPlay.set(key, []);
+      byPlay.get(key)!.push(l);
+    });
+
+    const row = (l: Note) => {
+      const step = currentStep(l)!;
+      const overdue = (l.playDueAt || 0) < startOfToday();
+      return `
+        <div class="pl-row ${overdue ? 'overdue' : ''}" data-lead="${l.id}">
+          <span class="pl-icon">${stepIcon(step.type)}</span>
+          <div class="pl-main">
+            <div class="pl-step">${escapeHtml(stepLabel(step.type))}${step.template ? `<span class="pl-tpl">${escapeHtml(step.template)}</span>` : ''}</div>
+            <div class="pl-who">${escapeHtml(l.name || noteHeadline(l))}${l.company ? ` · ${escapeHtml(l.company)}` : ''}</div>
+            ${step.note ? `<div class="pl-note">${escapeHtml(step.note)}</div>` : ''}
+          </div>
+          <div class="pl-actions">
+            <button class="pl-do" data-lead="${l.id}">Do</button>
+            <button class="pl-skip" data-lead="${l.id}">Skip</button>
+          </div>
+        </div>`;
+    };
+
+    root.innerHTML = `
+      <div class="pl-head">
+        <span class="pl-count">Today${due.length ? ` · ${due.length}` : ''}</span>
+      </div>
+      ${due.length ? [...byPlay.entries()].map(([pid, leads]) => `
+        <section class="pl-section">
+          <h3>${escapeHtml(getPlays().find(p => p.id === pid)?.name || 'Play')}</h3>
+          <div class="pl-rows">${leads.map(row).join('')}</div>
+        </section>`).join('') : `<div class="pl-empty">Nothing due today.</div>`}
+
+      ${upcoming.length ? `
+        <section class="pl-section pl-upcoming">
+          <h3>Coming up</h3>
+          <div class="pl-rows">${upcoming.map(l => {
+            const st = currentStep(l)!;
+            return `<div class="pl-row quiet" data-lead="${l.id}">
+              <span class="pl-icon">${stepIcon(st.type)}</span>
+              <div class="pl-main">
+                <div class="pl-step">${escapeHtml(stepLabel(st.type))}</div>
+                <div class="pl-who">${escapeHtml(l.name || noteHeadline(l))}</div>
+              </div>
+              <span class="pl-when">${formatDate(l.playDueAt!)}</span>
+            </div>`;
+          }).join('')}</div>
+        </section>` : ''}
+
+      ${idle ? `<div class="pl-idle">${idle} lead${idle === 1 ? '' : 's'} with no play running</div>` : ''}
+    `;
+
+    root.querySelectorAll('.pl-do').forEach(b => b.addEventListener('click', (e) => {
+      e.stopPropagation(); doPlayStep((b as HTMLElement).dataset.lead!);
+    }));
+    root.querySelectorAll('.pl-skip').forEach(b => b.addEventListener('click', (e) => {
+      e.stopPropagation(); skipPlayStep((b as HTMLElement).dataset.lead!);
+    }));
+    root.querySelectorAll('.pl-row').forEach(r => r.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('button')) return;
+      openDetailModal((r as HTMLElement).dataset.lead!);
+    }));
+  }
+
   // ============ LIST VIEW ============
   const LIST_FILTER_KEY = 'stiki-list-filter';
   let listFilter: number | null = (() => {
@@ -6737,12 +8155,17 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
     const goals = getGoals();
 
     // Counts across every board drive the filter chips, so they stay put
+    const tasks = state.notes.filter(n => !n.isLead);
     const totals = [0, 0, 0, 0, 0, 0];
-    state.notes.forEach(n => { totals[n.quadrant ?? 0]++; });
+    tasks.forEach(n => { totals[n.quadrant ?? 0]++; });
     if (listFilter !== null && !totals[listFilter]) listFilter = null;
 
-    const shown = listFilter === null ? state.notes : state.notes.filter(n => (n.quadrant ?? 0) === listFilter);
-    const leads = shown.filter(n => n.isLead).length;
+    const shown = listFilter === null ? tasks : tasks.filter(n => (n.quadrant ?? 0) === listFilter);
+
+    // every pending play step, not just today's
+    const pending = state.notes
+      .filter(n => n.isLead && n.playId && n.playDueAt && currentStep(n))
+      .sort((a, b) => (a.playDueAt || 0) - (b.playDueAt || 0));
 
     const chips = `
       <div class="list-filter">
@@ -6755,7 +8178,7 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
 
     const bar = `
       <div class="list-bar">
-        <div class="list-summary">${shown.length} stiki${shown.length === 1 ? '' : 's'}${leads ? ` · ${leads} lead${leads === 1 ? '' : 's'}` : ''}</div>
+        <div class="list-summary">${shown.length} task${shown.length === 1 ? '' : 's'}${pending.length ? ` · ${pending.length} play step${pending.length === 1 ? '' : 's'}` : ''}</div>
         ${chips}
       </div>`;
 
@@ -6768,12 +8191,30 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
       });
     };
 
-    if (!state.notes.length) {
-      root.innerHTML = `<div class="list-empty">Nothing here yet. Add a stiki from the Tasks board.</div>`;
+    const playsHtml = pending.length ? `
+      <section class="list-section">
+        <header class="list-head"><span class="list-swatch" style="background:#12100e"></span><h3>Plays</h3><span class="list-n">${pending.length}</span></header>
+        <div class="list-rows">${pending.map(l => {
+          const st = currentStep(l)!;
+          const due = playDueToday(l);
+          return `<div class="lrow" data-id="${l.id}" role="button" tabindex="0">
+            <div class="lrow-avatar"><span class="lrow-face lrow-initials">${stepIcon(st.type)}</span></div>
+            <div class="lrow-main">
+              <div class="lrow-primary">${escapeHtml(stepLabel(st.type))}</div>
+              <div class="lrow-secondary">${escapeHtml(l.name || noteHeadline(l))}${l.company ? ` · ${escapeHtml(l.company)}` : ''}</div>
+            </div>
+            <div class="lrow-tags"></div><div class="lrow-counts"></div>
+            <div class="lrow-date ${due ? 'due' : ''}">${formatDate(l.playDueAt!)}</div>
+          </div>`;
+        }).join('')}</div>
+      </section>` : '';
+
+    if (!tasks.length && !pending.length) {
+      root.innerHTML = `<div class="list-empty">Nothing here yet.</div>`;
       return;
     }
     if (!shown.length) {
-      root.innerHTML = bar + `<div class="list-empty">Nothing on this board.</div>`;
+      root.innerHTML = bar + playsHtml + `<div class="list-empty">No tasks on this board.</div>`;
       wire();
       return;
     }
@@ -6785,7 +8226,7 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
       byBoard.get(q)!.push(n);
     });
 
-    root.innerHTML = bar + [...byBoard.entries()].sort((a, b) => a[0] - b[0]).map(([q, notes]) => {
+    root.innerHTML = bar + playsHtml + [...byBoard.entries()].sort((a, b) => a[0] - b[0]).map(([q, notes]) => {
         notes.sort((a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt));
         return `
           <section class="list-section">
@@ -7310,6 +8751,8 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
     refreshView();
     updateSyncIndicator();
     updateCurrentProjectDisplay();
+    migratePlayTasks();
+    removeEmptyLeads();
     drainLeadInbox();   // this project may have agent leads waiting
 
     settingsModal.classList.remove('visible');
@@ -7755,12 +9198,18 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
   });
 
   document.getElementById('action-linkedin')?.addEventListener('click', () => {
-    const linkedin = (document.getElementById('detail-linkedin') as HTMLInputElement).value;
+    const linkedin = (document.getElementById('detail-linkedin') as HTMLInputElement).value.trim();
     if (linkedin) {
-      let url = linkedin;
-      if (!url.startsWith('http')) url = 'https://' + url;
-      window.open(url, '_blank');
+      window.open(linkedin.startsWith('http') ? linkedin : `https://${linkedin}`, '_blank', 'noopener');
+      return;
     }
+    /* No URL yet: go and find them. Google indexes LinkedIn profiles even
+       though LinkedIn itself refuses to be fetched, so this is the way in. */
+    const name = (document.getElementById('detail-name') as HTMLInputElement).value.trim();
+    const company = (document.getElementById('detail-company') as HTMLInputElement).value.trim();
+    if (!name && !company) { alert('Add a name or company first.'); return; }
+    const q = `${name} ${company} linkedin`.replace(/\s+/g, ' ').trim();
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`, '_blank', 'noopener');
   });
 
   document.getElementById('action-website')?.addEventListener('click', () => {
@@ -8104,6 +9553,8 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
 
+    // ?view= (arriving from the PDA nav) beats the remembered mode
+    const urlView = new URLSearchParams(location.search).get('view');
     const savedMode = localStorage.getItem(VIEW_MODE_KEY);
     const wanted = VIEW_MODES.includes(urlView as ViewMode)
       ? urlView as ViewMode
@@ -8121,13 +9572,17 @@ body.goals-reordering .goal-card:not(.goal-dragging) { opacity: 0.72; }
     if (currentProject) saveProjectToList(currentProject);
 
     drainLeadInbox();
-    setInterval(drainLeadInbox, 60000);
-    window.addEventListener('focus', drainLeadInbox);
+    setInterval(() => { drainLeadInbox(); pullFromCloud(); }, 30000);
+    window.addEventListener('focus', () => { drainLeadInbox(); pullFromCloud(); });
   }
 
-  // Start
+  // Start. If init throws, the app paints nothing and looks simply broken -
+  // so draw something regardless and put the reason where it can be seen.
   if (checkAuth()) {
-    init();
+    init().catch(err => {
+      console.error('[stiki] init failed', err);
+      try { refreshView(true); updateSyncIndicator(); } catch {}
+    });
   }
 </script>
 </body>

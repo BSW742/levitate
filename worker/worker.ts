@@ -254,6 +254,66 @@ export default {
     const hash = await simpleHash(password);
     const filename = `levitate-${hash}.json`;
 
+    /* People added on desktop with nothing but a LinkedIn URL. Getting the
+     * avatar is a phone job, so the queue is how the two devices hand over. */
+    if (url.pathname === '/hydrate-queue' && request.method === 'GET') {
+      const object = await env.BUCKET.get(filename);
+      if (!object) return json({ queue: [] });
+      const blob = await object.json() as { notes?: any[] };
+      const queue = (blob.notes || [])
+        .filter(n => n && n.isLead
+          && /linkedin\.com\/in\//i.test(n.linkedin || '')
+          && !String(n.name || '').trim())
+        .map(n => ({ id: n.id, linkedin: n.linkedin, quadrant: n.quadrant ?? 0, createdAt: n.createdAt }))
+        .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+      return json({ queue });
+    }
+
+    /* Delete a note and leave a marker. Rebuilding the blob client-side and
+     * omitting the row cannot express a deletion - the next device just sees
+     * a row it happens not to have, keeps its own copy, and pushes it back. */
+    if (url.pathname === '/delete-note' && request.method === 'POST') {
+      let body: { id?: string };
+      try { body = await request.json(); } catch { return json({ error: 'Body must be JSON' }, 400); }
+      if (!body.id) return json({ error: 'id required' }, 400);
+
+      const object = await env.BUCKET.get(filename);
+      if (!object) return json({ error: 'No data found' }, 404);
+      const blob = await object.json() as Record<string, any>;
+      const notes = Array.isArray(blob.notes) ? blob.notes : [];
+      const tombs = Array.isArray(blob.tombs) ? blob.tombs : [];
+      const now = Date.now();
+
+      await env.BUCKET.put(filename, JSON.stringify({
+        ...blob,
+        notes: notes.filter((n: any) => n && n.id !== body.id),
+        tombs: [...tombs.filter((t: any) => t && t.id !== body.id), { id: body.id, at: now }],
+        savedAt: now,
+      }), { httpMetadata: { contentType: 'application/json' } });
+      return json({ ok: true, deleted: body.id });
+    }
+
+    /* Merge fields into one note. Same reasoning as /append-note: the client
+     * sends only what changed, so it cannot clobber what it does not know. */
+    if (url.pathname === '/update-note' && request.method === 'POST') {
+      let body: { id?: string; patch?: Record<string, unknown> };
+      try { body = await request.json(); } catch { return json({ error: 'Body must be JSON' }, 400); }
+      if (!body.id || !body.patch) return json({ error: 'id and patch required' }, 400);
+
+      const object = await env.BUCKET.get(filename);
+      if (!object) return json({ error: 'No data found' }, 404);
+      const blob = await object.json() as Record<string, any>;
+      const notes = Array.isArray(blob.notes) ? blob.notes : [];
+      const i = notes.findIndex((n: any) => n && n.id === body.id);
+      if (i < 0) return json({ error: 'Note not found' }, 404);
+
+      notes[i] = { ...notes[i], ...body.patch, updatedAt: Date.now() };
+      await env.BUCKET.put(filename, JSON.stringify({ ...blob, notes, savedAt: Date.now() }), {
+        httpMetadata: { contentType: 'application/json' },
+      });
+      return json({ ok: true, id: body.id });
+    }
+
     // Pending agent leads for this project
     if (url.pathname === '/api/inbox' && request.method === 'GET') {
       const listed = await env.BUCKET.list({ prefix: `inbox/${hash}/`, limit: 200 });
@@ -306,7 +366,7 @@ export default {
       const nextZIndex = typeof blob.nextZIndex === 'number' ? blob.nextZIndex : 1;
       note.zIndex = nextZIndex;
 
-      const merged = { ...blob, notes: [...notes, note], nextZIndex: nextZIndex + 1 };
+      const merged = { ...blob, notes: [...notes, note], nextZIndex: nextZIndex + 1, savedAt: Date.now() };
       await env.BUCKET.put(filename, JSON.stringify(merged), {
         httpMetadata: { contentType: 'application/json' },
       });
@@ -477,6 +537,122 @@ Start your response with [ and end with ]`,
       }
     }
 
+    /* Given a LinkedIn profile URL, work out who it belongs to. LinkedIn
+     * itself answers 999, but Google has already indexed the page, so we
+     * search for the slug and read the result. Returns fast - contact
+     * enrichment is a separate call so the UI is never held up by it. */
+    if (request.method === 'POST' && url.pathname === '/hydrate') {
+      try {
+        const { profileUrl } = await request.json() as { profileUrl?: string };
+        if (!profileUrl) return json({ error: 'No URL provided' }, 400);
+
+        const slug = (profileUrl.match(/\/in\/([^/?#]+)/) || [])[1] || profileUrl;
+        const pretty = decodeURIComponent(slug).replace(/-[a-z0-9]{6,}$/i, '').replace(/-/g, ' ');
+
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+            'anthropic-beta': 'web-search-2025-03-05',
+          },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 500,
+            tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 4 }],
+            messages: [{
+              role: 'user',
+              content: `Identify the person behind this LinkedIn profile: ${profileUrl}
+
+The profile slug suggests their name is roughly "${pretty}". Search Google for that LinkedIn URL and for the name, and read the search result snippets - LinkedIn itself cannot be fetched.
+
+Report only what the search results actually show. Do not invent a role or company.
+
+Respond with ONLY this JSON, nothing before or after:
+{"name":"Full Name","role":"Job title","company":"Company","confidence":"high|low"}
+
+If you cannot identify them, return {"name":"","role":"","company":"","confidence":"low"}`,
+            }],
+          }),
+        });
+
+        if (!res.ok) return json({ error: 'Lookup failed' }, 500);
+        const data = await res.json() as { content: Array<{ type: string; text?: string }> };
+        const text = data.content.filter(c => c.type === 'text').map(c => c.text || '').join('');
+        const a = text.indexOf('{'), b = text.lastIndexOf('}');
+        if (a === -1 || b <= a) return json({ name: '', role: '', company: '', confidence: 'low' });
+        try {
+          const p = JSON.parse(text.slice(a, b + 1));
+          return json({
+            name: str(p.name) || pretty.replace(/\b\w/g, (c: string) => c.toUpperCase()),
+            role: str(p.role),
+            company: str(p.company),
+            confidence: p.confidence === 'high' ? 'high' : 'low',
+          });
+        } catch {
+          return json({ name: '', role: '', company: '', confidence: 'low' });
+        }
+      } catch (e) {
+        return json({ error: 'Hydrate failed', details: String(e) }, 500);
+      }
+    }
+
+    /* Read a screenshot of someone's LinkedIn activity and say when they last
+     * posted. LinkedIn returns 999 to any automated request, so the only
+     * lawful route is your own logged-in browser - you screenshot, we read. */
+    if (request.method === 'POST' && url.pathname === '/scan-activity') {
+      try {
+        const { image } = await request.json() as { image: string };
+        if (!image) return json({ error: 'No image provided' }, 400);
+
+        const m = image.match(/^data:(image\/[a-zA-Z]+);base64,(.+)$/);
+        if (!m) return json({ error: 'Image must be a data URL' }, 400);
+
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 300,
+            messages: [{
+              role: 'user',
+              content: [
+                { type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } },
+                { type: 'text', text: `This is a screenshot of a LinkedIn profile or activity feed.
+
+Find the MOST RECENT post by the profile owner and report how long ago it was, using the relative age LinkedIn shows next to the post (for example 2h, 3d, 1w, 2mo, 1yr).
+
+Ignore comments and reactions on other people's posts unless there is nothing else - if the most recent item is a reaction or comment rather than a post, say so in "kind".
+
+Respond with ONLY this JSON, nothing before or after:
+{"ago":"3d","kind":"post","topic":"short description of what it was about","author":"name shown"}
+
+If you cannot see any post or activity, return {"ago":null,"kind":null,"topic":"","author":""}` },
+              ],
+            }],
+          }),
+        });
+
+        if (!res.ok) return json({ error: 'Vision failed', details: await res.text() }, 500);
+        const data = await res.json() as { content: Array<{ type: string; text?: string }> };
+        const text = data.content.filter(c => c.type === 'text').map(c => c.text || '').join('');
+        const a = text.indexOf('{'), b = text.lastIndexOf('}');
+        if (a === -1 || b <= a) return json({ ago: null, kind: null, topic: '', author: '' });
+        try {
+          return json(JSON.parse(text.slice(a, b + 1)));
+        } catch {
+          return json({ ago: null, kind: null, topic: '', author: '' });
+        }
+      } catch (e) {
+        return json({ error: 'Scan failed', details: String(e) }, 500);
+      }
+    }
+
     /* In-app web lookup, so the PDA can show results as a list instead of
      * throwing the user out to Safari. Mirrors the search strategies in the
      * /leads skill: LinkedIn profiles via Google's index, team pages,
@@ -489,7 +665,11 @@ Start your response with [ and end with ]`,
 
         const where = location ? ` in ${location}` : '';
         let ask = '';
-        if (kind === 'website') {
+        if (kind === 'profile') {
+          // one named person's LinkedIn profile URL
+          if (!company) return json({ results: [] });
+          ask = `Find the LinkedIn profile URL for ${company}. Search Google for their name plus their company plus "linkedin". Return at most 2 results, and ONLY ones whose url is a linkedin.com/in/ profile for that exact person. If you cannot find that specific person, return an empty array.`;
+        } else if (kind === 'website') {
           if (!company) return json({ results: [] });
           ask = `Find the official website for the company "${company}"${where}, plus any obviously related official pages (contact page, team page). Return up to 5.`;
         } else if (kind === 'people') {
@@ -818,10 +998,11 @@ Start your response with [ and end with ].`,
           }
         }
 
+        merged.savedAt = Date.now();
         await env.BUCKET.put(filename, JSON.stringify(merged), {
           httpMetadata: { contentType: 'application/json' },
         });
-        return json({ success: true, filename, preserved });
+        return json({ success: true, filename, preserved, savedAt: merged.savedAt });
       } catch (e) {
         return json({ error: 'Failed to save' }, 500);
       }
