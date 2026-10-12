@@ -28,6 +28,15 @@
   <div id="app">
     <div id="multi-select-indicator" class="multi-select-indicator">SELECT MODE: Click cards, press 1-6 to move, ESC to cancel</div>
     <div id="whiteboard">
+      <!-- Shown only when this browser has no project, i.e. nothing is reaching
+           the cloud. Loud on purpose: the old signal was a tooltip, which meant
+           a disconnected app and a working one looked identical. -->
+      <div id="local-only" hidden>
+        <span class="lo-dot"></span>
+        <span class="lo-text"><strong>Local only.</strong> This browser is not connected to a project - nothing here is saved to the cloud or visible on any other device.</span>
+        <button id="lo-fix" type="button">Choose project</button>
+      </div>
+
       <!-- Top-right toolbar -->
       <div id="toolbar">
         <div id="mode-toggle">
@@ -36,6 +45,8 @@
           <button class="mode-btn" data-mode="plays">Plays</button>
           <button class="mode-btn" data-mode="tasks">Tasks</button>
           <button class="mode-btn" data-mode="deals">Deals</button>
+          <button class="mode-btn" data-mode="sales">Sales</button>
+          <button class="mode-btn" data-mode="funnel">Funnel</button>
         </div>
         <div id="project-badge" title="Current project">No project</div>
         <div id="sync-indicator" title="Cloud sync">
@@ -82,6 +93,34 @@
         <div id="deals-inner"></div>
       </div>
 
+      <!-- Sales View -->
+      <div id="sales-view">
+        <div id="sales-bar">
+          <div class="sales-title">
+            <i>Financial year</i>
+            <b>April 2026 &ndash; March 2027</b>
+          </div>
+          <div class="sales-legend">
+            <span class="sl-past">Actual</span>
+            <span class="sl-now">This month</span>
+            <span class="sl-fwd">Forecast</span>
+          </div>
+        </div>
+        <div id="sales-inner"></div>
+      </div>
+
+      <!-- Funnel View -->
+      <div id="funnel-view">
+        <div id="funnel-bar">
+          <div class="funnel-title">
+            <i>Incremental passive revenue</i>
+            <b><span id="funnel-target" contenteditable="true" spellcheck="false">$100,000</span> a month</b>
+          </div>
+          <button id="add-funnel-deal" class="deal-new">+ New deal</button>
+        </div>
+        <div id="funnel-inner"></div>
+      </div>
+
       <!-- People View -->
       <div id="people-view">
         <div id="people-bar">
@@ -94,6 +133,10 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
             <input type="search" id="people-search" placeholder="Search people" autocomplete="off" spellcheck="false">
           </div>
+          <button id="open-find" class="find-open-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+            Find people
+          </button>
         </div>
         <div id="people-inner"></div>
         <button id="add-person" title="Add a person">
@@ -171,6 +214,47 @@
     </div>
 
     <!-- Settings Modal -->
+    <!-- Find: the PDA's lead search, brought across to the desktop. Lives in a
+         modal rather than a sixth tab because finding is an action that makes
+         people, not a thing you own alongside them. -->
+    <div id="find-modal" class="modal">
+      <div class="modal-content find-content">
+        <div class="modal-header">
+          <h2>Find people</h2>
+          <button class="modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body find-body">
+          <input type="url" id="find-company" placeholder="Company URL (e.g. acme.com) - takes precedence" autocomplete="off">
+
+          <div class="find-divider"><span>or search by</span></div>
+
+          <div class="find-criteria">
+            <input type="text" id="find-location" placeholder="Location" autocomplete="off">
+            <input type="text" id="find-industry" placeholder="Industry" autocomplete="off">
+            <input type="text" id="find-role" placeholder="Role" autocomplete="off">
+          </div>
+
+          <div class="find-run-row">
+            <div class="find-board" title="Which board new people land on">
+              <span class="find-board-label">Add to</span>
+              <div class="find-board-dots"></div>
+            </div>
+            <button id="find-run" class="find-primary">Find leads</button>
+          </div>
+
+          <div class="find-web">
+            <span class="find-web-label">Look up on the web</span>
+            <button class="find-web-btn" data-g="website">Website</button>
+            <button class="find-web-btn" data-g="people">People</button>
+            <button class="find-web-btn" data-g="companies">Companies</button>
+          </div>
+
+          <div id="find-status" class="find-status" hidden></div>
+          <div id="find-results" class="find-results"></div>
+        </div>
+      </div>
+    </div>
+
     <div id="settings-modal" class="modal">
       <div class="modal-content settings-content">
         <div class="modal-header">
@@ -677,6 +761,68 @@ body {
 #whiteboard { position: relative; height: 100%; width: 100%; isolation: isolate; z-index: 0; }
 
 /* Toolbar */
+#local-only {
+  --lo-h: 44px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;          /* over the toolbar, which is 100 */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  height: var(--lo-h);
+  background: #12100e;
+  color: #f5f3f0;
+  font-size: 13px;
+  box-shadow: 0 1px 12px rgba(18,16,14,.22);
+}
+#local-only[hidden] { display: none; }
+#local-only .lo-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: #f59e0b;
+}
+#local-only .lo-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#local-only .lo-text strong { font-weight: 650; }
+#local-only #lo-fix {
+  flex: none;
+  height: 28px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 6px;
+  background: #f5f3f0;
+  color: #12100e;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+#local-only #lo-fix:hover { background: #ffffff; }
+
+/* The board steps down with it. Shifting only the toolbar leaves notes near
+   the top of the canvas hidden behind the bar. */
+body.is-local-only #whiteboard {
+  margin-top: 44px;
+  height: calc(100% - 44px);
+}
+body.is-local-only #toolbar { top: 60px; }
+
+@media (max-width: 640px) {
+  #local-only { --lo-h: 64px; padding: 9px 14px; }
+  #local-only .lo-text { white-space: normal; font-size: 12px; }
+  body.is-local-only #whiteboard { margin-top: 64px; height: calc(100% - 64px); }
+  body.is-local-only #toolbar { top: 78px; }
+}
+
 #toolbar {
   position: fixed;
   top: 16px;
@@ -1606,6 +1752,178 @@ body.multi-select-mode .sticky-note:hover {
 }
 .modal-close:hover { background: #e5e7eb; }
 .modal-body { padding: 24px; }
+
+/* ---- Find ------------------------------------------------------------
+   Deliberately quiet: the same greys, borders and radii the rest of the
+   app already uses, so opening it does not feel like a different product.
+   Only the run button carries any weight. ---- */
+.find-open-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #e9e7e2;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #57534e;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .15s, color .15s;
+}
+.find-open-btn:hover { border-color: #c8c4be; color: #12100e; }
+
+.find-content { max-width: 560px; }
+.find-body { padding: 20px 24px 24px; }
+.find-body input[type="text"],
+.find-body input[type="url"] {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13.5px;
+  color: #12100e;
+  font-family: inherit;
+}
+.find-body input::placeholder { color: #a8a29e; }
+.find-body input:focus { outline: none; border-color: #12100e; }
+
+.find-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+  color: #a8a29e;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.find-divider::before, .find-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #eceae6;
+}
+
+.find-criteria { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+.find-run-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+.find-board { display: flex; align-items: center; gap: 8px; }
+.find-board-label { font-size: 12px; color: #a8a29e; }
+.find-board-dots { display: flex; gap: 5px; }
+.find-board-dots button {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.find-board-dots button.active { border-color: #12100e; }
+
+.find-primary {
+  height: 38px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 8px;
+  background: #12100e;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.find-primary:disabled { opacity: .5; cursor: default; }
+
+.find-web {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #eceae6;
+}
+.find-web-label { flex: 1; font-size: 12px; color: #a8a29e; }
+.find-web-btn {
+  height: 28px;
+  padding: 0 11px;
+  border: 1px solid #e9e7e2;
+  border-radius: 7px;
+  background: #fff;
+  font-size: 12px;
+  color: #57534e;
+  cursor: pointer;
+}
+.find-web-btn:hover:not(:disabled) { border-color: #c8c4be; color: #12100e; }
+.find-web-btn:disabled { opacity: .45; cursor: default; }
+
+.find-status {
+  margin-top: 16px;
+  font-size: 13px;
+  color: #78716c;
+}
+.find-status[hidden] { display: none; }
+.find-status.err { color: #b91c1c; }
+
+.find-results { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.find-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #eceae6;
+  border-radius: 9px;
+}
+.find-row-main { flex: 1; min-width: 0; }
+.find-row-name {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: #12100e;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.find-row-sub {
+  font-size: 12px;
+  color: #a19b93;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.find-add {
+  flex: none;
+  height: 28px;
+  padding: 0 13px;
+  border: 1px solid #e9e7e2;
+  border-radius: 7px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #12100e;
+  cursor: pointer;
+}
+.find-add:hover { border-color: #12100e; }
+.find-add.added {
+  border-color: transparent;
+  background: #f0efec;
+  color: #a8a29e;
+  cursor: default;
+}
+
+@media (max-width: 560px) {
+  .find-criteria { grid-template-columns: 1fr; }
+  .find-run-row { flex-direction: column; align-items: stretch; }
+  .find-web { flex-wrap: wrap; }
+}
 
 /* Detail Modal Header */
 .detail-header {
@@ -3412,7 +3730,7 @@ body.goals-mode .board { display: none !important; }
   border: 1px solid #e9e7e2;
   border-radius: 4px;
   box-shadow: 0 1px 2px rgba(18,16,14,0.04);
-  overflow: hidden;
+  overflow: visible;
   transition: background 0.45s ease, border-color 0.45s ease, box-shadow 0.2s ease;
 }
 .goal-card:hover { box-shadow: 0 2px 4px rgba(18,16,14,0.05), 0 12px 24px -16px rgba(18,16,14,0.3); }
@@ -3592,6 +3910,57 @@ body.goals-mode .board { display: none !important; }
 }
 
 /* ---- The cross-out ---- */
+/* ---- Flames ---------------------------------------------------------
+   Hovering a goal you have not finished yet. Light it up a little: heat
+   licking up both edges and a warm glow off the card. Off once it is
+   crossed off, and off while you are dragging - it should feel like the
+   goal reacting to you, not decoration that is always on. ---- */
+.goal-flames {
+  position: absolute;
+  inset: 0;
+  z-index: -1;              /* behind the card, so the fire only shows past its edges */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.goal-flames i {
+  position: absolute;
+  top: -6%;
+  bottom: -8%;
+  width: 44px;
+  filter: blur(9px);
+  background: radial-gradient(50% 58% at 50% 82%,
+    rgba(255,232,150,.95) 0%,
+    rgba(255,170,40,.92) 26%,
+    rgba(255,96,6,.62) 56%,
+    rgba(255,58,0,0) 82%);
+  animation: goal-flame 2.1s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+/* pulled fully clear of the card so no heat sits on the paper */
+.goal-flames i:first-child { left: -34px; animation-delay: -.8s; }
+.goal-flames i:last-child  { right: -34px; animation-delay: -1.55s; }
+
+@keyframes goal-flame {
+  0%, 100% { transform: translateY(0) scaleY(1) scaleX(1);        opacity: .82; }
+  24%      { transform: translateY(-7%) scaleY(1.16) scaleX(.90); opacity: 1; }
+  51%      { transform: translateY(-2%) scaleY(1.03) scaleX(1.08); opacity: .86; }
+  79%      { transform: translateY(-10%) scaleY(1.22) scaleX(.88); opacity: 1; }
+}
+
+.goal-card:not(.done):hover .goal-flames { opacity: 1; }
+.goal-card:not(.done):hover {
+  box-shadow:
+    0 2px 4px rgba(18,16,14,.05),
+    0 12px 24px -16px rgba(18,16,14,.3),
+    0 0 46px -6px rgba(255,122,26,.55);
+}
+body.goals-reordering .goal-flames { opacity: 0 !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .goal-flames i { animation: none; opacity: .85; }
+}
+
 /* ---- Reordering: nothing here applies unless a card is actually moving ---- */
 body.goals-reordering { user-select: none; cursor: grabbing; }
 body.goals-reordering .goal-card { transition: none; }
@@ -3948,6 +4317,10 @@ body.deals-mode .board { display: none !important; }
 .deal.lost { opacity: .5; }
 .deal.lost .deal-value { color: #a19b93; text-decoration: line-through; text-decoration-thickness: 2px; }
 
+.deal.inplay { border-style: dashed; border-color: #ded9d0; background: #fdfcfa; }
+.deal-seal.inplay { color: #8a847c; border-color: #ded9d0; }
+.deal.inplay .deal-value { color: #57534e; }
+.deal.inplay .deal-value.muted { font-size: 19px; font-weight: 600; color: #b5b0a9; letter-spacing: 0; }
 .deal-seal {
   position: absolute; top: 16px; right: 16px;
   font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase;
@@ -4110,6 +4483,379 @@ body.deals-mode .board { display: none !important; }
   .deal-modal-head, .deal-modal-foot { padding-left: 18px; padding-right: 18px; }
 }
 
+/* ---- Sales -----------------------------------------------------------
+   A ledger, not a dashboard. Twelve months down the side, the six lines
+   across the top, and the year's totals underneath - nothing else, because
+   every figure here is typed in by hand and the grid has to stay quiet
+   enough to read a column down. ---- */
+/* ---- Funnel: the climb to the target ------------------------------------
+   Same paper as every other view. The only colour is the one warm gold,
+   used at three strengths because the three strengths ARE the data: banked,
+   weighted prospect, weighted suspect. Nothing else is tinted. ---- */
+#funnel-view {
+  position: absolute; inset: 0; display: none; overflow: auto;
+  background: #f7f5f1;
+}
+#funnel-view.active { display: block; }
+body.funnel-mode #minimap, body.funnel-mode #hints,
+body.funnel-mode #props-palette, body.funnel-mode #new-note-fab { display: none !important; }
+body.funnel-mode .board { display: none !important; }
+
+#funnel-bar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  max-width: 1340px; margin: 0 auto; padding: 78px 30px 18px;
+  background: linear-gradient(#f7f5f1 72%, rgba(247,245,241,0));
+}
+.funnel-title { display: flex; flex-direction: column; gap: 1px; }
+.funnel-title i {
+  font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: .13em;
+  text-transform: uppercase; color: #b5b0a9;
+}
+.funnel-title b {
+  font-size: 22px; font-weight: 700; letter-spacing: -.025em; color: #12100e;
+  font-variant-numeric: tabular-nums;
+}
+#funnel-target {
+  outline: none; border-radius: 4px;
+  padding: 0 2px; margin: 0 -2px;
+  cursor: text; transition: background .15s, box-shadow .15s;
+}
+#funnel-target:hover { background: #efece4; }
+#funnel-target:focus { background: #fff; box-shadow: 0 0 0 2px #e8d9a8; }
+
+#funnel-inner { max-width: 1340px; margin: 0 auto; padding: 0 30px 70px; }
+
+.fn-empty {
+  padding: 46px 34px; border-radius: 14px;
+  background: #fffefb; border: 1px solid #e9e5dd;
+  box-shadow: 0 1px 2px rgba(18,16,14,.04), 0 14px 30px -20px rgba(18,16,14,.3);
+}
+.fn-empty p { margin: 0 0 8px; font-size: 16px; font-weight: 700; color: #12100e; }
+.fn-empty span { display: block; max-width: 62ch; font-size: 13px; line-height: 1.65; color: #8a847c; }
+.fn-empty b { color: #57534e; }
+
+/* ---- The bar ---- */
+.fn-climb {
+  padding: 26px 28px 22px; margin-bottom: 30px;
+  border-radius: 14px;
+  background: #fffefb; border: 1px solid #e9e5dd;
+  box-shadow: 0 1px 2px rgba(18,16,14,.04), 0 14px 30px -20px rgba(18,16,14,.3);
+}
+.fn-climb-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 20px; }
+.fn-now { display: flex; flex-direction: column; gap: 2px; }
+.fn-now.right { text-align: right; }
+.fn-now i {
+  font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: .13em;
+  text-transform: uppercase; color: #b5b0a9;
+}
+.fn-now b {
+  font-size: 40px; font-weight: 700; letter-spacing: -.035em; line-height: 1.05;
+  color: #12100e; font-variant-numeric: tabular-nums;
+}
+.fn-now b em { font-style: normal; font-size: 16px; font-weight: 600; color: #a19b93; letter-spacing: 0; }
+.fn-now u { text-decoration: none; font-size: 12.5px; font-weight: 600; color: #a19b93; font-variant-numeric: tabular-nums; }
+.fn-now.right b { font-size: 26px; color: #57534e; }
+.fn-now.right.is-met b { color: #a3801f; }
+
+.fn-track {
+  position: relative; display: flex; height: 16px;
+  border-radius: 999px; overflow: hidden;
+  background: #efece4; box-shadow: inset 0 1px 2px rgba(18,16,14,.06);
+}
+.fn-seg { height: 100%; transition: width .5s cubic-bezier(.4,0,.2,1); }
+.fn-seg.won { background: #a3801f; }
+.fn-seg.pro { background: #d6c288; }
+.fn-seg.sus { background: #ece0c2; }
+
+.fn-legend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 18px;
+  margin-top: 13px;
+  font-size: 11.5px; font-weight: 600; color: #a19b93;
+  font-variant-numeric: tabular-nums;
+}
+.fn-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.fn-legend .sw { width: 9px; height: 9px; border-radius: 2px; }
+.fn-legend .sw.won { background: #a3801f; }
+.fn-legend .sw.pro { background: #d6c288; }
+.fn-legend .sw.sus { background: #ece0c2; }
+.fn-legend .fn-proj { margin-left: auto; font-weight: 700; color: #57534e; }
+
+/* ---- Suspects -> Prospects -> Wins ---- */
+.fn-stages {
+  display: grid; grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: 0 14px; align-items: start; margin-bottom: 30px;
+}
+.fn-stage {
+  border-radius: 14px; background: #fffefb; border: 1px solid #e9e5dd;
+  box-shadow: 0 1px 2px rgba(18,16,14,.04), 0 14px 30px -20px rgba(18,16,14,.3);
+  overflow: hidden;
+}
+.fn-stage.is-win { background: #fffdf5; border-color: #e8d9a8; }
+.fn-stage > header { padding: 16px 17px 14px; border-bottom: 1px solid #f0ece4; }
+.fn-stage.is-win > header { border-bottom-color: #efe3c2; }
+.fn-stage h3 {
+  margin: 0; font-size: 11px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: #8a847c;
+}
+.fn-stage.is-win h3 { color: #a3801f; }
+.fn-stage > header p { margin: 3px 0 10px; font-size: 11.5px; color: #b5b0a9; }
+.fn-stage-sum { display: flex; flex-direction: column; gap: 1px; }
+.fn-stage-sum b {
+  font-size: 22px; font-weight: 700; letter-spacing: -.028em; color: #12100e;
+  font-variant-numeric: tabular-nums;
+}
+.fn-stage-sum b em { font-style: normal; font-size: 12px; font-weight: 600; color: #a19b93; letter-spacing: 0; }
+.fn-stage-sum u { text-decoration: none; font-size: 11.5px; font-weight: 600; color: #b5b0a9; }
+
+.fn-rows { padding: 7px; display: flex; flex-direction: column; gap: 3px; }
+.fn-none { padding: 18px 10px; text-align: center; font-size: 12px; color: #c6c1b9; }
+
+.fn-row { border-radius: 9px; transition: background .14s; }
+.fn-row:hover { background: #f7f5f0; }
+.fn-stage.is-win .fn-row:hover { background: #fdf8e8; }
+.fn-row-main {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 9px 10px; border: none; background: none; cursor: pointer; text-align: left;
+}
+.fn-face {
+  flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; overflow: hidden;
+  display: grid; place-items: center;
+  background: #efece4; color: #8a847c;
+  font-size: 10.5px; font-weight: 800; letter-spacing: .02em;
+}
+.fn-face img { width: 100%; height: 100%; object-fit: cover; }
+.fn-face.empty { background: #f4f1ea; box-shadow: inset 0 0 0 1px #e9e5dd; }
+.fn-row-who { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.fn-row-who b {
+  font-size: 13px; font-weight: 650; color: #12100e;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fn-row-who i {
+  font-style: normal; font-size: 11px; color: #a19b93;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.fn-row-mo {
+  flex: 0 0 auto; font-size: 13px; font-weight: 700; color: #12100e;
+  font-variant-numeric: tabular-nums;
+}
+.fn-row-mo em { font-style: normal; font-size: 10.5px; font-weight: 600; color: #b5b0a9; }
+.fn-row.no-mo .fn-row-mo { font-weight: 600; color: #c6c1b9; }
+
+.fn-row-act { display: flex; gap: 5px; padding: 0 10px 9px 48px; }
+.fn-row-act button {
+  height: 25px; padding: 0 10px; border-radius: 7px;
+  border: 1px solid #e3ded4; background: #fff;
+  font-size: 11px; font-weight: 700; color: #57534e; cursor: pointer;
+  transition: background .14s, border-color .14s, color .14s;
+}
+.fn-row-act button:hover { background: #12100e; border-color: #12100e; color: #fff; }
+.fn-row-act button.is-lost:hover { background: #fff; border-color: #d9d3c8; color: #a19b93; }
+
+/* The gate between two stages: the rate, and whether it was measured */
+.fn-gate {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding-top: 62px; color: #d4cec3;
+}
+.fn-gate b {
+  font-size: 15px; font-weight: 700; color: #57534e; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+.fn-gate i { font-style: normal; font-size: 10px; font-weight: 600; color: #b5b0a9; white-space: nowrap; }
+.fn-gate u {
+  text-decoration: none; font-size: 9.5px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: #c6c1b9; white-space: nowrap;
+}
+
+/* ---- The arithmetic, spelled out ---- */
+.fn-maths {
+  padding: 22px 26px 24px; border-radius: 14px;
+  background: #fffefb; border: 1px solid #e9e5dd;
+  box-shadow: 0 1px 2px rgba(18,16,14,.04), 0 14px 30px -20px rgba(18,16,14,.3);
+}
+.fn-maths h3 {
+  margin: 0 0 13px; font-size: 11px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: #8a847c;
+}
+.fn-maths ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+.fn-maths li {
+  position: relative; padding-left: 16px; max-width: 86ch;
+  font-size: 13.5px; line-height: 1.6; color: #57534e;
+}
+.fn-maths li::before {
+  content: ''; position: absolute; left: 0; top: 9px;
+  width: 5px; height: 5px; border-radius: 50%; background: #ded8cc;
+}
+.fn-maths li b { font-weight: 700; color: #12100e; font-variant-numeric: tabular-nums; }
+.fn-maths li.is-verdict {
+  margin-top: 5px; padding: 13px 16px; border-radius: 10px;
+  background: #faf7ef; border: 1px solid #ece5d6; color: #4a453e;
+}
+.fn-maths li.is-verdict::before { display: none; }
+.fn-maths li.is-verdict.ok { background: #fffdf5; border-color: #e8d9a8; }
+.fn-maths li.is-verdict.ok b { color: #a3801f; }
+
+@media (max-width: 1100px) {
+  .fn-stages { grid-template-columns: 1fr; gap: 10px; }
+  .fn-gate {
+    flex-direction: row; align-items: center; gap: 8px;
+    padding: 2px 0 2px 17px;
+  }
+  .fn-gate svg { transform: rotate(90deg); }
+  .fn-climb-head { flex-direction: column; gap: 14px; }
+  .fn-now.right { text-align: left; }
+}
+
+#sales-view {
+  position: absolute; inset: 0; display: none; overflow: auto;
+  background: #f7f5f1;
+}
+#sales-view.active { display: block; }
+body.sales-mode #minimap, body.sales-mode #hints,
+body.sales-mode #props-palette, body.sales-mode #new-note-fab { display: none !important; }
+body.sales-mode .board { display: none !important; }
+
+#sales-bar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  max-width: 1340px; margin: 0 auto; padding: 78px 30px 18px;
+  background: linear-gradient(#f7f5f1 72%, rgba(247,245,241,0));
+}
+.sales-title { display: flex; flex-direction: column; gap: 1px; }
+.sales-title i {
+  font-style: normal; font-size: 10px; font-weight: 800; letter-spacing: .13em;
+  text-transform: uppercase; color: #b5b0a9;
+}
+.sales-title b { font-size: 22px; font-weight: 700; letter-spacing: -.025em; color: #12100e; }
+
+#sales-inner { max-width: 1340px; margin: 0 auto; padding: 0 30px 70px; }
+
+.sales-sheet {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  background: #fffefb;
+  border: 1px solid #e9e5dd; border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(18,16,14,.04), 0 14px 30px -20px rgba(18,16,14,.3);
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+}
+.sales-sheet th, .sales-sheet td { padding: 0; }
+
+.sales-sheet thead th {
+  padding: 13px 14px 12px;
+  background: #fffefb;
+  border-bottom: 1px solid #e6e2da;
+  font-size: 10px; font-weight: 800; letter-spacing: .11em;
+  text-transform: uppercase; color: #8a847c;
+  text-align: right; white-space: nowrap;
+}
+.sales-sheet thead th.sales-mh { text-align: left; }
+
+.sales-mo {
+  padding: 0 14px;
+  font-size: 12.5px; font-weight: 700; color: #57534e;
+  white-space: nowrap; border-bottom: 1px solid #f3f0e9;
+}
+.sales-mo em { font-style: normal; font-weight: 600; color: #b5b0a9; }
+.sales-mo i {
+  font-style: normal; margin-left: 8px;
+  font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: #a3801f;
+}
+
+/* Three states down the sheet - closed, in play, still only forecast -
+   carried by shading and one divider rather than by extra chrome. */
+tr.is-now .sales-mo { color: #12100e; box-shadow: inset 3px 0 0 #a3801f; }
+tr.is-now .sales-mo em { color: #a3801f; }
+tr.is-now .sales-cell { background: #fffcf0; }
+tr.is-now .sales-cell input { font-weight: 700; }
+
+tr.is-fwd .sales-mo { color: #a8a29a; }
+tr.is-fwd .sales-mo em { color: #cdc8bf; }
+tr.is-fwd .sales-cell { background: #f8f6f0; }
+tr.is-fwd .sales-cell input { color: #57534e; }
+/* softening a forecast row must not swallow the colour that marks money
+   going out - that rule carries fewer classes, so it needs saying again */
+tr.is-fwd .sales-cell.is-neg input { color: #c2660f; }
+tr.is-fwd .sales-cell input:hover { background: #efebe2; }
+tr.is-fwd .sales-cell input:focus { background: #fff; color: #12100e; }
+
+/* the line between what happened and what is still being planned. An inset
+   shadow, not a border, so the row does not grow a pixel taller than the
+   rest of the sheet. */
+tr.is-fwd-open .sales-mo, tr.is-fwd-open .sales-cell { box-shadow: inset 0 1px 0 #cfc8ba; }
+
+.sales-cell { border-bottom: 1px solid #f3f0e9; border-left: 1px solid #f3f0e9; }
+.sales-cell input {
+  display: block; width: 100%; height: 38px;
+  padding: 0 14px; margin: 0;
+  border: none; background: none; color: #12100e;
+  font-family: inherit; font-size: 13.5px; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right; outline: none;
+  transition: background .12s;
+}
+.sales-cell input::placeholder { color: #ded9d0; font-weight: 500; }
+.sales-cell input:hover { background: #f7f5f1; }
+.sales-cell input:focus {
+  background: #fff;
+  box-shadow: inset 0 0 0 2px #12100e;
+  font-weight: 700;
+}
+.sales-cell.is-neg input { color: #b45309; }
+
+/* NP is worked out, not typed: no input in the box, and a rule down its
+   left edge marking it off from the columns entered by hand. */
+.sales-sheet .sales-np { box-shadow: inset 1px 0 0 #e6e2da; }
+td.sales-np {
+  height: 38px; padding: 0 14px;
+  font-size: 13.5px; font-weight: 700; color: #12100e;
+  text-align: right; white-space: nowrap;
+}
+td.sales-np.is-neg { color: #b45309; }
+td.sales-np.is-zero { color: #ded9d0; font-weight: 600; }
+tr.is-fwd td.sales-np { color: #57534e; }
+tr.is-fwd td.sales-np.is-neg { color: #c2660f; }
+tr.is-fwd td.sales-np.is-zero { color: #ded9d0; font-weight: 600; }
+/* both rules at once where the forecast divider crosses the NP column */
+tr.is-fwd-open .sales-np { box-shadow: inset 1px 0 0 #e6e2da, inset 0 1px 0 #cfc8ba; }
+
+.sales-sheet tfoot td {
+  padding: 15px 14px;
+  background: #faf8f4;
+  border-top: 1px solid #e6e2da;
+  font-size: 15px; font-weight: 700; letter-spacing: -.02em;
+  color: #12100e; text-align: right; white-space: nowrap;
+}
+.sales-sheet tfoot td.sales-mh {
+  text-align: left;
+  font-size: 10px; font-weight: 800; letter-spacing: .13em;
+  text-transform: uppercase; color: #8a847c;
+}
+.sales-sheet tfoot td.is-zero { color: #ded9d0; font-weight: 600; }
+.sales-sheet tfoot td.is-neg { color: #b45309; }
+
+.sales-legend { display: flex; align-items: center; gap: 15px; }
+.sales-legend span {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 10px; font-weight: 800; letter-spacing: .11em;
+  text-transform: uppercase; color: #8a847c; white-space: nowrap;
+}
+.sales-legend span::before {
+  content: ''; width: 10px; height: 10px; border-radius: 3px;
+  border: 1px solid #e0dbd1; background: #fffefb;
+}
+.sales-legend .sl-now::before { background: #fffcf0; border-color: #a3801f; }
+.sales-legend .sl-fwd::before { background: #f0ece3; border-color: #cfc8ba; }
+
+.sales-hint { margin: 14px 2px 0; font-size: 11.5px; line-height: 1.6; color: #b5b0a9; }
+
+@media (max-width: 860px) {
+  #sales-bar { flex-wrap: wrap; gap: 10px; padding: 74px 16px 14px; }
+  .sales-legend { gap: 12px; }
+  #sales-inner { padding: 0 16px 60px; overflow-x: auto; }
+  .sales-sheet { min-width: 720px; }
+}
+
 /* ---- People: one roster, everyone, no board navigation ---- */
 #people-view { position: absolute; inset: 0; display: none; overflow: auto; background: #f6f5f3; }
 #people-view.active { display: block; }
@@ -4183,6 +4929,25 @@ body.people-mode #new-note-fab { display: none !important; }
 .queue-open:hover { text-decoration: underline; }
 .queue-del { flex: none; border: none; background: none; font-size: 19px; line-height: 1; color: #c8c4be; cursor: pointer; padding: 0 2px; }
 .queue-del:hover { color: #dc2626; }
+.queue-hy {
+  flex: none; height: 26px; padding: 0 11px;
+  border: 1px solid #e2dfd9; border-radius: 7px; background: #fff;
+  font-size: 11.5px; font-weight: 600; color: #57534e; cursor: pointer;
+}
+.queue-hy:hover:not(:disabled) { border-color: #12100e; color: #12100e; }
+.queue-hy:disabled { opacity: .45; cursor: default; }
+.queue-all {
+  margin-left: auto; height: 26px; padding: 0 11px;
+  border: 1px solid #e2dfd9; border-radius: 7px; background: #fff;
+  font-size: 11.5px; font-weight: 600; color: #57534e; cursor: pointer;
+}
+.queue-all:hover:not(:disabled) { border-color: #12100e; color: #12100e; }
+.queue-all:disabled { opacity: .45; cursor: default; }
+/* what the row is doing, or why it stopped */
+.queue-msg { flex: none; font-size: 11.5px; color: #a8a29e; }
+.queue-msg.err { color: #b91c1c; }
+.queue-row.is-dupe { border-style: solid; border-color: #f0d9a8; background: #fffdf6; }
+.queue-dupe { flex: none; font-size: 11.5px; font-weight: 600; color: #a16207; }
 
 .people-search {
   display: flex;
@@ -4551,8 +5316,20 @@ body.plays-mode .board { display: none !important; }
 <script>
   const PASSWORD = 'Ben123';
   const AUTH_KEY = 'stiki-auth';
-  const STORAGE_KEY = 'stiki-notes-v2';
+  /* Local state is keyed BY PROJECT. It used to be one shared key, which meant
+     the notes left in localStorage by the last project you had open were the
+     notes init() merged into the next one - so opening a new project could
+     silently fill it with the previous project's data and push that up as its
+     own. Nothing here migrates the old shared key forward: doing so would copy
+     whichever project happened to be last into every project. The cloud is the
+     source of truth, and syncFromCloud fills a project the first time you open
+     it on a device. The old key is left untouched on disk. */
   const SYNC_PASSWORD_KEY = 'stiki-sync-password';
+  const STORAGE_KEY_BASE = 'stiki-notes-v2';
+  function storageKey(): string {
+    const project = localStorage.getItem(SYNC_PASSWORD_KEY);
+    return project ? `${STORAGE_KEY_BASE}::${project}` : STORAGE_KEY_BASE;
+  }
   const SAVED_PROJECTS_KEY = 'stiki-saved-projects';
   const WORKER_URL = 'https://levitate-sync.ben-6a6.workers.dev';
 
@@ -4745,9 +5522,33 @@ body.plays-mode .board { display: none !important; }
   }
 
 
+  /* One typed figure, addressed by month and line. A cell rather than a
+     row of six, so two devices editing different months of the same line
+     merge instead of one overwriting the other. The id is derived from
+     that address, so the same cell edited in two places converges on one
+     row rather than forking into two. */
+  interface SalesCell {
+    id: string;
+    month: string;          // '2026-04'
+    line: string;           // one of SALES_LINES[].key
+    value: number;
+    createdAt: number;
+    updatedAt?: number;
+  }
+
+  /* The one number the Funnel view is measured against. Carries its own
+     timestamp because it is a scalar, not an id-keyed row: mergeFromCloud
+     only adopts unknown keys, so without a stamp to compare, a target
+     retyped on the laptop could never reach the phone. */
+  interface PassiveTarget {
+    value: number;
+    updatedAt: number;
+  }
+
   interface State {
     notes: Note[];
     goals?: Goal[];
+    passiveTarget?: PassiveTarget;
     props?: Prop[];
     arrows?: Arrow[];
     nextZIndex: number;
@@ -4755,6 +5556,7 @@ body.plays-mode .board { display: none !important; }
     emailTemplates?: EmailTemplate[];
     plays?: Play[];
     deals?: Deal[];
+    sales?: SalesCell[];
     // ids of things deleted here, so a delete survives a merge from another device
     tombs?: { id: string; at: number }[];
     boardLabels?: BoardLabel[];
@@ -4842,7 +5644,8 @@ body.plays-mode .board { display: none !important; }
 
   // Storage
   function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    stampChangedItems();
+    localStorage.setItem(storageKey(), JSON.stringify(state));
     markViewsDirty();
     syncToCloud();
   }
@@ -4870,7 +5673,7 @@ body.plays-mode .board { display: none !important; }
   }
 
   function emptyState(): State {
-    return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES], props: [], arrows: [], goals: [], boardLabels: [], plays: [], deals: [], tombs: [] };
+    return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES], props: [], arrows: [], goals: [], boardLabels: [], plays: [], deals: [], sales: [], tombs: [] };
   }
 
   /* Any blob becoming `state` goes through here. Older projects predate
@@ -4888,6 +5691,7 @@ body.plays-mode .board { display: none !important; }
       goals: Array.isArray(raw.goals) ? raw.goals : [],
       plays: Array.isArray(raw.plays) ? raw.plays : [],
       deals: Array.isArray(raw.deals) ? raw.deals : [],
+      sales: Array.isArray(raw.sales) ? raw.sales : [],
       tombs: Array.isArray(raw.tombs) ? raw.tombs : [],
       boardLabels: Array.isArray(raw.boardLabels) ? raw.boardLabels : [],
     };
@@ -4908,6 +5712,10 @@ body.plays-mode .board { display: none !important; }
       renderPlaysView();
     } else if (viewMode === 'deals') {
       renderDeals();
+    } else if (viewMode === 'sales') {
+      renderSales();
+    } else if (viewMode === 'funnel') {
+      renderFunnel();
     } else if (viewMode === 'people') {
       renderPeople();
     } else {
@@ -4921,7 +5729,58 @@ body.plays-mode .board { display: none !important; }
      later - plays, email templates, props, arrows, board labels - was simply
      never read, and a device would sit there insisting it had none. Keys are
      discovered rather than listed, so a new one works without touching this. */
-  const ID_COLLECTIONS = ['notes', 'goals', 'props', 'arrows', 'boardLabels', 'plays', 'deals'];
+  const ID_COLLECTIONS = ['notes', 'goals', 'props', 'arrows', 'boardLabels', 'plays', 'deals', 'sales'];
+
+  /* How recently an item was touched. Only notes ever carried updatedAt, so
+     for every other collection this used to compare 0 against 0 - meaning the
+     cloud copy could never win and an edit made on one machine could never
+     reach another, while the sync indicator sat green because the upload
+     itself had succeeded. Worse, the "absent from a newer cloud means deleted"
+     rule read the same 0 and so fired on everything.
+
+     The fallbacks matter for data written before stamping existed: a goal with
+     neither updatedAt nor completedAt still has createdAt, which is enough to
+     keep it from being read as ancient. */
+  function itemStamp(x: any): number {
+    return (x && (x.updatedAt || x.completedAt || x.createdAt)) || 0;
+  }
+
+  /* Stamping by diff rather than by hand. Every collection has several
+     mutators and more get added; stamping each one is a promise nobody keeps.
+     Comparing against the last snapshot catches all of them, including the
+     ones written next year. */
+  let lastSnap = new Map<string, string>();
+
+  function snapshotItems() {
+    lastSnap = new Map();
+    for (const k of ID_COLLECTIONS) {
+      const arr = (state as any)[k];
+      if (!Array.isArray(arr)) continue;
+      for (const x of arr) if (x && x.id) lastSnap.set(k + ':' + x.id, JSON.stringify(x));
+    }
+  }
+
+  function stampChangedItems() {
+    const now = Date.now();
+    for (const k of ID_COLLECTIONS) {
+      const arr = (state as any)[k];
+      if (!Array.isArray(arr)) continue;
+      for (const x of arr) {
+        if (!x || !x.id) continue;
+        const key = k + ':' + x.id;
+        const prev = lastSnap.get(key);
+        const cur = JSON.stringify(x);
+        if (prev === undefined) {
+          // new here: give it a stamp if it has none, so it can win a merge
+          if (!x.updatedAt) x.updatedAt = x.createdAt || now;
+          lastSnap.set(key, JSON.stringify(x));
+        } else if (prev !== cur) {
+          x.updatedAt = now;
+          lastSnap.set(key, JSON.stringify(x));   // re-serialise: the stamp changed it
+        }
+      }
+    }
+  }
 
   function mergeFromCloud(local: State, cloud: any): State {
     const out: any = { ...local };
@@ -4955,7 +5814,7 @@ body.plays-mode .board { display: none !important; }
       theirs.forEach((t: any) => {
         if (!t || !t.id) return;
         const m = map.get(t.id);
-        if (!m || (t.updatedAt || 0) > (m.updatedAt || 0)) map.set(t.id, t);
+        if (!m || itemStamp(t) > itemStamp(m)) map.set(t.id, t);
       });
       /* Two ways an item can be gone.
          1. An explicit tombstone, which beats any copy not touched since.
@@ -4968,8 +5827,8 @@ body.plays-mode .board { display: none !important; }
       const cloudIds = new Set(theirs.filter((x: any) => x && x.id).map((x: any) => x.id));
       out[k] = [...map.values()].filter((x: any) => {
         const at = tombs.get(x.id);
-        if (at !== undefined && (x.updatedAt || 0) <= at) return false;
-        if (!cloudIds.has(x.id) && cloudSavedAt && (x.updatedAt || 0) < cloudSavedAt) return false;
+        if (at !== undefined && itemStamp(x) <= at) return false;
+        if (!cloudIds.has(x.id) && cloudSavedAt && itemStamp(x) < cloudSavedAt) return false;
         return true;
       });
     }
@@ -4980,13 +5839,20 @@ body.plays-mode .board { display: none !important; }
     const names = new Set(mineT.map((t: any) => t && t.name));
     out.emailTemplates = [...mineT, ...theirsT.filter((t: any) => t && !names.has(t.name))];
 
+    // scalar, so it merges by its own stamp rather than by row
+    const theirTarget = cloud.passiveTarget;
+    if (theirTarget && typeof theirTarget.value === 'number' &&
+        (theirTarget.updatedAt || 0) > (out.passiveTarget?.updatedAt || 0)) {
+      out.passiveTarget = theirTarget;
+    }
+
     if (cloud.boardTitles) out.boardTitles = cloud.boardTitles;
     out.nextZIndex = Math.max(out.nextZIndex || 1, cloud.nextZIndex || 1);
     return normalizeState(out);
   }
 
   function load(): State {
-    const data = localStorage.getItem(STORAGE_KEY);
+    const data = localStorage.getItem(storageKey());
     if (!data) return emptyState();
     try { return normalizeState(JSON.parse(data)); }
     catch { return emptyState(); }
@@ -5003,6 +5869,10 @@ body.plays-mode .board { display: none !important; }
 
     const pw = getSyncPassword();
     indicator.className = '';
+
+    const bar = document.getElementById('local-only');
+    if (bar) (bar as HTMLElement).hidden = !!pw;
+    document.body.classList.toggle('is-local-only', !pw);
 
     if (!pw) {
       indicator.title = 'Cloud sync disabled - set password in settings';
@@ -5037,6 +5907,13 @@ body.plays-mode .board { display: none !important; }
     const pw = getSyncPassword();
     if (!pw) { syncStatus = 'none'; updateSyncIndicator(); return; }
 
+    /* Snapshot the body NOW, next to the password it belongs to. This used to
+       serialise `state` a second later, inside the timer - so switching project
+       inside that second sent the new project's notes up under the old
+       project's password. Each save reschedules, so the last snapshot before
+       the timer fires is still the current one. */
+    const body = JSON.stringify(state);
+
     if (syncTimeout) clearTimeout(syncTimeout);
     syncTimeout = setTimeout(async () => {
       syncStatus = 'syncing';
@@ -5045,7 +5922,7 @@ body.plays-mode .board { display: none !important; }
         const res = await fetch(WORKER_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Sync-Password': pw },
-          body: JSON.stringify(state)
+          body
         });
         syncStatus = res.ok ? 'success' : 'error';
       } catch {
@@ -5117,7 +5994,7 @@ body.plays-mode .board { display: none !important; }
     state.notes = state.notes.filter(n => n.id !== id);
     if (selectedId === id) selectedId = null;
     save();
-    render();
+    refreshView(true);   // repaint whichever view is open, not always Tasks
   }
 
   function undoDelete() {
@@ -5125,7 +6002,7 @@ body.plays-mode .board { display: none !important; }
       state.notes.push(lastDeleted);
       lastDeleted = null;
       save();
-      render();
+      refreshView(true);
     }
   }
 
@@ -6538,7 +7415,7 @@ body.plays-mode .board { display: none !important; }
       });
     }
 
-    render();
+    refreshView(true);
     closeDetailModal();
   }
 
@@ -6626,9 +7503,9 @@ body.plays-mode .board { display: none !important; }
     save();
     refreshView(true);
   }
-  type ViewMode = 'goals' | 'people' | 'plays' | 'tasks' | 'list' | 'deals';
+  type ViewMode = 'goals' | 'people' | 'plays' | 'tasks' | 'list' | 'deals' | 'sales' | 'funnel';
   // list still works, it just no longer earns a place in the nav
-  const VIEW_MODES: ViewMode[] = ['goals', 'people', 'plays', 'tasks', 'deals'];
+  const VIEW_MODES: ViewMode[] = ['goals', 'people', 'plays', 'tasks', 'deals', 'sales', 'funnel'];
   let viewMode: ViewMode = 'tasks';
 
   function getGoals(): Goal[] {
@@ -6644,7 +7521,11 @@ body.plays-mode .board { display: none !important; }
     document.body.classList.toggle('plays-mode', mode === 'plays');
     document.body.classList.toggle('people-mode', mode === 'people');
     document.body.classList.toggle('deals-mode', mode === 'deals');
+    document.body.classList.toggle('sales-mode', mode === 'sales');
+    document.body.classList.toggle('funnel-mode', mode === 'funnel');
     document.getElementById('deals-view')?.classList.toggle('active', mode === 'deals');
+    document.getElementById('sales-view')?.classList.toggle('active', mode === 'sales');
+    document.getElementById('funnel-view')?.classList.toggle('active', mode === 'funnel');
     document.getElementById('people-view')?.classList.toggle('active', mode === 'people');
 
     document.getElementById('plays-view')?.classList.toggle('active', mode === 'plays');
@@ -6672,7 +7553,9 @@ body.plays-mode .board { display: none !important; }
 
   function toggleGoal(id: string) {
     const goal = getGoals().find(g => g.id === id);
-    if (!goal) return;
+    // The card on screen belongs to a project that is no longer loaded. Silently
+    // doing nothing is what made this look like the app changing project by itself.
+    if (!goal) { renderGoals(); return; }
     goal.done = !goal.done;
     goal.completedAt = goal.done ? Date.now() : undefined;
 
@@ -6861,6 +7744,34 @@ body.plays-mode .board { display: none !important; }
     viewDirty.goals = false;   // the DOM is already correct, no need to redraw
   });
 
+  /* ---- Committing a goal edit ------------------------------------------
+     A goal's text and its "done when" line are contenteditable, and they used
+     to be written back on blur alone. Reloading with the caret still in the
+     text never fires blur, so the edit went with the page. Read the field
+     straight off the DOM so the same commit works from the blur handler and
+     from the unload flush below. ---- */
+  function commitGoalField(el: HTMLElement) {
+    const id = el.closest('.goal-card')?.getAttribute('data-id');
+    const field = el.dataset.field as 'text' | 'doneWhen' | undefined;
+    if (!id || !field) return;
+    const goal = getGoals().find(g => g.id === id);
+    if (!goal) return;
+    const val = (el.innerText || '').trim();
+    if (goal[field] !== val) { (goal as any)[field] = val; save(); }
+  }
+
+  /* save() writes localStorage synchronously, so flushing the open field on the
+     way out is enough - no need for the unreliable work-after-unload dance. */
+  function flushOpenGoalEdit() {
+    const el = document.activeElement as HTMLElement | null;
+    if (el?.matches?.('.goal-card [data-field]')) commitGoalField(el);
+  }
+
+  window.addEventListener('pagehide', flushOpenGoalEdit);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushOpenGoalEdit();
+  });
+
   function renderGoals() {
     const grid = document.getElementById('goals-grid');
     const count = document.getElementById('goals-count');
@@ -6930,6 +7841,7 @@ body.plays-mode .board { display: none !important; }
             </div>
             ${boardsHtml}
           </div>
+          <span class="goal-flames" aria-hidden="true"><i></i><i></i></span>
           <svg class="goal-cross" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
             <path class="s1" d="M -6 -5 C 30 28, 64 62, 106 105" pathLength="100"/>
             <path class="s2" d="M 106 -5 C 68 30, 32 64, -6 105" pathLength="100"/>
@@ -6946,13 +7858,7 @@ body.plays-mode .board { display: none !important; }
       const id = (card as HTMLElement).dataset.id!;
 
       card.querySelectorAll('[data-field]').forEach(el => {
-        const field = (el as HTMLElement).dataset.field as 'text' | 'doneWhen';
-        el.addEventListener('blur', () => {
-          const goal = getGoals().find(g => g.id === id);
-          if (!goal) return;
-          const val = ((el as HTMLElement).innerText || '').trim();
-          if (goal[field] !== val) { (goal as any)[field] = val; save(); }
-        });
+        el.addEventListener('blur', () => commitGoalField(el as HTMLElement));
         el.addEventListener('keydown', (e) => {
           if ((e as KeyboardEvent).key === 'Escape') (el as HTMLElement).blur();
         });
@@ -7031,7 +7937,9 @@ body.plays-mode .board { display: none !important; }
      dragging or have a card open, so nothing moves under your hands. */
   function stateSignature(): string {
     return state.notes.length + '|' + state.notes.reduce((t, n) => t + (n.updatedAt || 0), 0)
-      + '|' + (state.goals?.length || 0) + '|' + (state.deals?.length || 0);
+      + '|' + (state.goals?.length || 0) + '|' + (state.deals?.length || 0)
+      + '|' + (state.sales?.length || 0)
+      + '|' + (state.sales || []).reduce((t, c) => t + (c.updatedAt || 0), 0);
   }
 
   async function pullFromCloud() {
@@ -7039,13 +7947,15 @@ body.plays-mode .board { display: none !important; }
     if (isDragging || goalDragging || multiSelectMode) return;
     if (document.getElementById('detail-modal')?.classList.contains('visible')) return;
     if (document.activeElement?.isContentEditable) return;
+    if (salesCellFocused()) return;
 
     const raw = await syncFromCloud();
     if (!raw) return;
     const before = stateSignature();
     state = mergeFromCloud(state, raw);
     if (stateSignature() === before) return;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    snapshotItems();   // the merged copy is the new baseline
+    localStorage.setItem(storageKey(), JSON.stringify(state));
     refreshView(true);
     console.log('[stiki] pulled changes from the cloud');
   }
@@ -7590,8 +8500,13 @@ body.plays-mode .board { display: none !important; }
     return `${t.capex ? money(t.capex) : ''}${t.capex && t.ongoing ? ' + ' : ''}${t.ongoing ? money(t.ongoing) + '/mo' : ''}` || '—';
   }
 
-  function dealState(d: Deal): 'won' | 'lost' | 'quoted' {
-    return d.wonAt ? 'won' : d.lostAt ? 'lost' : 'quoted';
+  /* In play is talking, quoted is a number sent. The quote date decides,
+     so there is no status field to keep honest - either a quote went out
+     on a day, or it has not. */
+  function dealState(d: Deal): 'won' | 'lost' | 'quoted' | 'inplay' {
+    if (d.wonAt) return 'won';
+    if (d.lostAt) return 'lost';
+    return d.sentAt ? 'quoted' : 'inplay';
   }
 
   let editingDeal: Deal | null = null;
@@ -7600,7 +8515,7 @@ body.plays-mode .board { display: none !important; }
     const deals = getDeals();
     editingDeal = id
       ? JSON.parse(JSON.stringify(deals.find(d => d.id === id))) as Deal
-      : { id: `deal-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, title: '', sentAt: Date.now() };
+      : { id: `deal-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, title: '' };
 
     const v = (el: string, val: string) => { (document.getElementById(el) as HTMLInputElement).value = val; };
     (document.getElementById('deal-modal-title') as HTMLElement).textContent = id ? 'Edit Deal' : 'New Deal';
@@ -7650,7 +8565,7 @@ body.plays-mode .board { display: none !important; }
     save();
     document.getElementById('deal-modal')!.classList.remove('visible');
     editingDeal = null;
-    renderDeals();
+    refreshView();
   });
 
   document.getElementById('deal-delete')?.addEventListener('click', () => {
@@ -7660,18 +8575,21 @@ body.plays-mode .board { display: none !important; }
     save();
     document.getElementById('deal-modal')!.classList.remove('visible');
     editingDeal = null;
-    renderDeals();
+    refreshView();
   });
 
-  function setDealOutcome(id: string, outcome: 'won' | 'lost' | 'quoted') {
+  function setDealOutcome(id: string, outcome: 'won' | 'lost' | 'quoted' | 'inplay') {
     const d = getDeals().find(x => x.id === id);
     if (!d) return;
     d.wonAt = outcome === 'won' ? Date.now() : undefined;
     d.lostAt = outcome === 'lost' ? Date.now() : undefined;
+    if (outcome === 'quoted' && !d.sentAt) d.sentAt = Date.now();
+    if (outcome === 'inplay') d.sentAt = undefined;
     const person = d.personId ? state.notes.find(n => n.id === d.personId) : undefined;
-    if (person) addPlayActivity(person, outcome === 'quoted' ? `Back to quoted: ${d.title}` : `Quote ${outcome}: ${d.title} (${totalsHtml([d])})`);
+    if (person) addPlayActivity(person, outcome === 'inplay' ? `Back to in play: ${d.title}`
+      : outcome === 'quoted' ? `Quote sent: ${d.title}` : `Quote ${outcome}: ${d.title} (${totalsHtml([d])})`);
     save();
-    renderDeals();
+    refreshView();   // Deals or Funnel, whichever is open
   }
 
   /* The point of the whole view: get into the quote without hunting for a
@@ -7693,7 +8611,7 @@ body.plays-mode .board { display: none !important; }
 
     return `
       <article class="deal ${st}" data-id="${d.id}">
-        ${st === 'won' ? `<span class="deal-seal">Won</span>` : ''}
+        ${st === 'won' ? `<span class="deal-seal">Won</span>` : st === 'inplay' ? `<span class="deal-seal inplay">In play</span>` : ''}
         <header class="deal-head">
           ${person ? `<span class="deal-face">${person.avatar
             ? `<img src="${person.avatar}" alt="">`
@@ -7707,7 +8625,7 @@ body.plays-mode .board { display: none !important; }
         <div class="deal-money">
           ${capexOf(d) ? `<div class="deal-value">${money(capexOf(d))}</div>` : ''}
           ${ongoingOf(d) ? `<div class="deal-ongoing ${capexOf(d) ? '' : 'lead'}">${capexOf(d) ? '+ ' : ''}${money(ongoingOf(d))}<em>/month</em></div>` : ''}
-          ${!capexOf(d) && !ongoingOf(d) ? `<div class="deal-value muted">—</div>` : ''}
+          ${!capexOf(d) && !ongoingOf(d) ? `<div class="deal-value muted">${dealState(d) === 'inplay' ? 'In play' : '—'}</div>` : ''}
         </div>
 
         ${d.url ? `
@@ -7726,15 +8644,17 @@ body.plays-mode .board { display: none !important; }
           <span class="deal-host">${escapeHtml(host)}</span>
           <span class="deal-meta">
             ${goal ? `<span class="deal-goal" title="Goal: ${escapeHtml(goal.text || 'Untitled goal')}">◆</span>` : ''}
-            ${d.sentAt ? formatDate(d.sentAt) : ''}
+            ${d.sentAt ? formatDate(d.sentAt) : 'not quoted yet'}
           </span>
         </footer>
 
         <div class="deal-actions">
           <button data-edit="${d.id}">Edit</button>
-          ${st === 'quoted'
-            ? `<button data-won="${d.id}">Won</button><button data-lost="${d.id}">Lost</button>`
-            : `<button data-live="${d.id}">Back to quoted</button>`}
+          ${st === 'inplay'
+            ? `<button data-quoted="${d.id}">Quoted</button><button data-won="${d.id}">Won</button><button data-lost="${d.id}">Lost</button>`
+            : st === 'quoted'
+              ? `<button data-won="${d.id}">Won</button><button data-lost="${d.id}">Lost</button>`
+              : `<button data-live="${d.id}">Reopen</button>`}
         </div>
       </article>`;
   }
@@ -7745,6 +8665,7 @@ body.plays-mode .board { display: none !important; }
     if (!root) return;
     const deals = getDeals();
 
+    const inplay = deals.filter(d => dealState(d) === 'inplay');
     const quoted = deals.filter(d => dealState(d) === 'quoted');
     const won = deals.filter(d => dealState(d) === 'won');
     const lost = deals.filter(d => dealState(d) === 'lost');
@@ -7753,6 +8674,7 @@ body.plays-mode .board { display: none !important; }
     if (countEl) {
       const q = dealTotals(quoted), w = dealTotals(won);
       countEl.innerHTML = deals.length ? `
+        <span class="dc-stat"><i>In play</i><b>${inplay.length}</b><u>conversation${inplay.length === 1 ? '' : 's'}</u></span>
         <span class="dc-stat"><i>Quoted</i><b>${money(q.capex)}</b>${q.ongoing ? `<u>+${money(q.ongoing)}/mo</u>` : ''}</span>
         <span class="dc-stat won"><i>Won</i><b>${money(w.capex)}</b>${w.ongoing ? `<u>+${money(w.ongoing)}/mo</u>` : ''}</span>` : '';
     }
@@ -7764,17 +8686,20 @@ body.plays-mode .board { display: none !important; }
 
     const section = (title: string, list: Deal[], cls = '') => list.length ? `
       <section class="deal-section ${cls}">
-        <header class="deal-section-head"><h3>${title}</h3><span>${list.length} · ${totalsHtml(list)}</span></header>
+        <header class="deal-section-head"><h3>${title}</h3><span>${cls === 'is-inplay'
+          ? `${list.length} conversation${list.length === 1 ? '' : 's'}`
+          : `${list.length} · ${totalsHtml(list)}`}</span></header>
         <div class="deal-grid">${list.map(dealCardHtml).join('')}</div>
       </section>` : '';
 
-    root.innerHTML = section('Quoted', quoted) + section('Won', won, 'is-won') + section('Lost', lost, 'is-lost');
+    root.innerHTML = section('In play', inplay, 'is-inplay') + section('Quoted', quoted) + section('Won', won, 'is-won') + section('Lost', lost, 'is-lost');
 
     root.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => openQuote((b as HTMLElement).dataset.open!)));
     root.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openDealModal((b as HTMLElement).dataset.edit!)));
+    root.querySelectorAll('[data-quoted]').forEach(b => b.addEventListener('click', () => setDealOutcome((b as HTMLElement).dataset.quoted!, 'quoted')));
     root.querySelectorAll('[data-won]').forEach(b => b.addEventListener('click', () => setDealOutcome((b as HTMLElement).dataset.won!, 'won')));
     root.querySelectorAll('[data-lost]').forEach(b => b.addEventListener('click', () => setDealOutcome((b as HTMLElement).dataset.lost!, 'lost')));
-    root.querySelectorAll('[data-live]').forEach(b => b.addEventListener('click', () => setDealOutcome((b as HTMLElement).dataset.live!, 'quoted')));
+    root.querySelectorAll('[data-live]').forEach(b => b.addEventListener('click', () => setDealOutcome((b as HTMLElement).dataset.live!, getDeals().find(x => x.id === (b as HTMLElement).dataset.live)?.sentAt ? 'quoted' : 'inplay')));
     root.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', async () => {
       const el = b as HTMLElement;
       try {
@@ -7784,6 +8709,479 @@ body.plays-mode .board { display: none !important; }
         setTimeout(() => { el.innerHTML = was; }, 1400);
       } catch { /* clipboard unavailable */ }
     }));
+  }
+
+  // ============ FUNNEL ============
+  /* The climb, and the only view that answers whether the target gets met.
+     Deals is the record of quotes and Sales is the sheet of typed figures;
+     this is neither. One number - recurring money already won - measured
+     against $100k a month, and behind it the three stages that have to fill
+     the rest, so "where does the remainder come from" is answered on the
+     same screen. Only the per-month figure counts: a one-off build is real
+     money but it is not passive revenue, so it never moves the bar. */
+  const DEFAULT_PASSIVE_TARGET = 100000;
+
+  /* Conversion is measured once there is enough history to divide by, and
+     stated as an assumption until then. Two closed deals is not a win rate,
+     and a view that quietly presents one as fact is worse than no view. */
+  const FUNNEL_MIN_SAMPLE = 4;
+  const ASSUMED_QUOTE_RATE = 0.5;
+  const ASSUMED_WIN_RATE = 0.33;
+
+  function passiveTarget(): number {
+    const t = state.passiveTarget;
+    return t && typeof t.value === 'number' && t.value > 0 ? t.value : DEFAULT_PASSIVE_TARGET;
+  }
+
+  function setPassiveTarget(v: number) {
+    state.passiveTarget = { value: v, updatedAt: Date.now() };
+    save();
+  }
+
+  type FunnelStage = 'suspect' | 'prospect' | 'win' | 'lost';
+
+  /* The three words, read off dates the deal already carries: talking with no
+     quote out is a suspect, a quote sent and still open is a prospect, wonAt
+     is a win. No status field to keep honest, and nothing to migrate. */
+  function funnelStage(d: Deal): FunnelStage {
+    const st = dealState(d);
+    return st === 'inplay' ? 'suspect' : st === 'quoted' ? 'prospect' : st === 'won' ? 'win' : 'lost';
+  }
+
+  const fnMoney = (v: number) => '$' + Math.round(v).toLocaleString('en-NZ');
+  const fnPct = (v: number) => `${Math.round(v * 100)}%`;
+  const monthlyOf = (list: Deal[]) => list.reduce((t, d) => t + ongoingOf(d), 0);
+
+  function funnelRates() {
+    const deals = getDeals();
+    // a win counts as having been quoted even where the sent date never got filled in
+    const asked = deals.filter(d => d.sentAt || d.wonAt);
+    const decided = deals.filter(d => d.wonAt || d.lostAt);
+    const won = deals.filter(d => d.wonAt);
+    const quoteKnown = deals.length >= FUNNEL_MIN_SAMPLE;
+    const winKnown = decided.length >= FUNNEL_MIN_SAMPLE;
+    return {
+      quote: quoteKnown ? asked.length / deals.length : ASSUMED_QUOTE_RATE,
+      win: winKnown ? won.length / decided.length : ASSUMED_WIN_RATE,
+      quoteKnown, winKnown,
+      askedOf: `${asked.length} of ${deals.length}`,
+      wonOf: `${won.length} of ${decided.length}`,
+    };
+  }
+
+  function funnelRowHtml(d: Deal, stage: FunnelStage): string {
+    const person = d.personId ? state.notes.find(n => n.id === d.personId) : undefined;
+    const mo = ongoingOf(d);
+    const act = stage === 'suspect'
+      ? `<button data-fn-quoted="${d.id}" title="A quote has gone out">Quote sent</button>`
+      : stage === 'prospect'
+        ? `<button data-fn-won="${d.id}">Won</button><button class="is-lost" data-fn-lost="${d.id}">Lost</button>`
+        : '';
+
+    return `
+      <article class="fn-row${mo ? '' : ' no-mo'}" data-id="${d.id}">
+        <button class="fn-row-main" data-fn-edit="${d.id}" title="Edit deal">
+          ${person
+            ? `<span class="fn-face">${person.avatar
+                ? `<img src="${person.avatar}" alt="">`
+                : `<span>${escapeHtml(initials(person.name || noteHeadline(person)))}</span>`}</span>`
+            : `<span class="fn-face empty"></span>`}
+          <span class="fn-row-who">
+            <b>${escapeHtml(d.title)}</b>
+            ${person ? `<i>${escapeHtml(person.name || noteHeadline(person))}${person.company ? ` · ${escapeHtml(person.company)}` : ''}</i>` : ''}
+          </span>
+          <span class="fn-row-mo">${mo ? `${fnMoney(mo)}<em>/mo</em>` : `<em>one-off</em>`}</span>
+        </button>
+        ${act ? `<div class="fn-row-act">${act}</div>` : ''}
+      </article>`;
+  }
+
+  function renderFunnel() {
+    const root = document.getElementById('funnel-inner');
+    if (!root) return;
+
+    const target = passiveTarget();
+    const targetEl = document.getElementById('funnel-target');
+    // never repaint the figure being typed into
+    if (targetEl && document.activeElement !== targetEl) targetEl.textContent = fnMoney(target);
+
+    const deals = getDeals();
+    const suspects = deals.filter(d => funnelStage(d) === 'suspect');
+    const prospects = deals.filter(d => funnelStage(d) === 'prospect');
+    const wins = deals.filter(d => funnelStage(d) === 'win');
+
+    if (!deals.length) {
+      root.innerHTML = `
+        <div class="fn-empty">
+          <p>Nothing in the funnel yet.</p>
+          <span>Every deal lands here the moment it exists. Talking with no quote out is a
+          <b>suspect</b>; a quote sent and still open is a <b>prospect</b>; a deal marked won is a
+          <b>win</b>. Only the monthly part of a deal counts toward ${fnMoney(target)} a month.</span>
+        </div>`;
+      return;
+    }
+
+    const r = funnelRates();
+    const wonMo = monthlyOf(wins);
+    const prospectMo = monthlyOf(prospects);
+    const suspectMo = monthlyOf(suspects);
+
+    const expProspect = prospectMo * r.win;
+    const expSuspect = suspectMo * r.quote * r.win;
+    const projected = wonMo + expProspect + expSuspect;
+    const gap = Math.max(0, target - wonMo);
+    const met = wonMo >= target;
+
+    // widths as a share of the target, each segment taking only the room left
+    const w = (v: number) => Math.max(0, Math.min(100, (v / target) * 100));
+    const wWon = w(wonMo);
+    const wPro = Math.min(100 - wWon, w(expProspect));
+    const wSus = Math.min(100 - wWon - wPro, w(expSuspect));
+
+    const climb = `
+      <section class="fn-climb">
+        <div class="fn-climb-head">
+          <div class="fn-now">
+            <i>Won and recurring</i>
+            <b>${fnMoney(wonMo)}<em>/mo</em></b>
+            <u>${fnPct(target ? wonMo / target : 0)} of ${fnMoney(target)}</u>
+          </div>
+          <div class="fn-now right ${met ? 'is-met' : ''}">
+            <i>${met ? 'Target' : 'Still to find'}</i>
+            <b>${met ? 'Met' : fnMoney(gap)}${met ? '' : '<em>/mo</em>'}</b>
+            <u>${met ? 'every month, banked' : `at ${fnPct(r.win)} win rate, ${fnMoney(gap / (r.win || ASSUMED_WIN_RATE))} of quotes`}</u>
+          </div>
+        </div>
+
+        <div class="fn-track" role="img" aria-label="${fnMoney(wonMo)} of ${fnMoney(target)} per month won">
+          <div class="fn-seg won" style="width:${wWon}%"></div>
+          <div class="fn-seg pro" style="width:${wPro}%"></div>
+          <div class="fn-seg sus" style="width:${wSus}%"></div>
+        </div>
+
+        <div class="fn-legend">
+          <span><i class="sw won"></i>Won ${fnMoney(wonMo)}</span>
+          <span><i class="sw pro"></i>Prospects, weighted ${fnMoney(expProspect)}</span>
+          <span><i class="sw sus"></i>Suspects, weighted ${fnMoney(expSuspect)}</span>
+          <span class="fn-proj">Projects to ${fnMoney(projected)}/mo</span>
+        </div>
+      </section>`;
+
+    const col = (stage: FunnelStage, title: string, blurb: string, list: Deal[]) => {
+      const mo = monthlyOf(list);
+      const oneOff = list.filter(d => !ongoingOf(d)).length;
+      return `
+        <div class="fn-stage is-${stage}">
+          <header>
+            <h3>${title}</h3>
+            <p>${blurb}</p>
+            <div class="fn-stage-sum">
+              <b>${fnMoney(mo)}<em>/mo</em></b>
+              <u>${list.length} deal${list.length === 1 ? '' : 's'}${oneOff ? ` · ${oneOff} one-off only` : ''}</u>
+            </div>
+          </header>
+          <div class="fn-rows">${list.length
+            ? list.map(d => funnelRowHtml(d, stage)).join('')
+            : `<div class="fn-none">Nothing here</div>`}</div>
+        </div>`;
+    };
+
+    const gate = (pct: string, label: string, known: boolean, of: string) => `
+      <div class="fn-gate">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+        <b>${pct}</b>
+        <i>${label}</i>
+        <u>${known ? of : 'assumed'}</u>
+      </div>`;
+
+    const stages = `
+      <section class="fn-stages">
+        ${col('suspect', 'Suspects', 'Talking, no quote out', suspects)}
+        ${gate(fnPct(r.quote), 'get a quote', r.quoteKnown, r.askedOf)}
+        ${col('prospect', 'Prospects', 'Quote sent, still open', prospects)}
+        ${gate(fnPct(r.win), 'are won', r.winKnown, r.wonOf)}
+        ${col('win', 'Wins', 'Recurring money banked', wins)}
+      </section>`;
+
+    /* The arithmetic spelled out, because a bar can be read optimistically.
+       Every rate it leans on says whether it was measured or assumed. */
+    const shortfall = target - projected;
+    const effWin = r.win > 0 ? r.win : ASSUMED_WIN_RATE;
+    const maths = `
+      <section class="fn-maths">
+        <h3>What it takes</h3>
+        <ul>
+          ${met
+            ? `<li><b>${fnMoney(wonMo)}/mo</b> is won against a ${fnMoney(target)} target. The target is met.</li>`
+            : `<li><b>${fnMoney(gap)}/mo</b> still to find after the ${fnMoney(wonMo)}/mo already won.</li>`}
+          <li>${prospectMo
+            ? `<b>${fnMoney(prospectMo)}/mo</b> is out on quotes. At a ${fnPct(r.win)} win rate${r.winKnown ? ` (${r.wonOf} closed deals)` : ' (assumed — not enough closed deals to measure)'} that is worth about <b>${fnMoney(expProspect)}/mo</b>.`
+            : `No quotes are out. Nothing can be won this month from an empty prospect column.`}</li>
+          <li>${suspectMo
+            ? `<b>${fnMoney(suspectMo)}/mo</b> is in conversation. At ${fnPct(r.quote)} reaching a quote${r.quoteKnown ? '' : ' (assumed)'} and ${fnPct(r.win)} of those won, that is worth about <b>${fnMoney(expSuspect)}/mo</b>.`
+            : `No suspects. The funnel has nothing feeding it.`}</li>
+          ${met ? '' : shortfall > 0
+            ? `<li class="is-verdict">Everything in the funnel projects to <b>${fnMoney(projected)}/mo</b> — <b>${fnMoney(shortfall)}/mo short</b>. Closing that needs roughly <b>${fnMoney(shortfall / effWin)}/mo</b> of new quotes out.</li>`
+            : `<li class="is-verdict ok">Everything in the funnel projects to <b>${fnMoney(projected)}/mo</b>, which clears ${fnMoney(target)}. The work is converting it, not finding more.</li>`}
+        </ul>
+      </section>`;
+
+    root.innerHTML = climb + stages + maths;
+
+    root.querySelectorAll('[data-fn-edit]').forEach(b =>
+      b.addEventListener('click', () => openDealModal((b as HTMLElement).dataset.fnEdit!)));
+    root.querySelectorAll('[data-fn-quoted]').forEach(b =>
+      b.addEventListener('click', () => setDealOutcome((b as HTMLElement).dataset.fnQuoted!, 'quoted')));
+    root.querySelectorAll('[data-fn-won]').forEach(b =>
+      b.addEventListener('click', () => setDealOutcome((b as HTMLElement).dataset.fnWon!, 'won')));
+    root.querySelectorAll('[data-fn-lost]').forEach(b =>
+      b.addEventListener('click', () => setDealOutcome((b as HTMLElement).dataset.fnLost!, 'lost')));
+  }
+
+  document.getElementById('add-funnel-deal')?.addEventListener('click', () => openDealModal());
+
+  /* The target is typed, so read what a hand types - "100k", "$100,000" -
+     with the sales parser that already does exactly that. */
+  (() => {
+    const el = document.getElementById('funnel-target');
+    if (!el) return;
+    const commit = () => {
+      const parsed = parseSalesInput(el.textContent || '');
+      const next = parsed === null || Number.isNaN(parsed) || parsed <= 0 ? passiveTarget() : parsed;
+      if (next !== passiveTarget()) setPassiveTarget(next);
+      el.textContent = fnMoney(next);
+      renderFunnel();
+    };
+    el.addEventListener('blur', commit);
+    el.addEventListener('keydown', (e) => {
+      const k = (e as KeyboardEvent).key;
+      if (k === 'Enter') { e.preventDefault(); el.blur(); }
+      if (k === 'Escape') { el.textContent = fnMoney(passiveTarget()); el.blur(); }
+    });
+  })();
+
+  // ============ SALES ============
+  /* Twelve months down the side, six lines across the top, and one typed
+     figure in each box. Five of those lines are whatever gets typed into
+     them - this sheet holds the numbers being worked to, it does not model
+     the accounts. NP is the one exception: it always equals Gross Profit
+     less Expenses less Salary, so it is worked out rather than entered and
+     cannot drift away from the three lines above it. The other arithmetic
+     is the year total per line, along the bottom. */
+  const SALES_LINES = [
+    { key: 'revenue',  label: 'Revenue',         derived: false },
+    { key: 'passive',  label: 'Passive Revenue', derived: false },
+    { key: 'gp',       label: 'Gross Profit',    derived: false },
+    { key: 'expenses', label: 'Expenses',        derived: false },
+    { key: 'salary',   label: 'Salary',          derived: false },
+    { key: 'np',       label: 'NP',              derived: true  },
+  ];
+  // how far Enter has to jump to land on the same line a month down
+  const SALES_INPUT_COLS = SALES_LINES.filter(l => !l.derived).length;
+
+  /* April 2026 through March 2027, as ['2026-04' ... '2027-03']. Spelled out
+     from a start rather than hardcoded so next year is a one-line change. */
+  const SALES_FY_START_YEAR = 2026;
+  const SALES_FY_START_MONTH = 4;
+  const SALES_MONTHS: string[] = Array.from({ length: 12 }, (_, i) => {
+    const n = SALES_FY_START_MONTH - 1 + i;
+    const y = SALES_FY_START_YEAR + Math.floor(n / 12);
+    return `${y}-${String((n % 12) + 1).padStart(2, '0')}`;
+  });
+  const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const salesMonthName = (m: string) => `${MONTH_ABBR[+m.slice(5) - 1]} ${m.slice(0, 4)}`;
+
+  function getSales(): SalesCell[] {
+    if (!state.sales) state.sales = [];
+    return state.sales;
+  }
+
+  /* Derived, not random: the same box edited on two devices lands on one
+     row that merges by timestamp, instead of forking into two. */
+  const salesCellId = (month: string, line: string) => `sales-${month}-${line}`;
+
+  function salesValue(month: string, line: string): number | null {
+    const c = getSales().find(x => x.id === salesCellId(month, line));
+    return c ? c.value : null;
+  }
+
+  function setSalesValue(month: string, line: string, v: number | null) {
+    const id = salesCellId(month, line);
+    const cells = getSales();
+    const i = cells.findIndex(c => c.id === id);
+    if (v === null) {
+      if (i < 0) return;
+      /* An emptied box has to stay empty everywhere. Without the marker the
+         other device just sees a row it still holds and puts the figure back. */
+      tombstone(id);
+      cells.splice(i, 1);
+    } else if (i >= 0) {
+      if (cells[i].value === v) return;
+      cells[i].value = v;
+    } else {
+      cells.push({ id, month, line, value: v, createdAt: Date.now() });
+    }
+    save();
+  }
+
+  /* Typed by hand, so read what a hand types: $, thousands commas, a
+     trailing k or m, and brackets or a minus for money going out.
+     null means the box was cleared. NaN means it holds something that is
+     not a number at all, and the caller puts back the previous figure
+     rather than wiping it over a typo. */
+  function parseSalesInput(raw: string): number | null {
+    let t = raw.trim().replace(/[$,\s]/g, '');
+    if (!t) return null;
+    let neg = false;
+    if (/^\(.*\)$/.test(t)) { neg = true; t = t.slice(1, -1); }
+    let mult = 1;
+    if (/k$/i.test(t)) { mult = 1000; t = t.slice(0, -1); }
+    else if (/m$/i.test(t)) { mult = 1e6; t = t.slice(0, -1); }
+    const n = Number(t);
+    if (t === '' || !isFinite(n)) return NaN;
+    const v = Math.round(n * mult);
+    return neg ? -v : v;
+  }
+
+  const salesFmt = (v: number) =>
+    (v < 0 ? '-' : '') + '$' + Math.abs(v).toLocaleString('en-NZ');
+
+  /* The one derived figure. null - rather than $0 - while none of the three
+     lines it is built from has been filled in, so an untouched month reads
+     as blank instead of as a month that nets out to nothing. */
+  function salesNp(month: string): number | null {
+    const gp = salesValue(month, 'gp');
+    const ex = salesValue(month, 'expenses');
+    const sal = salesValue(month, 'salary');
+    if (gp === null && ex === null && sal === null) return null;
+    return (gp ?? 0) - (ex ?? 0) - (sal ?? 0);
+  }
+
+  function salesLineTotal(line: string): number {
+    if (line === 'np') return SALES_MONTHS.reduce((t, m) => t + (salesNp(m) ?? 0), 0);
+    return SALES_MONTHS.reduce((t, m) => t + (salesValue(m, line) ?? 0), 0);
+  }
+
+  /* Repaint only the bottom row. A full renderSales() here would rebuild the
+     inputs mid-edit, which throws away the focus Tab is trying to hand on. */
+  function updateSalesTotals() {
+    const tds = document.querySelectorAll('#sales-inner tfoot td:not(.sales-mh)');
+    SALES_LINES.forEach((l, i) => {
+      const td = tds[i] as HTMLElement | undefined;
+      if (!td) return;
+      const t = salesLineTotal(l.key);
+      // rebuilt rather than toggled, but the column rule has to survive it
+      td.className = [l.derived ? 'sales-np' : '', t === 0 ? 'is-zero' : t < 0 ? 'is-neg' : ''].filter(Boolean).join(' ');
+      td.textContent = t === 0 ? '—' : salesFmt(t);
+    });
+  }
+
+  function commitSalesCell(el: HTMLInputElement) {
+    const month = el.dataset.month!, line = el.dataset.line!;
+    const before = salesValue(month, line);
+    const parsed = parseSalesInput(el.value);
+    const next = parsed !== null && Number.isNaN(parsed) ? before : parsed;
+    if (next !== before) setSalesValue(month, line, next);
+    el.value = next === null ? '' : salesFmt(next);
+    el.closest('.sales-cell')?.classList.toggle('is-neg', next !== null && next < 0);
+    paintSalesNp(month);
+    updateSalesTotals();
+  }
+
+  /* Repaint one month's NP box in place, for the same reason the totals are
+     repainted rather than re-rendered: a full renderSales() would rebuild
+     the inputs mid-edit and throw away the focus Tab is handing on. */
+  function paintSalesNp(month: string) {
+    const td = document.querySelector(`#sales-inner td.sales-np[data-month="${month}"]`) as HTMLElement | null;
+    if (!td) return;
+    const v = salesNp(month);
+    td.classList.toggle('is-neg', v !== null && v < 0);
+    td.classList.toggle('is-zero', v === null);
+    td.textContent = v === null ? '—' : salesFmt(v);
+  }
+
+  // true while a figure is half-typed, so a cloud pull does not repaint over it
+  function salesCellFocused(): boolean {
+    return !!(document.activeElement as HTMLElement | null)?.closest?.('.sales-cell');
+  }
+
+  function renderSales() {
+    const root = document.getElementById('sales-inner');
+    if (!root) return;
+
+    const now = new Date();
+    const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    /* Each month is settled, in play, or still only forecast. Compared as
+       strings rather than against an index, so a sheet that sits entirely
+       behind or ahead of today still shades correctly instead of reading as
+       twelve months of history. */
+    const firstFwd = SALES_MONTHS.findIndex(m => m > nowKey);
+
+    const rows = SALES_MONTHS.map((m, i) => {
+      const cls = [m === nowKey ? 'is-now' : m > nowKey ? 'is-fwd' : 'is-past'];
+      // the line between what has happened and what is still being planned
+      if (i === firstFwd && i > 0) cls.push('is-fwd-open');
+      return `
+      <tr class="${cls.join(' ')}">
+        <td class="sales-mo">${MONTH_ABBR[+m.slice(5) - 1]} <em>${m.slice(0, 4)}</em>${m === nowKey ? '<i>now</i>' : ''}</td>
+        ${SALES_LINES.map(l => {
+          if (l.derived) {
+            const d = salesNp(m);
+            return `<td class="sales-cell sales-np${d === null ? ' is-zero' : d < 0 ? ' is-neg' : ''}"
+              data-month="${m}" title="Gross Profit less Expenses less Salary"
+              aria-label="${l.label}, ${salesMonthName(m)}">${d === null ? '—' : salesFmt(d)}</td>`;
+          }
+          const v = salesValue(m, l.key);
+          return `<td class="sales-cell${v !== null && v < 0 ? ' is-neg' : ''}"><input
+            type="text" inputmode="decimal" spellcheck="false" autocomplete="off" placeholder="—"
+            data-month="${m}" data-line="${l.key}"
+            aria-label="${l.label}, ${salesMonthName(m)}"
+            value="${v === null ? '' : salesFmt(v)}"></td>`;
+        }).join('')}
+      </tr>`;
+    }).join('');
+
+    root.innerHTML = `
+      <table class="sales-sheet">
+        <thead>
+          <tr>
+            <th class="sales-mh">Month</th>
+            ${SALES_LINES.map(l => `<th${l.derived ? ' class="sales-np"' : ''}>${l.label}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr>
+            <td class="sales-mh">Total</td>
+            ${SALES_LINES.map(l => {
+              const t = salesLineTotal(l.key);
+              const cls = [l.derived ? 'sales-np' : '', t === 0 ? 'is-zero' : t < 0 ? 'is-neg' : ''].filter(Boolean).join(' ');
+              return `<td class="${cls}">${t === 0 ? '—' : salesFmt(t)}</td>`;
+            }).join('')}
+          </tr>
+        </tfoot>
+      </table>
+      <p class="sales-hint">Type a figure into any box &mdash; <strong>Tab</strong> moves across, <strong>Enter</strong> moves down, <strong>Esc</strong> undoes. <strong>NP</strong> is the one worked-out column: Gross Profit less Expenses less Salary. The only other sums are the year totals along the bottom.</p>`;
+
+    const cells = Array.from(root.querySelectorAll('.sales-cell input')) as HTMLInputElement[];
+    cells.forEach((el, idx) => {
+      el.addEventListener('focus', () => el.select());
+      el.addEventListener('blur', () => commitSalesCell(el));
+      el.addEventListener('keydown', e => {
+        const ev = e as KeyboardEvent;
+        if (ev.key === 'Escape') {
+          const v = salesValue(el.dataset.month!, el.dataset.line!);
+          el.value = v === null ? '' : salesFmt(v);
+          el.blur();
+        } else if (ev.key === 'Enter') {
+          ev.preventDefault();
+          // down a month in the same line, or up one with shift
+          const next = cells[idx + (ev.shiftKey ? -SALES_INPUT_COLS : SALES_INPUT_COLS)];
+          if (next) next.focus(); else el.blur();
+        }
+      });
+    });
   }
 
   // ============ PEOPLE ============
@@ -7901,6 +9299,130 @@ body.plays-mode .board { display: none !important; }
     renderPeople();
   });
 
+  /* ---- Hydrate --------------------------------------------------------
+     A queued row is only a LinkedIn URL. Hydrating turns it into a person:
+     /hydrate identifies who it is, /enrich-profile goes after the website
+     and contact details. Same two calls the phone makes.
+
+     The reason it belongs here and not only on the phone is the dedupe. You
+     cannot tell whether you already have someone's company until you know
+     what their company is, so the check has to happen after the first call
+     and before the person is written. Anyone who clashes stays in the queue
+     with the clash named, rather than quietly landing on a board. ---- */
+  type Finding = { name: string; role: string; company: string; clashWith: string };
+  const queueFindings = new Map<string, Finding>();   // deliberately not persisted
+  let hydrating = false;
+
+  const normCo = (s: string) =>
+    (s || '').toLowerCase()
+      .replace(/\b(limited|ltd|pty|llc|inc|incorporated|company|co|group|holdings|nz|new zealand)\b/g, '')
+      .replace(/[^a-z0-9]/g, '');
+
+  function queueMsg(id: string, text: string, isError = false) {
+    const el = document.querySelector(`[data-msg="${id}"]`);
+    if (!el) return;
+    el.textContent = text;
+    el.classList.toggle('err', isError);
+  }
+
+  /* Does someone already here work at this company? Queued rows are excluded -
+     they have no company yet - as is the row being hydrated. */
+  function companyClash(company: string, exceptId: string): string | null {
+    const key = normCo(company);
+    if (!key) return null;
+    const hit = state.notes.find(n =>
+      n.isLead && n.id !== exceptId && !isQueued(n) && normCo(n.company || '') === key);
+    return hit ? (hit.name || 'someone already here') : null;
+  }
+
+  async function hydrateOne(id: string, opts: { force?: boolean } = {}): Promise<'added' | 'held' | 'failed'> {
+    const pw = getSyncPassword();
+    if (!pw) { queueMsg(id, 'No project set', true); return 'failed'; }
+    const note = state.notes.find(n => n.id === id);
+    if (!note?.linkedin) return 'failed';
+
+    try {
+      queueMsg(id, 'Identifying...');
+      const res = await fetch(`${WORKER_URL}/hydrate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Sync-Password': pw },
+        body: JSON.stringify({ profileUrl: note.linkedin }),
+      });
+      const p = await res.json();
+      if (!res.ok || !p.name) { queueMsg(id, 'Could not identify that profile', true); return 'failed'; }
+
+      const clash = opts.force ? null : companyClash(p.company || '', id);
+      if (clash) {
+        queueFindings.set(id, { name: p.name, role: p.role || '', company: p.company || '', clashWith: clash });
+        renderPeople();
+        return 'held';
+      }
+
+      // Only now is it safe to write. The contact details are a bonus - if
+      // that call fails the person is still correctly identified.
+      note.name = p.name;
+      note.role = p.role || '';
+      note.company = p.company || '';
+
+      queueMsg(id, 'Finding contact details...');
+      try {
+        const er = await fetch(`${WORKER_URL}/enrich-profile`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Sync-Password': pw },
+          body: JSON.stringify({ name: p.name, company: p.company }),
+        });
+        const d = await er.json();
+        if (er.ok) {
+          note.website = d.website || note.website || '';
+          note.phone = d.phone || note.phone || '';
+          note.email = d.email || note.email || '';
+        }
+      } catch { /* identified is enough; contacts can be filled by hand */ }
+
+      note.updatedAt = Date.now();
+      queueFindings.delete(id);
+      save();
+      renderPeople();
+      return 'added';
+    } catch {
+      queueMsg(id, 'Could not reach the worker', true);
+      return 'failed';
+    }
+  }
+
+  function setHydrateBusy(on: boolean) {
+    hydrating = on;
+    document.querySelectorAll('.queue-hy, .queue-all').forEach(b => (b as HTMLButtonElement).disabled = on);
+  }
+
+  document.getElementById('people-inner')?.addEventListener('click', async (e) => {
+    const el = (e.target as HTMLElement).closest('[data-hy], [data-anyway], [data-hydrate-all]') as HTMLElement | null;
+    if (!el || hydrating) return;
+
+    if (el.dataset.hydrateAll !== undefined) {
+      const ids = state.notes.filter(isQueued).map(n => n.id);
+      if (!ids.length) return;
+      setHydrateBusy(true);
+      let added = 0, held = 0, failed = 0;
+      // one at a time on purpose: these calls are slow and the worker is not
+      // something to fire fifty requests at
+      for (const id of ids) {
+        const r = await hydrateOne(id);
+        if (r === 'added') added++; else if (r === 'held') held++; else failed++;
+      }
+      setHydrateBusy(false);
+      const hint = document.querySelector('.queue-hint');
+      if (hint) hint.textContent =
+        `${added} added${held ? `, ${held} held back as duplicate companies` : ''}${failed ? `, ${failed} could not be identified` : ''}.`;
+      return;
+    }
+
+    const id = el.dataset.hy || el.dataset.anyway!;
+    setHydrateBusy(true);
+    await hydrateOne(id, { force: el.dataset.anyway !== undefined });
+    setHydrateBusy(false);
+  });
+
   function renderPeople() {
     const root = document.getElementById('people-inner');
     const countEl = document.getElementById('people-count');
@@ -7938,14 +9460,23 @@ body.plays-mode .board { display: none !important; }
           <span class="pe-dot queue-dot"></span>
           <h3>Waiting to hydrate</h3>
           <span class="people-n">${queued.length}</span>
+          <button class="queue-all" data-hydrate-all title="Hydrate every queued profile, one after another">Hydrate all</button>
         </header>
-        <p class="queue-hint">Open Hydrate on your phone to finish these off — it fills in who they are and grabs a photo.</p>
-        <div class="queue-rows">${queued.map(n => `
-          <div class="queue-row" data-id="${n.id}">
-            <span class="queue-name">${escapeHtml(queueSlug(n))}</span>
+        <p class="queue-hint">Hydrate fills in who they are and where they work. Anyone whose company you already have is held back here rather than added.</p>
+        <div class="queue-rows">${queued.map(n => {
+          const f = queueFindings.get(n.id);
+          return `
+          <div class="queue-row ${f ? 'is-dupe' : ''}" data-id="${n.id}">
+            <span class="queue-name">${escapeHtml(f ? f.name : queueSlug(n))}</span>
+            ${f ? `<span class="queue-dupe">Already have ${escapeHtml(f.company)} — ${escapeHtml(f.clashWith)}</span>` : ''}
+            <span class="queue-msg" data-msg="${n.id}"></span>
+            ${f
+              ? `<button class="queue-hy" data-anyway="${n.id}">Add anyway</button>`
+              : `<button class="queue-hy" data-hy="${n.id}">Hydrate</button>`}
             <a class="queue-open" href="${escapeHtml(n.linkedin!)}" target="_blank" rel="noopener" data-stop title="Open profile">View</a>
             <button class="queue-del" data-del="${n.id}" title="Remove">&times;</button>
-          </div>`).join('')}</div>
+          </div>`;
+        }).join('')}</div>
       </section>` : '';
 
     // what needs you first, then who is booked, then who nobody is working
@@ -8649,6 +10180,11 @@ body.plays-mode .board { display: none !important; }
     }
   }
 
+  document.getElementById('lo-fix')?.addEventListener('click', () => {
+    (document.getElementById('settings-btn') as HTMLElement)?.click();
+    (document.getElementById('switch-project-input') as HTMLInputElement)?.focus();
+  });
+
   document.getElementById('settings-btn')?.addEventListener('click', () => {
     settingsModal.classList.add('visible');
     updateCurrentProjectDisplay();
@@ -8747,8 +10283,16 @@ body.plays-mode .board { display: none !important; }
     document.querySelectorAll('.board').forEach(b => {
       b.classList.toggle('active', (b as HTMLElement).dataset.q === '0');
     });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    refreshView();
+    localStorage.setItem(storageKey(), JSON.stringify(state));
+    /* Every view is now showing the OLD project. refreshView() alone honours
+       the viewDirty cache, which was last cleared while the previous project
+       was on screen - so the goals grid would keep painting that project's
+       cards over this project's state until something else forced a redraw.
+       Ticking one of those stale cards then did nothing at all, because its id
+       does not exist in the project you just switched to. */
+    snapshotItems();   // different project, different baseline
+    markViewsDirty();
+    refreshView(true);
     updateSyncIndicator();
     updateCurrentProjectDisplay();
     migratePlayTasks();
@@ -9545,13 +11089,271 @@ body.plays-mode .board { display: none !important; }
   });
 
   // Init
+  /* ---- Find -----------------------------------------------------------
+     The PDA's lead search, on the desktop. Same three worker endpoints it
+     has always used - /search by criteria, /enrich-url for a company, and
+     /lookup for the web shortcuts - so there is one implementation of the
+     searching and two front ends onto it.
+
+     Everything reports into one status line inside the modal rather than a
+     toast: these calls take seconds, and the answer belongs next to the
+     button you pressed. ---- */
+  const findModal = document.getElementById('find-modal');
+  let findBoard = 0;
+  let findBusy = false;
+
+  function findEl<T extends HTMLElement>(id: string) {
+    return document.getElementById(id) as T | null;
+  }
+  const findVal = (id: string) => (findEl<HTMLInputElement>(id)?.value || '').trim();
+
+  function findSay(msg: string, isError = false) {
+    const box = findEl('find-status');
+    if (!box) return;
+    box.hidden = !msg;
+    box.textContent = msg;
+    box.classList.toggle('err', isError);
+  }
+
+  function findClearResults() {
+    const box = findEl('find-results');
+    if (box) box.innerHTML = '';
+  }
+
+  function renderFindBoards() {
+    const wrap = document.querySelector('.find-board-dots');
+    if (!wrap) return;
+    wrap.innerHTML = BOARD_COLORS.map((c, i) =>
+      `<button data-b="${i}" class="${i === findBoard ? 'active' : ''}" style="background:${c}"
+         title="${escapeHtml((state.boardTitles || DEFAULT_TITLES)[i])}"
+         aria-label="${escapeHtml((state.boardTitles || DEFAULT_TITLES)[i])}"></button>`).join('');
+    wrap.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      findBoard = Number((b as HTMLElement).dataset.b);
+      renderFindBoards();
+    }));
+  }
+
+  function findBusyState(on: boolean) {
+    findBusy = on;
+    const run = findEl<HTMLButtonElement>('find-run');
+    if (run) run.disabled = on;
+    document.querySelectorAll('.find-web-btn').forEach(b => (b as HTMLButtonElement).disabled = on);
+  }
+
+  // The run button says what it will actually do, which depends on the top field
+  function syncFindButton() {
+    const run = findEl('find-run');
+    if (run) run.textContent = findVal('find-company') ? 'Look up company' : 'Find leads';
+  }
+
+  findEl('open-find')?.addEventListener('click', () => {
+    findBoard = activeQuadrant;
+    renderFindBoards();
+    syncFindButton();
+    findSay('');
+    findClearResults();
+    findModal?.classList.add('visible');
+    findEl<HTMLInputElement>('find-company')?.focus();
+  });
+
+  function closeFind() { findModal?.classList.remove('visible'); }
+  findModal?.querySelector('.modal-close')?.addEventListener('click', closeFind);
+  findModal?.addEventListener('click', e => { if (e.target === findModal) closeFind(); });
+  findEl('find-company')?.addEventListener('input', syncFindButton);
+
+  // Enter anywhere in the form runs it, which is what you expect of a search box
+  ['find-company', 'find-location', 'find-industry', 'find-role'].forEach(id =>
+    findEl(id)?.addEventListener('keydown', e => {
+      if ((e as KeyboardEvent).key === 'Enter') findEl<HTMLButtonElement>('find-run')?.click();
+    }));
+
+  /* One person, straight onto a board. Same shape drainLeadInbox builds, so
+     a lead found here is indistinguishable from one the agent sent in. */
+  function addFoundLead(l: { name?: string; role?: string; company?: string; linkedin?: string;
+                            phone?: string; email?: string; website?: string }) {
+    const q = findBoard;
+    const onBoard = state.notes.filter(n => (n.quadrant ?? 0) === q).length;
+    const col = onBoard % 5;
+    const row = Math.floor(onBoard / 5);
+
+    const note: Note = {
+      id: `find-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      text: [l.name, l.role, l.company].filter(Boolean).join('\n'),
+      color: BOARD_COLORS[q],
+      x: 40 + col * 200,
+      y: 80 + row * 175,
+      rotation: (Math.random() - 0.5) * 6,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      zIndex: state.nextZIndex++,
+      isLead: true,
+      quadrant: q,
+      name: l.name || '',
+      role: l.role || '',
+      company: l.company || '',
+      phone: l.phone || '',
+      email: l.email || '',
+      linkedin: l.linkedin || '',
+      website: l.website || '',
+      notes: '',
+    } as Note;
+
+    state.notes.push(note);
+    save();
+    refreshView();
+  }
+
+  function renderFindPeople(people: Array<{ name?: string; role?: string; company?: string; linkedin?: string }>) {
+    const box = findEl('find-results');
+    if (!box) return;
+    box.innerHTML = people.map((p, i) => `
+      <div class="find-row">
+        <div class="find-row-main">
+          <div class="find-row-name">${escapeHtml(p.name || 'Unnamed')}</div>
+          <div class="find-row-sub">${escapeHtml([p.role, p.company].filter(Boolean).join(' · '))}</div>
+        </div>
+        <button class="find-add" data-i="${i}">Add</button>
+      </div>`).join('');
+
+    box.querySelectorAll('.find-add').forEach(btn => btn.addEventListener('click', () => {
+      const el = btn as HTMLButtonElement;
+      if (el.classList.contains('added')) return;
+      addFoundLead(people[Number(el.dataset.i)] || {});
+      el.classList.add('added');
+      el.textContent = 'Added';
+    }));
+  }
+
+  /* Web results are links, not people. A company link fills the top field so
+     you can enrich it; a person link goes to the clipboard, because the thing
+     you want with those is to open them. */
+  function renderFindLinks(kind: string, results: Array<{ title?: string; subtitle?: string; url: string }>) {
+    const box = findEl('find-results');
+    if (!box) return;
+    const domainOf = (u: string) => { try { return new URL(u.startsWith('http') ? u : `https://${u}`).hostname.replace(/^www\./, ''); } catch { return u; } };
+
+    box.innerHTML = results.map((r, i) => `
+      <div class="find-row">
+        <div class="find-row-main">
+          <div class="find-row-name">${escapeHtml(r.title || domainOf(r.url))}</div>
+          <div class="find-row-sub">${escapeHtml(r.subtitle || domainOf(r.url))}</div>
+        </div>
+        <button class="find-add" data-i="${i}">${kind === 'people' ? 'Copy' : 'Use'}</button>
+      </div>`).join('');
+
+    box.querySelectorAll('.find-add').forEach(btn => btn.addEventListener('click', () => {
+      const r = results[Number((btn as HTMLElement).dataset.i)];
+      if (!r) return;
+      if (kind === 'people') {
+        navigator.clipboard?.writeText(r.url).then(() => findSay('Link copied.'), () => findSay(r.url));
+      } else {
+        const input = findEl<HTMLInputElement>('find-company');
+        if (input) { input.value = domainOf(r.url); syncFindButton(); }
+        findSay(`Company set to ${domainOf(r.url)}. Press Look up company.`);
+      }
+    }));
+  }
+
+  findEl('find-run')?.addEventListener('click', async () => {
+    if (findBusy) return;
+    const pw = getSyncPassword();
+    if (!pw) { findSay('No project set, so there is nowhere to search from. Pick one in Settings first.', true); return; }
+
+    const company = findVal('find-company');
+    findClearResults();
+    findBusyState(true);
+
+    try {
+      if (company) {
+        findSay(`Looking up ${company}...`);
+        const res = await fetch(`${WORKER_URL}/enrich-url`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Sync-Password': pw },
+          body: JSON.stringify({ url: company }),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) { findSay(`Could not read that company${data.error ? ': ' + data.error : ''}.`, true); return; }
+        renderFindPeople([{
+          name: data.name || data.company || company,
+          role: data.role || data.industry || '',
+          company: data.company || '',
+        }]);
+        findSay('Found this. Add it, or refine and search again.');
+        return;
+      }
+
+      const location = findVal('find-location');
+      const industry = findVal('find-industry');
+      const role = findVal('find-role');
+      if (!location && !industry && !role) { findSay('Give it a location, an industry or a role to work with.', true); return; }
+
+      findSay('Searching...');
+      const res = await fetch(`${WORKER_URL}/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Sync-Password': pw },
+        body: JSON.stringify({ location, industry, role }),
+      });
+      const data = await res.json();
+      const people = data.profiles || [];
+      if (!people.length) { findSay('Nobody came back. Try broader words.', true); return; }
+      renderFindPeople(people);
+      findSay(`${people.length} found.`);
+    } catch {
+      findSay('That search failed to reach the worker.', true);
+    } finally {
+      findBusyState(false);
+    }
+  });
+
+  document.querySelectorAll('.find-web-btn').forEach(btn => btn.addEventListener('click', async () => {
+    if (findBusy) return;
+    const pw = getSyncPassword();
+    if (!pw) { findSay('No project set, so there is nowhere to search from. Pick one in Settings first.', true); return; }
+
+    const kind = (btn as HTMLElement).dataset.g!;
+    const body = {
+      kind,
+      company: findVal('find-company'),
+      location: findVal('find-location'),
+      industry: findVal('find-industry'),
+      role: findVal('find-role'),
+    };
+    if (kind === 'website' && !body.company) { findSay('Put a company in the top field first.', true); return; }
+    if (kind === 'people' && !body.role && !body.industry && !body.location) { findSay('Add a role, industry or location first.', true); return; }
+    if (kind === 'companies' && !body.industry && !body.location) { findSay('Add an industry or location first.', true); return; }
+
+    findClearResults();
+    findBusyState(true);
+    findSay('Searching the web...');
+    try {
+      const res = await fetch(`${WORKER_URL}/lookup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Sync-Password': pw },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      const results = data.results || [];
+      if (!results.length) { findSay('Nothing found. Try different words.', true); return; }
+      renderFindLinks(kind, results);
+      findSay(`${results.length} result${results.length === 1 ? '' : 's'}.`);
+    } catch {
+      findSay('That search failed to reach the worker.', true);
+    } finally {
+      findBusyState(false);
+    }
+  }));
+
   async function init() {
     state = load();
     const rawCloud = await syncFromCloud();
     if (rawCloud) {
       state = mergeFromCloud(state, rawCloud);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(storageKey(), JSON.stringify(state));
     }
+    /* Baseline AFTER loading, never before: stamping is for edits made from
+       here on. Snapshotting an empty state would mark everything as new and
+       let this device's copy win every merge it takes part in. */
+    snapshotItems();
 
     // ?view= (arriving from the PDA nav) beats the remembered mode
     const urlView = new URLSearchParams(location.search).get('view');

@@ -45,12 +45,12 @@
         </div>
       </div>
       <div id="board-bar">
-        <button class="board-dot" data-board="0" style="background: #fed7aa" title="Orange"></button>
-        <button class="board-dot" data-board="1" style="background: #fef08a" title="Yellow"></button>
-        <button class="board-dot" data-board="2" style="background: #bbf7d0" title="Green"></button>
-        <button class="board-dot" data-board="3" style="background: #93c5fd" title="Blue"></button>
-        <button class="board-dot" data-board="4" style="background: #c7d2fe" title="Indigo"></button>
-        <button class="board-dot" data-board="5" style="background: #ddd6fe" title="Violet"></button>
+        <button class="board-dot" data-board="0" style="background: #c2410c" title="Orange"><span class="board-count" data-count="0"></span></button>
+        <button class="board-dot" data-board="1" style="background: #a16207" title="Yellow"><span class="board-count" data-count="1"></span></button>
+        <button class="board-dot" data-board="2" style="background: #15803d" title="Green"><span class="board-count" data-count="2"></span></button>
+        <button class="board-dot" data-board="3" style="background: #1d4ed8" title="Blue"><span class="board-count" data-count="3"></span></button>
+        <button class="board-dot" data-board="4" style="background: #4338ca" title="Indigo"><span class="board-count" data-count="4"></span></button>
+        <button class="board-dot" data-board="5" style="background: #6d28d9" title="Violet"><span class="board-count" data-count="5"></span></button>
       </div>
     </header>
 
@@ -314,38 +314,48 @@
 
       <div id="hydrate-result" class="hidden">
         <div class="hy-person">
-          <button type="button" id="hydrate-avatar" class="hy-avatar" title="Add a photo"><span>?</span></button>
           <div class="hy-fields">
             <input type="text" id="hy-name" placeholder="Name">
             <input type="text" id="hy-role" placeholder="Role">
             <input type="text" id="hy-company" placeholder="Company">
           </div>
         </div>
-        <div class="hy-contacts">
-          <input type="tel" id="hy-phone" placeholder="Phone">
-          <input type="email" id="hy-email" placeholder="Email">
-          <input type="url" id="hy-website" placeholder="Website">
-          <input type="url" id="hy-linkedin" placeholder="LinkedIn URL">
-        </div>
+
         <div class="hy-photo">
-          <button id="hy-photo-btn" class="action-btn">Add photo</button>
+          <div class="hy-photo-row">
+            <div id="hy-photo-preview" class="hy-photo-preview hidden"></div>
+            <p class="hy-photo-hint" id="hy-photo-hint">Their photo comes from their LinkedIn profile — open it, screenshot the picture, then pick it here.</p>
+          </div>
+          <div class="hy-photo-actions">
+            <button type="button" id="hy-open-li" class="av-btn">Open profile</button>
+            <button type="button" id="hy-photo-btn" class="av-btn primary">Choose screenshot</button>
+          </div>
           <input type="file" id="hy-photo-input" accept="image/*" style="display:none">
         </div>
+
+        <div class="hy-block">
+          <div class="hy-block-head">Contact details</div>
+          <div id="hy-contacts" class="hy-contacts"></div>
+          <div id="hy-add-chips" class="hy-chips"></div>
+        </div>
+
         <div class="hy-board">
           <span>Board</span>
           <div id="hy-boards" class="hy-board-dots"></div>
         </div>
+
         <button id="hy-save" class="primary-btn">
           <span class="btn-text">Save to Stiki</span>
           <span class="btn-loading">Saving...</span>
         </button>
-        <button id="hy-cancel" class="action-btn secondary">Start again</button>
+        <button id="hy-cancel" class="hy-cancel">Cancel</button>
       </div>
     </div>
 
     <div id="board-view" class="hidden">
       <div id="board-title-bar">
         <input type="text" id="board-title" placeholder="Untitled">
+        <span id="board-head-count" title="People on this board"></span>
       </div>
       <div id="board-cards"></div>
       <div id="board-empty" class="hidden">
@@ -434,21 +444,21 @@
             </div>
             <div class="field-group">
               <label>LinkedIn</label>
-              <input type="url" id="detail-linkedin-url" placeholder="linkedin.com/in/...">
+              <div class="field-act"><input type="url" id="detail-linkedin-url" placeholder="linkedin.com/in/..."><button type="button" class="field-go" data-go="li" aria-label="Open LinkedIn profile" title="Open LinkedIn profile"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></button></div>
             </div>
             <div class="field-row">
               <div class="field-group">
                 <label>Phone</label>
-                <input type="tel" id="detail-phone">
+                <div class="field-act"><input type="tel" id="detail-phone"><button type="button" class="field-go" data-go="phone" aria-label="Call this number" title="Call this number"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></button></div>
               </div>
               <div class="field-group">
                 <label>Email</label>
-                <input type="email" id="detail-email">
+                <div class="field-act"><input type="email" id="detail-email"><button type="button" class="field-go" data-go="email" aria-label="Email this person" title="Email this person"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg></button></div>
               </div>
             </div>
             <div class="field-group">
               <label>Website</label>
-              <input type="url" id="detail-website">
+              <div class="field-act"><input type="url" id="detail-website"><button type="button" class="field-go" data-go="website" aria-label="Open website" title="Open website"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"/></svg></button></div>
             </div>
             <div class="field-group">
               <label>Notes</label>
@@ -697,6 +707,45 @@ body {
 }
 .google-btn:hover { border-color: #12100e; color: #12100e; background: #faf9f7; }
 
+.hy-photo-row { display: flex; align-items: flex-start; gap: 12px; }
+.hy-photo-preview { width: 54px; height: 54px; flex: none; border-radius: 50%; overflow: hidden; background: #f1efec; }
+.hy-photo-preview.hidden { display: none; }
+.hy-photo-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hy-photo { margin-bottom: 16px; padding: 14px; background: #faf9f7; border: 1px solid #efece6; border-radius: 12px; }
+.hy-photo-hint { margin: 0 0 10px; font-size: 12.5px; line-height: 1.45; color: #8a847c; }
+.hy-photo-actions { display: flex; gap: 8px; }
+
+.hy-block { margin-bottom: 16px; }
+.hy-block-head { font-size: 10.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: #b5b0a9; margin-bottom: 9px; }
+.hy-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+.hy-row-icon {
+  width: 30px; height: 30px; flex: none; border-radius: 8px;
+  background: #f2f0ec; color: #8a847c;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+}
+.hy-row input {
+  flex: 1; min-width: 0; height: 42px; padding: 0 12px;
+  border: 1px solid #e5e1d9; border-radius: 10px; background: #fff;
+  font-size: 14px; color: #12100e; outline: none;
+}
+.hy-row input:focus { border-color: #12100e; }
+.hy-none { margin: 0 0 8px; font-size: 12.5px; color: #b5b0a9; }
+.hy-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.hy-chip {
+  height: 30px; padding: 0 12px; border-radius: 999px;
+  border: 1px dashed #ded9d0; background: transparent;
+  font-size: 12px; font-weight: 600; color: #8a847c; cursor: pointer;
+}
+.hy-chip:hover { border-style: solid; border-color: #12100e; color: #12100e; }
+
+.hy-cancel {
+  width: 100%; margin-top: 10px; height: 40px;
+  border: none; background: none; color: #a8a29e;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.hy-cancel:hover { color: #57534e; }
+
 #hydrate-queue { margin-bottom: 18px; }
 #hydrate-queue.hidden { display: none; }
 .hq-head {
@@ -718,7 +767,7 @@ body {
 .hq-row em { font-style: normal; font-size: 12px; font-weight: 700; color: #0a66c2; text-transform: none; flex: none; }
 
 /* ---- Hydrate ---- */
-body:not(.outreach-mode) #board-bar { display: none; }
+body:not(.outreach-mode) body:not(.outreach-mode) #board-bar { display: none; }
 .hy-intro { font-size: 13px; line-height: 1.5; color: #8a847c; margin-bottom: 14px; }
 
 .hy-steps { margin-top: 14px; display: flex; flex-direction: column; gap: 2px; }
@@ -928,13 +977,30 @@ body:not(.outreach-mode) #board-bar { display: none; }
   padding: 0 20px 16px;
   justify-content: center;
 }
+/* Each colour carries its own head count, white inside the circle. The dots use
+   the deeper weight of each hue rather than the pastel the boards are painted
+   in: white on those pastels measures 1.2:1, which is invisible. Same colours,
+   enough depth to read a number off. */
 .board-dot {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 3px solid transparent;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.board-count {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
 }
 .board-dot:hover {
   transform: scale(1.1);
@@ -1180,6 +1246,31 @@ body:not(.outreach-mode) #board-bar { display: none; }
   color: #12100e;
   font-size: 1rem;
 }
+/* Tap-to-act. Out and about you want to call someone, not read their number,
+   so each of these fields carries the action next to it. 44px is Apple's
+   minimum tap target and this gets used one-handed, often moving. */
+.field-act { position: relative; }
+.field-act input { padding-right: 52px !important; }
+.field-go {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  display: none;            /* only when the field has something to act on */
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: #57534e;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.field-go.on { display: flex; }
+.field-go:active { color: #12100e; transform: translateY(-50%) scale(0.88); }
+.field-go[data-go="li"] { color: #0a66c2; }
+
 .field-group input:focus {
   outline: none;
   border-color: #6366f1;
@@ -1234,9 +1325,22 @@ body:not(.outreach-mode) #board-bar { display: none; }
 
 #board-title-bar {
   margin-bottom: 20px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+}
+/* the name is centred, so the count rides beside it rather than pushing it off */
+#board-head-count {
+  flex: none;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #a8a29e;
+  font-variant-numeric: tabular-nums;
 }
 #board-title {
-  width: 100%;
+  width: auto;
+  max-width: 70%;
   background: transparent;
   border: none;
   border-bottom: 2px solid #e9e7e2;
@@ -2124,6 +2228,10 @@ body:not(.outreach-mode) #board-bar { display: none; }
         selectedBoardView = 0;
         document.querySelectorAll('.board-dot').forEach(d => d.classList.toggle('active', (d as HTMLElement).dataset.board === '0'));
         loadBoardCards(0);
+      } else {
+        // a board was already chosen: still reload, or the counts would be
+        // whatever they were when you last looked
+        loadBoardCards(selectedBoardView);
       }
     }
   }
@@ -2195,6 +2303,73 @@ body:not(.outreach-mode) #board-bar { display: none; }
     }));
   }
 
+  /* Only show a field once there is something in it. A wall of empty inputs
+     makes it look like work is owed; a short list of what was found, plus a
+     chip for anything you want to add, makes the state obvious. */
+  const HY_FIELDS = [
+    { id: 'hy-phone', label: 'Phone', type: 'tel', icon: '\u260E' },
+    { id: 'hy-email', label: 'Email', type: 'email', icon: '\u2709' },
+    { id: 'hy-website', label: 'Website', type: 'url', icon: '\u2295' },
+    { id: 'hy-linkedin', label: 'LinkedIn', type: 'url', icon: 'in' },
+  ];
+  let hyValues: Record<string, string> = {};
+  let hyShown = new Set<string>();
+
+  function setHyPhoto(dataUrl: string | null) {
+    hyAvatar = dataUrl;
+    const prev = document.getElementById('hy-photo-preview');
+    const hint = document.getElementById('hy-photo-hint');
+    const btn = document.getElementById('hy-photo-btn');
+    if (prev) {
+      prev.classList.toggle('hidden', !dataUrl);
+      prev.innerHTML = dataUrl ? `<img src="${dataUrl}" alt="">` : '';
+    }
+    if (hint) hint.textContent = dataUrl
+      ? 'Photo set. It saves with the rest of their details.'
+      : 'Their photo comes from their LinkedIn profile — open it, screenshot the picture, then pick it here.';
+    if (btn) btn.textContent = dataUrl ? 'Change photo' : 'Choose screenshot';
+  }
+
+  function renderHyContacts() {
+    const box = document.getElementById('hy-contacts');
+    const chips = document.getElementById('hy-add-chips');
+    if (!box || !chips) return;
+
+    box.innerHTML = HY_FIELDS.filter(f => hyShown.has(f.id)).map(f => `
+      <label class="hy-row">
+        <span class="hy-row-icon">${f.icon}</span>
+        <input type="${f.type}" id="${f.id}" placeholder="${f.label}" value="${escapeHtml(hyValues[f.id] || '')}">
+      </label>`).join('');
+
+    box.querySelectorAll('input').forEach(i =>
+      i.addEventListener('input', () => { hyValues[(i as HTMLInputElement).id] = (i as HTMLInputElement).value; }));
+
+    const missing = HY_FIELDS.filter(f => !hyShown.has(f.id));
+    chips.innerHTML = missing.length
+      ? missing.map(f => `<button type="button" class="hy-chip" data-add="${f.id}">+ ${f.label}</button>`).join('')
+      : '';
+    chips.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => {
+      hyShown.add((b as HTMLElement).dataset.add!);
+      renderHyContacts();
+      (document.getElementById((b as HTMLElement).dataset.add!) as HTMLInputElement)?.focus();
+    }));
+
+    if (!hyShown.size) box.innerHTML = '<p class="hy-none">Nothing found yet — add what you have.</p>';
+  }
+
+  function setHyField(id: string, value: string) {
+    if (!value) return;
+    hyValues[id] = value;
+    hyShown.add(id);
+  }
+
+  document.getElementById('hy-open-li')?.addEventListener('click', () => {
+    const li = hyValues['hy-linkedin'] || (document.getElementById('hydrate-url') as HTMLInputElement).value.trim();
+    if (!li) { showToast('No profile URL yet', true); return; }
+    window.open(li.startsWith('http') ? li : `https://${li}`, '_blank', 'noopener');
+    showToast('Screenshot their photo, then come back');
+  });
+
   document.getElementById('hydrate-btn')?.addEventListener('click', async () => {
     const input = document.getElementById('hydrate-url') as HTMLInputElement;
     const btn = document.getElementById('hydrate-btn') as HTMLButtonElement;
@@ -2224,9 +2399,10 @@ body:not(.outreach-mode) #board-bar { display: none; }
       (document.getElementById('hy-name') as HTMLInputElement).value = p.name || '';
       (document.getElementById('hy-role') as HTMLInputElement).value = p.role || '';
       (document.getElementById('hy-company') as HTMLInputElement).value = p.company || '';
-      (document.getElementById('hy-linkedin') as HTMLInputElement).value = raw;
-      hyAvatar = null;
-      (document.getElementById('hydrate-avatar') as HTMLElement).innerHTML = `<span>${(p.name || '?').trim().charAt(0).toUpperCase()}</span>`;
+      hyValues = {}; hyShown = new Set();
+      setHyField('hy-linkedin', raw);
+      renderHyContacts();
+      setHyPhoto(null);
       renderHyBoards();
       document.getElementById('hydrate-form')!.classList.add('hidden');
       document.getElementById('hydrate-result')!.classList.remove('hidden');
@@ -2243,9 +2419,10 @@ body:not(.outreach-mode) #board-bar { display: none; }
       stepState('hydrate-steps', 1, d.website ? 'done' : 'skip', d.website ? `Website ${d.website.replace(/^https?:\/\//, '')}` : 'No website found');
       stepState('hydrate-steps', 2, (d.phone || d.email) ? 'done' : 'skip',
         (d.phone || d.email) ? [d.phone, d.email].filter(Boolean).join('  ·  ') : 'No contact details published');
-      (document.getElementById('hy-website') as HTMLInputElement).value = d.website || '';
-      (document.getElementById('hy-phone') as HTMLInputElement).value = d.phone || '';
-      (document.getElementById('hy-email') as HTMLInputElement).value = d.email || '';
+      setHyField('hy-website', d.website || '');
+      setHyField('hy-phone', d.phone || '');
+      setHyField('hy-email', d.email || '');
+      renderHyContacts();
       stepsDone('hydrate-steps');
     } catch {
       stepState('hydrate-steps', 0, 'fail', 'Something went wrong — try again');
@@ -2257,23 +2434,33 @@ body:not(.outreach-mode) #board-bar { display: none; }
 
   document.getElementById('hy-photo-btn')?.addEventListener('click', () => document.getElementById('hy-photo-input')?.click());
   // the avatar is the obvious thing to tap, so make it the control
-  document.getElementById('hydrate-avatar')?.addEventListener('click', () => document.getElementById('hy-photo-input')?.click());
   document.getElementById('hy-photo-input')?.addEventListener('change', (e) => {
     const f = (e.target as HTMLInputElement).files?.[0];
     (e.target as HTMLInputElement).value = '';
     if (f) openCropper(f, 'hydrate');
   });
 
-  document.getElementById('hy-cancel')?.addEventListener('click', () => {
+  function resetHydrate() {
     document.getElementById('hydrate-result')!.classList.add('hidden');
     document.getElementById('hydrate-form')!.classList.remove('hidden');
     document.getElementById('hydrate-form')!.appendChild(document.getElementById('hydrate-steps')!);
-    document.getElementById('hydrate-steps')!.classList.add('hidden');
+    const steps = document.getElementById('hydrate-steps')!;
+    steps.classList.add('hidden');
+    steps.innerHTML = '';
     (document.getElementById('hydrate-url') as HTMLInputElement).value = '';
-    hyAvatar = null;
+    ['hy-name', 'hy-role', 'hy-company'].forEach(id => {
+      const el = document.getElementById(id) as HTMLInputElement | null;
+      if (el) el.value = '';
+    });
     hyNoteId = null;
-    loadHydrateQueue();
-  });
+    hyValues = {};
+    hyShown = new Set();
+    renderHyContacts();
+    setHyPhoto(null);
+    (document.getElementById('hydrate-url') as HTMLInputElement)?.focus();
+  }
+
+  document.getElementById('hy-cancel')?.addEventListener('click', () => { resetHydrate(); loadHydrateQueue(); });
 
   document.getElementById('hy-save')?.addEventListener('click', async () => {
     const g = (id: string) => (document.getElementById(id) as HTMLInputElement).value.trim();
@@ -2284,8 +2471,10 @@ body:not(.outreach-mode) #board-bar { display: none; }
     showLoading('Saving to Stiki...');
     const fields = {
       name, role: g('hy-role'), company: g('hy-company'),
-      phone: g('hy-phone'), email: g('hy-email'), website: g('hy-website'),
-      linkedin: (document.getElementById('hy-linkedin') as HTMLInputElement).value.trim()
+      phone: (hyValues['hy-phone'] || '').trim(),
+      email: (hyValues['hy-email'] || '').trim(),
+      website: (hyValues['hy-website'] || '').trim(),
+      linkedin: (hyValues['hy-linkedin'] || '').trim()
         || (document.getElementById('hydrate-url') as HTMLInputElement).value.trim(),
       avatar: hyAvatar || undefined,
       quadrant: hyBoard,
@@ -2306,6 +2495,7 @@ body:not(.outreach-mode) #board-bar { display: none; }
       hideLoading();
       showToast(`${name} saved`);
       hyNoteId = null;
+      resetHydrate();
       loadHydrateQueue();
       (document.getElementById('hy-cancel') as HTMLButtonElement).click();
     } catch (e) {
@@ -2613,8 +2803,7 @@ body:not(.outreach-mode) #board-bar { display: none; }
         return;
       }
       if (cropTarget === 'hydrate') {
-        hyAvatar = croppedImage;
-        (document.getElementById('hydrate-avatar') as HTMLElement).innerHTML = `<img src="${croppedImage}" alt="">`;
+        setHyPhoto(croppedImage);
         cropTarget = 'find';
         showToast('Photo set');
         return;
@@ -3226,17 +3415,26 @@ body:not(.outreach-mode) #board-bar { display: none; }
         cardsEl.innerHTML = '';
         emptyEl.classList.remove('hidden');
         titleEl.value = '';
+        setBoardCounts(null);   // rather than leave numbers we can no longer vouch for
         return;
       }
 
       const data = await res.json();
       const notes: Note[] = Array.isArray(data.notes) ? data.notes : [];
 
+      // The head count for every board, from the response we already have -
+      // no second request just to number six dots.
+      setBoardCounts(notes);
+
       // Load board titles from cloud
       if (Array.isArray(data.boardTitles)) {
         boardTitles = data.boardTitles.map((t: string, i: number) => t || DEFAULT_TITLES[i]);
       }
       titleEl.value = boardTitles[board] || DEFAULT_TITLES[board];
+      // the count belongs beside the name as well as in the dot
+      const headEl = document.getElementById('board-head-count');
+      const here = notes.filter(n => n.isLead && (n.quadrant ?? 0) === board).length;
+      if (headEl) headEl.textContent = here ? String(here) : '';
 
       // Filter by board (quadrant) and sort by newest first
       currentBoardNotes = notes
@@ -3248,7 +3446,31 @@ body:not(.outreach-mode) #board-bar { display: none; }
       cardsEl.innerHTML = '';
       emptyEl.classList.remove('hidden');
       titleEl.value = '';
+      setBoardCounts(null);
       showToast('Failed to load cards', true);
+    }
+  }
+
+  /* Pass the notes to number the dots, or null to clear them. Only leads count:
+     a board's plain stickies are not people. */
+  function setBoardCounts(notes: Note[] | null) {
+    const tally = [0, 0, 0, 0, 0, 0];
+    if (notes) {
+      for (const n of notes) {
+        if (!n.isLead) continue;
+        const q = n.quadrant ?? 0;
+        if (q >= 0 && q < 6) tally[q]++;
+      }
+    }
+    document.querySelectorAll('.board-count').forEach(el => {
+      const i = Number((el as HTMLElement).dataset.count);
+      const v = notes ? tally[i] : 0;
+      el.textContent = v ? String(v) : '';       // blank, not "0"
+      (el as HTMLElement).title = notes ? `${v} ${v === 1 ? 'person' : 'people'}` : '';
+    });
+    if (!notes) {
+      const headEl = document.getElementById('board-head-count');
+      if (headEl) headEl.textContent = '';
     }
   }
 
@@ -3345,6 +3567,51 @@ body:not(.outreach-mode) #board-bar { display: none; }
     if (f) openCropper(f, 'detail');
   });
 
+  /* ---- Tap to act -----------------------------------------------------
+     The detail fields are editable inputs, so they cannot be links. Each one
+     carries its own action button instead, shown only when there is something
+     to act on and re-checked as you type.
+
+     tel: and mailto: go through location.href rather than window.open - in a
+     standalone PWA window.open leaves you staring at a blank tab, whereas
+     location.href hands straight off to the dialler and comes back. ---- */
+  const GO_FIELDS: Record<string, string> = {
+    phone: 'detail-phone',
+    email: 'detail-email',
+    website: 'detail-website',
+    li: 'detail-linkedin-url',
+  };
+
+  function goValue(kind: string): string {
+    const el = document.getElementById(GO_FIELDS[kind]) as HTMLInputElement | null;
+    return (el?.value || '').trim();
+  }
+
+  function syncGoButtons() {
+    document.querySelectorAll('.field-go').forEach(btn => {
+      const kind = (btn as HTMLElement).dataset.go!;
+      btn.classList.toggle('on', !!goValue(kind));
+    });
+  }
+
+  document.querySelectorAll('.field-go').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const kind = (btn as HTMLElement).dataset.go!;
+      const v = goValue(kind);
+      if (!v) return;
+      if (kind === 'phone') {
+        location.href = 'tel:' + v.replace(/[^\d+]/g, '');
+      } else if (kind === 'email') {
+        location.href = 'mailto:' + v;
+      } else {
+        window.open(/^https?:\/\//i.test(v) ? v : 'https://' + v, '_blank', 'noopener');
+      }
+    });
+  });
+
+  Object.values(GO_FIELDS).forEach(id =>
+    document.getElementById(id)?.addEventListener('input', syncGoButtons));
+
   function openCardDetail(note: Note) {
     editingNote = note;
     editingNoteBoard = note.quadrant;
@@ -3356,9 +3623,11 @@ body:not(.outreach-mode) #board-bar { display: none; }
     (document.getElementById('detail-name') as HTMLInputElement).value = note.name || '';
     (document.getElementById('detail-role') as HTMLInputElement).value = note.role || '';
     (document.getElementById('detail-company') as HTMLInputElement).value = note.company || '';
+
     (document.getElementById('detail-phone') as HTMLInputElement).value = note.phone || '';
     (document.getElementById('detail-email') as HTMLInputElement).value = note.email || '';
     (document.getElementById('detail-website') as HTMLInputElement).value = note.website || '';
+    syncGoButtons();
     (document.getElementById('detail-notes') as HTMLTextAreaElement).value = note.notes || '';
 
     // Set board picker with custom titles

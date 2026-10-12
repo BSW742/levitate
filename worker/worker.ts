@@ -373,6 +373,24 @@ export default {
       return json({ ok: true, notes: merged.notes.length });
     }
 
+    if (request.method === 'GET' && url.pathname === '/backups') {
+      const listed = await env.BUCKET.list({ prefix: `backups/${filename}/`, limit: 1000 });
+      const items = await Promise.all(listed.objects.map(async (o) => {
+        let notes = null, goals = null;
+        try {
+          const b = await env.BUCKET.get(o.key);
+          if (b) {
+            const d = await b.json() as any;
+            notes = Array.isArray(d.notes) ? d.notes.length : null;
+            goals = Array.isArray(d.goals) ? d.goals.length : null;
+          }
+        } catch { /* a listing is more useful than an error */ }
+        return { key: o.key, at: Number(o.key.split('/').pop()!.replace('.json', '')), size: o.size, notes, goals };
+      }));
+      items.sort((a, b) => b.at - a.at);
+      return json({ backups: items });
+    }
+
     if (request.method === 'GET') {
       // Load data
       const object = await env.BUCKET.get(filename);
@@ -952,6 +970,35 @@ Start your response with [ and end with ].`,
       }
     }
 
+    /* ---- Backups -------------------------------------------------------
+       Every save parks the copy it replaces under backups/<file>/<ms>.json.
+       These two endpoints are how you get one back, using the project's own
+       password - no admin key, because the person who needs a restore is the
+       person whose data it is, usually in a hurry. ---- */
+    if (request.method === 'POST' && url.pathname === '/restore') {
+      const { key } = await request.json() as { key?: string };
+      // a project may only restore its own backups
+      if (!key || !key.startsWith(`backups/${filename}/`)) {
+        return json({ error: 'That backup does not belong to this project' }, 400);
+      }
+      const obj = await env.BUCKET.get(key);
+      if (!obj) return json({ error: 'No such backup' }, 404);
+      const text = await obj.text();
+
+      // the state being replaced is itself worth keeping
+      const current = await env.BUCKET.get(filename);
+      if (current) {
+        await env.BUCKET.put(`backups/${filename}/${Date.now()}.json`, await current.text(), {
+          httpMetadata: { contentType: 'application/json' },
+        });
+      }
+      await env.BUCKET.put(filename, text, { httpMetadata: { contentType: 'application/json' } });
+      const d = JSON.parse(text) as any;
+      return json({ success: true, restored: key,
+        notes: Array.isArray(d.notes) ? d.notes.length : null,
+        goals: Array.isArray(d.goals) ? d.goals.length : null });
+    }
+
     if (request.method === 'POST') {
       /* Whole-blob save, with two guards.
        *
@@ -971,7 +1018,32 @@ Start your response with [ and end with ].`,
         const preserved: string[] = [];
 
         if (existing) {
-          const prev = await existing.json() as Record<string, any>;
+          const prevText = await existing.text();
+          const prev = JSON.parse(prevText) as Record<string, any>;
+
+          /* Keep the copy we are about to replace. R2 has no versioning, so
+             without this every guard below is the last line of defence and a
+             bad write is final. One project blob is ~300KB; thirty of them is
+             pocket change against losing a day's work. Written BEFORE the new
+             blob, so if the backup fails the save fails with it. */
+          await env.BUCKET.put(`backups/${filename}/${Date.now()}.json`, prevText, {
+            httpMetadata: { contentType: 'application/json' },
+          });
+
+          /* Keep the last KEEP_VERSIONS and drop the rest. The app saves on
+             every edit and a project blob runs to hundreds of KB, so without
+             this the bucket grows without bound. Recovery is always a recent
+             thing - you notice within hours, not months. */
+          try {
+            const KEEP_VERSIONS = 40;
+            const old = await env.BUCKET.list({ prefix: `backups/${filename}/`, limit: 1000 });
+            if (old.objects.length > KEEP_VERSIONS) {
+              const byAge = old.objects
+                .map(o => ({ key: o.key, at: Number(o.key.split('/').pop()!.replace('.json', '')) || 0 }))
+                .sort((a, b) => b.at - a.at);
+              await Promise.all(byAge.slice(KEEP_VERSIONS).map(o => env.BUCKET.delete(o.key)));
+            }
+          } catch { /* pruning is housekeeping; never fail a save over it */ }
 
           // Guard 1: a key the client never sent is a key it does not know
           // about, not a deletion. Carry it over.
@@ -985,14 +1057,35 @@ Start your response with [ and end with ].`,
           // because R2 keeps no history.
           if (url.searchParams.get('force') !== '1') {
             for (const k of ['notes', 'goals']) {
-              const before = Array.isArray(prev[k]) ? prev[k].length : 0;
-              const after = Array.isArray(merged[k]) ? merged[k].length : 0;
+              const prevArr = Array.isArray(prev[k]) ? prev[k] : [];
+              const nextArr = Array.isArray(merged[k]) ? merged[k] : [];
+              const before = prevArr.length;
+              const after = nextArr.length;
+
+              // Guard 2a: wiping a populated collection.
               if (before >= 5 && after === 0) {
                 return json({
                   error: `Refused: this save would delete all ${before} ${k}. If that is intended, repeat with ?force=1.`,
-                  guard: k,
-                  before,
+                  guard: k, before,
                 }, 409);
+              }
+
+              /* Guard 2b: losing most of a collection. Emptying it to zero was
+                 the only case caught before, so a save that replaced 29 notes
+                 with 44 different ones went straight through - which is exactly
+                 how a day of lead research was lost on 15 Sep 2026. What matters
+                 is not the count but WHICH ids survive: a genuine edit keeps most
+                 of them, a clobber from another project keeps none. */
+              const prevIds = new Set(prevArr.map((x: any) => x && x.id).filter(Boolean));
+              if (prevIds.size >= 5) {
+                const kept = nextArr.filter((x: any) => x && prevIds.has(x.id)).length;
+                if (kept < prevIds.size / 2) {
+                  return json({
+                    error: `Refused: this save drops ${prevIds.size - kept} of ${prevIds.size} existing ${k}, keeping only ${kept}. `
+                         + `That looks like a different project's data, not an edit. If it is intended, repeat with ?force=1.`,
+                    guard: `${k}-identity`, before, kept,
+                  }, 409);
+                }
               }
             }
           }
