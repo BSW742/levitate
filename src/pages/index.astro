@@ -414,6 +414,18 @@
       </div>
     </div>
 
+    <!-- NP Earning Potential -->
+    <div id="sales-np-modal" class="modal">
+      <div class="modal-content ep-content">
+        <div class="deal-modal-head">
+          <h2 id="ep-title">Earning potential</h2>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="ep-body" id="ep-body"></div>
+        <div class="ep-foot"><button type="button" id="ep-close" class="dl-save">Close</button></div>
+      </div>
+    </div>
+
     <!-- Play Editor Modal -->
     <div id="play-modal" class="modal">
       <div class="modal-content play-modal-content">
@@ -4963,6 +4975,70 @@ tr.is-fwd .sales-build:hover, tr.is-fwd .sales-build:focus-visible { color: #121
 .sb-total b.is-zero { color: #ded9d0; }
 .sb-total b.is-neg { color: #b45309; }
 
+/* ---- Earning potential ----
+   NP is worked out, so there is nothing to edit here - this only shows the
+   arithmetic, top to bottom, ending on the figure it arrives at. The one
+   place in the sheet that is allowed a big number. */
+.sales-np-open {
+  display: block; width: 100%; height: 38px;
+  padding: 0 14px; margin: 0;
+  border: none; background: none; color: inherit; cursor: pointer;
+  font-family: inherit; font-size: 13.5px; font-weight: 700;
+  font-variant-numeric: tabular-nums; text-align: right;
+  transition: background .12s;
+}
+td.sales-np.is-openable { padding: 0; }
+.sales-np-open:hover { background: #f5f2ec; }
+.sales-np-open:focus-visible {
+  outline: none; background: #fff; box-shadow: inset 0 0 0 2px #12100e;
+}
+tr.is-fwd .sales-np-open:hover { background: #ece7dd; }
+
+.ep-content { max-width: 440px; padding: 0; overflow: visible; }
+.ep-body { padding: 2px 28px 0; }
+.ep-work { display: flex; flex-direction: column; }
+.ep-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  padding: 9px 0; border-bottom: 1px solid #f4f1ea;
+  font-size: 13px; color: #78716c;
+}
+.ep-row b {
+  font-size: 14px; font-weight: 700; color: #12100e;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.ep-row i { font-style: normal; font-weight: 700; color: #12100e; font-variant-numeric: tabular-nums; }
+.ep-row.is-sub { color: #12100e; font-weight: 600; }
+.ep-row.is-op { border-bottom: none; color: #a8a29e; }
+.ep-row.is-op b { color: #a8a29e; font-weight: 700; letter-spacing: .02em; }
+.ep-row.is-neg b { color: #b45309; }
+
+.ep-figure {
+  margin: 4px 0 0; padding: 18px 0 2px;
+  border-top: 2px solid #12100e;
+}
+.ep-figure b {
+  display: block;
+  font-size: 38px; font-weight: 700; letter-spacing: -.035em;
+  color: #12100e; font-variant-numeric: tabular-nums; line-height: 1.05;
+}
+.ep-figure.is-neg b { color: #b45309; }
+.ep-figure span { display: block; margin-top: 6px; font-size: 12.5px; color: #a8a29e; }
+.ep-note { margin: 16px 0 0; font-size: 11.5px; line-height: 1.5; color: #b5b0a9; }
+.ep-empty { margin: 10px 0 2px; font-size: 13px; line-height: 1.6; color: #a8a29e; }
+.ep-foot {
+  display: flex; justify-content: flex-end;
+  padding: 16px 28px 22px; margin-top: 16px;
+  border-top: 1px solid #f0ece4;
+}
+/* focused on open so Esc and Enter both land somewhere sensible, which
+   otherwise brings Chrome's blue ring into a sheet that has none */
+.ep-foot .dl-save:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(18,16,14,.22); }
+
+@media (max-width: 700px) {
+  .ep-body, .ep-foot { padding-left: 18px; padding-right: 18px; }
+  .ep-figure b { font-size: 32px; }
+}
+
 @media (max-width: 700px) {
   .sb-body, .sb-foot { padding-left: 18px; padding-right: 18px; }
   .sb-row { grid-template-columns: 1fr 106px 28px; }
@@ -9220,6 +9296,25 @@ body.plays-mode .board { display: none !important; }
     return (gp ?? 0) - (ex ?? 0) - (sal ?? 0);
   }
 
+  /* What a month is worth to you if it simply kept happening: the salary
+     and the net profit are one pot, you take half, and that half runs for
+     twelve months. Null when NP is - an untouched month has nothing to
+     annualise, and $0 a year would read as an answer rather than as a
+     blank. */
+  function salesPotential(month: string) {
+    const np = salesNp(month);
+    if (np === null) return null;
+    const salary = salesValue(month, 'salary') ?? 0;
+    const together = salary + np;
+    const half = together / 2;      // may land on a half-dollar; the year never does
+    return { np, salary, together, half, year: together * 6 };
+  }
+
+  // the half can be a half-dollar, and $45.5 reads as a typo
+  const salesFmtExact = (v: number) => (v < 0 ? '-' : '') + '$' +
+    Math.abs(v).toLocaleString('en-NZ', {
+      minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2 });
+
   function salesLineTotal(line: string): number {
     if (line === 'np') return SALES_MONTHS.reduce((t, m) => t + (salesNp(m) ?? 0), 0);
     return SALES_MONTHS.reduce((t, m) => t + (salesValue(m, line) ?? 0), 0);
@@ -9260,14 +9355,72 @@ body.plays-mode .board { display: none !important; }
     const v = salesNp(month);
     td.classList.toggle('is-neg', v !== null && v < 0);
     td.classList.toggle('is-zero', v === null);
-    td.textContent = v === null ? '—' : salesFmt(v);
+    // the figure lives inside the button that opens the potential, so write
+    // into it rather than over the top of it
+    const btn = td.querySelector('.sales-np-open') as HTMLElement | null;
+    const p = salesPotential(month);
+    if (btn) {
+      btn.textContent = v === null ? '—' : salesFmt(v);
+      btn.title = p
+        ? `Gross Profit less Expenses less Salary \u2014 a year of months like this is worth ${salesFmt(p.year)} to you`
+        : 'Gross Profit less Expenses less Salary';
+    } else {
+      td.textContent = v === null ? '—' : salesFmt(v);
+    }
   }
 
   // true while a figure is being worked on, so a cloud pull does not repaint over it
   function salesCellFocused(): boolean {
     if (document.getElementById('sales-build-modal')?.classList.contains('visible')) return true;
+    if (document.getElementById('sales-np-modal')?.classList.contains('visible')) return true;
     return !!(document.activeElement as HTMLElement | null)?.closest?.('.sales-cell');
   }
+
+  /* ---- Earning potential ----
+     The one thing NP is actually read for: not the figure itself but what a
+     year of months like this one would be worth. Nothing to edit, so the
+     modal only lays the arithmetic out in the order it is done, and ends on
+     the number. */
+  let npCellMonth: string | null = null;
+
+  function openNpPotential(month: string) {
+    const body = document.getElementById('ep-body');
+    if (!body) return;
+    npCellMonth = month;
+    (document.getElementById('ep-title') as HTMLElement).textContent =
+      `Earning potential \u2014 ${salesMonthName(month)}`;
+
+    const p = salesPotential(month);
+    body.innerHTML = !p
+      ? `<p class="ep-empty">Nothing to work from yet. Fill in Gross Profit, Expenses and Salary for ${salesMonthName(month)} and this will tell you what a year of months like it is worth.</p>`
+      : `
+      <div class="ep-work">
+        <div class="ep-row"><span>Salary</span><b>${salesFmt(p.salary)}</b></div>
+        <div class="ep-row${p.np < 0 ? ' is-neg' : ''}"><span>NP</span><b>${salesFmt(p.np)}</b></div>
+        <div class="ep-row is-sub${p.together < 0 ? ' is-neg' : ''}"><span>Together, for the month</span><b>${salesFmt(p.together)}</b></div>
+        <div class="ep-row is-op"><span>Your half, run for a year</span><b>\u00f7 2 \u00d7 12</b></div>
+      </div>
+      <div class="ep-figure${p.year < 0 ? ' is-neg' : ''}">
+        <b>${salesFmt(p.year)}</b>
+        <span>a year \u2014 ${salesFmtExact(p.half)} a month to you</span>
+      </div>
+      <p class="ep-note">If ${salesMonthName(month)} kept happening. Worked off the salary and net profit as they stand in the sheet \u2014 nothing here is saved.</p>`;
+
+    document.getElementById('sales-np-modal')!.classList.add('visible');
+    (document.getElementById('ep-close') as HTMLElement | null)?.focus();
+  }
+
+  function closeNpPotential() {
+    document.getElementById('sales-np-modal')!.classList.remove('visible');
+    npCellMonth = null;
+  }
+
+  document.getElementById('ep-close')?.addEventListener('click', closeNpPotential);
+  document.querySelectorAll('#sales-np-modal .modal-close').forEach(b =>
+    b.addEventListener('click', closeNpPotential));
+  document.getElementById('sales-np-modal')?.addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeNpPotential();
+  });
 
   /* ---- The breakdown editor ----
      Revenue and Passive are the two lines you forecast by looking at what
@@ -9431,7 +9584,9 @@ body.plays-mode .board { display: none !important; }
     if (e.target === e.currentTarget) saveSalesBuild();
   });
   document.addEventListener('keydown', e => {
-    if (!buildCell || (e as KeyboardEvent).key !== 'Escape') return;
+    if ((e as KeyboardEvent).key !== 'Escape') return;
+    if (npCellMonth) { e.stopPropagation(); closeNpPotential(); return; }
+    if (!buildCell) return;
     // Esc walks away from the box without writing, the same as it does in the sheet
     e.stopPropagation();
     closeSalesBuild();
@@ -9460,9 +9615,12 @@ body.plays-mode .board { display: none !important; }
         ${SALES_LINES.map(l => {
           if (l.derived) {
             const d = salesNp(m);
-            return `<td class="sales-cell sales-np${d === null ? ' is-zero' : d < 0 ? ' is-neg' : ''}"
-              data-month="${m}" title="Gross Profit less Expenses less Salary"
-              aria-label="${l.label}, ${salesMonthName(m)}">${d === null ? '—' : salesFmt(d)}</td>`;
+            const p = salesPotential(m);
+            return `<td class="sales-cell sales-np is-openable${d === null ? ' is-zero' : d < 0 ? ' is-neg' : ''}"
+              data-month="${m}"><button type="button" class="sales-np-open" data-month="${m}"
+              title="${p ? `Gross Profit less Expenses less Salary \u2014 a year of months like this is worth ${salesFmt(p.year)} to you` : 'Gross Profit less Expenses less Salary'}"
+              aria-label="${l.label}, ${salesMonthName(m)} \u2014 opens what a year of this month is worth"
+              >${d === null ? '—' : salesFmt(d)}</button></td>`;
           }
           const v = salesValue(m, l.key);
           if (l.built) {
@@ -9507,11 +9665,14 @@ body.plays-mode .board { display: none !important; }
           </tr>
         </tfoot>
       </table>
-      <p class="sales-hint"><strong>Revenue</strong> and <strong>Passive Revenue</strong> open a breakdown &mdash; list the projects and work you can see, and the month's figure is their total. The rest are typed: <strong>Tab</strong> moves across, <strong>Enter</strong> moves down, <strong>Esc</strong> undoes. <strong>NP</strong> is the one worked-out column: Gross Profit less Expenses less Salary. The only other sums are the year totals along the bottom.</p>`;
+      <p class="sales-hint"><strong>Revenue</strong> and <strong>Passive Revenue</strong> open a breakdown &mdash; list the projects and work you can see, and the month's figure is their total. The rest are typed: <strong>Tab</strong> moves across, <strong>Enter</strong> moves down, <strong>Esc</strong> undoes. <strong>NP</strong> is the one worked-out column: Gross Profit less Expenses less Salary &mdash; click it to see what a year of months like that one is worth to you. The only other sums are the year totals along the bottom.</p>`;
 
     /* Inputs and breakdown buttons together, in the order they sit in the
        grid, so Tab and Enter still walk the sheet as one surface even
        though two of the five columns are no longer typed into. */
+    root.querySelectorAll('.sales-np-open').forEach(b => b.addEventListener('click', () =>
+      openNpPotential((b as HTMLElement).dataset.month!)));
+
     const cells = Array.from(root.querySelectorAll('.sales-cell input, .sales-cell .sales-build')) as HTMLElement[];
     cells.forEach((cell, idx) => {
       if (cell instanceof HTMLButtonElement) {
