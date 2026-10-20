@@ -390,6 +390,30 @@
       </div>
     </div>
 
+    <!-- Sales Breakdown Modal -->
+    <div id="sales-build-modal" class="modal">
+      <div class="modal-content sb-content">
+        <div class="deal-modal-head">
+          <h2 id="sb-title">Revenue</h2>
+          <button class="modal-close">&times;</button>
+        </div>
+
+        <div class="sb-body">
+          <div id="sb-rows" class="sb-rows"></div>
+          <div class="sb-tools">
+            <button type="button" id="sb-add" class="sb-add">+ Add a line</button>
+            <button type="button" id="sb-copy" class="sb-copy" hidden></button>
+          </div>
+          <p class="sb-note">Each line is a piece of work you can see &mdash; a project, a retainer, a job in the pipe. The month's figure is their total.</p>
+        </div>
+
+        <div class="sb-foot">
+          <div class="sb-total"><span>Total</span><b id="sb-total">&mdash;</b></div>
+          <button id="sb-save" class="dl-save">Done</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Play Editor Modal -->
     <div id="play-modal" class="modal">
       <div class="modal-content play-modal-content">
@@ -4849,6 +4873,101 @@ tr.is-fwd-open .sales-np { box-shadow: inset 1px 0 0 #e6e2da, inset 0 1px 0 #cfc
 
 .sales-hint { margin: 14px 2px 0; font-size: 11.5px; line-height: 1.6; color: #b5b0a9; }
 
+/* Revenue and Passive are assembled, not keyed: the box is a button onto
+   the list of work behind the figure. Dressed exactly like the inputs
+   beside it - the row has to read across as one line, not as a control
+   strip - with only the small count pip saying it holds anything. */
+.sales-build {
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  width: 100%; height: 38px; padding: 0 14px; margin: 0;
+  border: none; background: none; color: #12100e; cursor: pointer;
+  font-family: inherit; font-size: 13.5px; font-weight: 600;
+  font-variant-numeric: tabular-nums; text-align: right;
+  transition: background .12s;
+}
+.sales-build:hover { background: #f7f5f1; }
+.sales-build:focus-visible {
+  outline: none; background: #fff;
+  box-shadow: inset 0 0 0 2px #12100e; font-weight: 700;
+}
+.sales-build.is-empty { color: #ded9d0; font-weight: 500; }
+.sales-build i {
+  padding: 2px 6px; border-radius: 20px;
+  background: #f2efe8; color: #a8a29a;
+  font-style: normal; font-size: 9.5px; font-weight: 800; letter-spacing: .03em;
+}
+.sales-cell.is-neg .sales-build { color: #b45309; }
+tr.is-now .sales-build { font-weight: 700; }
+tr.is-fwd .sales-build { color: #57534e; }
+tr.is-fwd .sales-build.is-empty { color: #ded9d0; }
+tr.is-fwd .sales-build i { background: #e9e4da; }
+tr.is-fwd .sales-build:hover { background: #efebe2; }
+tr.is-fwd .sales-build:hover, tr.is-fwd .sales-build:focus-visible { color: #12100e; }
+
+/* ---- Sales breakdown editor ---- */
+.sb-content { max-width: 520px; padding: 0; overflow: visible; }
+.sb-body { padding: 0 28px 2px; max-height: 54vh; overflow: auto; }
+.sb-rows { display: flex; flex-direction: column; gap: 8px; }
+.sb-row { display: grid; grid-template-columns: 1fr 134px 30px; gap: 8px; align-items: center; }
+.sb-row input {
+  width: 100%; height: 40px; padding: 0 12px;
+  border: 1px solid #e5e1d9; border-radius: 9px;
+  background: #fffefb; color: #12100e;
+  font-family: inherit; font-size: 13.5px;
+  outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.sb-row input:hover { border-color: #d4cfc5; }
+.sb-row input:focus { border-color: #12100e; box-shadow: 0 0 0 3px rgba(18,16,14,.07); }
+.sb-row input::placeholder { color: #c8c4be; }
+.sb-amt { position: relative; }
+.sb-amt i {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  font-style: normal; font-size: 14px; font-weight: 600; color: #b5b0a9; pointer-events: none;
+}
+.sb-amt input {
+  padding-left: 24px; text-align: right;
+  font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.sb-del {
+  width: 30px; height: 30px; padding: 0;
+  border: none; border-radius: 8px; background: none;
+  color: #cdc8bf; font-size: 19px; line-height: 1; cursor: pointer;
+  transition: background .14s, color .14s;
+}
+.sb-del:hover { background: #fef6f6; color: #dc2626; }
+.sb-empty { padding: 24px 0 20px; text-align: center; color: #b5b0a9; font-size: 13px; }
+.sb-tools { display: flex; align-items: center; gap: 16px; margin: 14px 0 0; }
+.sb-add, .sb-copy {
+  padding: 0; border: none; background: none;
+  font-family: inherit; font-size: 12.5px; font-weight: 700;
+  cursor: pointer; transition: color .14s;
+}
+.sb-add { color: #8a847c; }
+.sb-copy { color: #b5b0a9; }
+.sb-add:hover, .sb-copy:hover { color: #12100e; }
+.sb-note { margin: 16px 0 0; font-size: 11.5px; line-height: 1.5; color: #b5b0a9; }
+.sb-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px 28px 22px; margin-top: 14px;
+  border-top: 1px solid #f0ece4;
+}
+.sb-total { display: flex; align-items: baseline; gap: 11px; }
+.sb-total span {
+  font-size: 10px; font-weight: 800; letter-spacing: .13em;
+  text-transform: uppercase; color: #a8a29e;
+}
+.sb-total b {
+  font-size: 21px; font-weight: 700; letter-spacing: -.025em;
+  color: #12100e; font-variant-numeric: tabular-nums;
+}
+.sb-total b.is-zero { color: #ded9d0; }
+.sb-total b.is-neg { color: #b45309; }
+
+@media (max-width: 700px) {
+  .sb-body, .sb-foot { padding-left: 18px; padding-right: 18px; }
+  .sb-row { grid-template-columns: 1fr 106px 28px; }
+}
+
 @media (max-width: 860px) {
   #sales-bar { flex-wrap: wrap; gap: 10px; padding: 74px 16px 14px; }
   .sales-legend { gap: 12px; }
@@ -5527,11 +5646,24 @@ body.plays-mode .board { display: none !important; }
      merge instead of one overwriting the other. The id is derived from
      that address, so the same cell edited in two places converges on one
      row rather than forking into two. */
+  /* One piece of the work behind a figure - a project, a retainer, a job
+     you can already see. Revenue and Passive are assembled out of these
+     rather than keyed, so the forecast says what it is made of. */
+  interface SalesItem {
+    id: string;
+    label: string;
+    value: number;
+  }
+
   interface SalesCell {
     id: string;
     month: string;          // '2026-04'
     line: string;           // one of SALES_LINES[].key
     value: number;
+    /* Only on the assembled lines, and always summing to value. Absent
+       means a figure that was simply typed - older cells, and the three
+       lines that are still keyed. */
+    items?: SalesItem[];
     createdAt: number;
     updatedAt?: number;
   }
@@ -8969,13 +9101,14 @@ body.plays-mode .board { display: none !important; }
      cannot drift away from the three lines above it. The other arithmetic
      is the year total per line, along the bottom. */
   const SALES_LINES = [
-    { key: 'revenue',  label: 'Revenue',         derived: false },
-    { key: 'passive',  label: 'Passive Revenue', derived: false },
-    { key: 'gp',       label: 'Gross Profit',    derived: false },
-    { key: 'expenses', label: 'Expenses',        derived: false },
-    { key: 'salary',   label: 'Salary',          derived: false },
-    { key: 'np',       label: 'NP',              derived: true  },
+    { key: 'revenue',  label: 'Revenue',         derived: false, built: true  },
+    { key: 'passive',  label: 'Passive Revenue', derived: false, built: true  },
+    { key: 'gp',       label: 'Gross Profit',    derived: false, built: false },
+    { key: 'expenses', label: 'Expenses',        derived: false, built: false },
+    { key: 'salary',   label: 'Salary',          derived: false, built: false },
+    { key: 'np',       label: 'NP',              derived: true,  built: false },
   ];
+  const salesLineLabel = (key: string) => SALES_LINES.find(l => l.key === key)?.label || key;
   // how far Enter has to jump to land on the same line a month down
   const SALES_INPUT_COLS = SALES_LINES.filter(l => !l.derived).length;
 
@@ -9020,6 +9153,36 @@ body.plays-mode .board { display: none !important; }
       cells[i].value = v;
     } else {
       cells.push({ id, month, line, value: v, createdAt: Date.now() });
+    }
+    save();
+  }
+
+  function salesItems(month: string, line: string): SalesItem[] {
+    const c = getSales().find(x => x.id === salesCellId(month, line));
+    return c && Array.isArray(c.items) ? c.items : [];
+  }
+
+  /* The assembled lines write the list and the figure together: the cell's
+     value is never anything other than the sum of what is in it, so the
+     column totals and NP keep working off value exactly as they did when
+     every box was keyed. An empty list is an emptied box, tombstone and
+     all, for the same reason a cleared input is. */
+  function setSalesBreakdown(month: string, line: string, items: SalesItem[]) {
+    const id = salesCellId(month, line);
+    const cells = getSales();
+    const i = cells.findIndex(c => c.id === id);
+    if (!items.length) {
+      if (i < 0) return;
+      tombstone(id);
+      cells.splice(i, 1);
+    } else {
+      const total = items.reduce((t, it) => t + it.value, 0);
+      if (i >= 0) {
+        cells[i].value = total;
+        cells[i].items = items;
+      } else {
+        cells.push({ id, month, line, value: total, items, createdAt: Date.now() });
+      }
     }
     save();
   }
@@ -9100,10 +9263,179 @@ body.plays-mode .board { display: none !important; }
     td.textContent = v === null ? '—' : salesFmt(v);
   }
 
-  // true while a figure is half-typed, so a cloud pull does not repaint over it
+  // true while a figure is being worked on, so a cloud pull does not repaint over it
   function salesCellFocused(): boolean {
+    if (document.getElementById('sales-build-modal')?.classList.contains('visible')) return true;
     return !!(document.activeElement as HTMLElement | null)?.closest?.('.sales-cell');
   }
+
+  /* ---- The breakdown editor ----
+     Revenue and Passive are the two lines you forecast by looking at what
+     is actually in front of you, so they are assembled rather than keyed:
+     the box opens this sheet, each line is a piece of work, and the figure
+     is their total. Held in a working copy while open and written on Done,
+     so a half-entered list never reaches the sheet or the cloud. */
+  let buildCell: { month: string; line: string } | null = null;
+  let buildRows: SalesItem[] = [];
+
+  const newBuildItem = (label = '', value = 0): SalesItem =>
+    ({ id: `sbi-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`, label, value });
+
+  // the amount fields carry their own $, so the figure goes in without one
+  const salesNum = (v: number) => (v < 0 ? '-' : '') + Math.abs(v).toLocaleString('en-NZ');
+
+  const buildTotal = () => buildRows.reduce((t, r) => t + (r.value || 0), 0);
+  const buildIsBlank = () => buildRows.every(r => !r.label.trim() && !r.value);
+
+  function openSalesBuild(month: string, line: string) {
+    buildCell = { month, line };
+    const items = salesItems(month, line);
+    const typed = salesValue(month, line);
+    buildRows = items.length
+      ? items.map(it => ({ ...it }))
+      /* A figure that was keyed before this existed, or by an older copy of
+         the app, opens as its own single line rather than being thrown away. */
+      : typed !== null ? [newBuildItem('', typed)] : [];
+    if (!buildRows.length) buildRows.push(newBuildItem());
+
+    (document.getElementById('sb-title') as HTMLElement).textContent =
+      `${salesLineLabel(line)} \u2014 ${salesMonthName(month)}`;
+    renderBuildRows();
+    document.getElementById('sales-build-modal')!.classList.add('visible');
+    (document.querySelector('#sb-rows .sb-row input') as HTMLInputElement | null)?.focus();
+  }
+
+  function closeSalesBuild() {
+    document.getElementById('sales-build-modal')!.classList.remove('visible');
+    buildCell = null;
+    buildRows = [];
+  }
+
+  function saveSalesBuild() {
+    if (!buildCell) return;
+    const { month, line } = buildCell;
+    // a line with neither a name nor a figure was never a line
+    const items = buildRows
+      .map(r => ({ id: r.id, label: r.label.trim(), value: r.value || 0 }))
+      .filter(r => r.label || r.value);
+    setSalesBreakdown(month, line, items);
+    closeSalesBuild();
+    renderSales();
+  }
+
+  function updateBuildTotal() {
+    const el = document.getElementById('sb-total') as HTMLElement | null;
+    if (!el) return;
+    const t = buildTotal();
+    el.className = t === 0 ? 'is-zero' : t < 0 ? 'is-neg' : '';
+    el.textContent = t === 0 ? '\u2014' : salesFmt(t);
+  }
+
+  /* The month before this one, same line - a forecast is mostly last
+     month's work carried on, and re-keying it twelve times is the thing
+     that stops a sheet like this from ever being filled in. Only offered
+     while the list is still blank, so it can never wipe anything. */
+  function buildCarrySource(): { month: string; items: SalesItem[] } | null {
+    if (!buildCell) return null;
+    const i = SALES_MONTHS.indexOf(buildCell.month);
+    if (i <= 0) return null;
+    const prev = SALES_MONTHS[i - 1];
+    const items = salesItems(prev, buildCell.line);
+    return items.length ? { month: prev, items } : null;
+  }
+
+  function renderBuildRows() {
+    const root = document.getElementById('sb-rows');
+    if (!root) return;
+
+    root.innerHTML = buildRows.length ? buildRows.map((r, i) => `
+      <div class="sb-row" data-i="${i}">
+        <input type="text" class="sb-label" spellcheck="false" autocomplete="off"
+          placeholder="Project, client or job" value="${escapeHtml(r.label)}"
+          aria-label="What this line is">
+        <div class="sb-amt"><i>$</i><input type="text" class="sb-val" inputmode="decimal"
+          spellcheck="false" autocomplete="off" placeholder="0"
+          value="${r.value ? escapeHtml(salesNum(r.value)) : ''}"
+          aria-label="Amount"></div>
+        <button type="button" class="sb-del" data-del="${i}" title="Remove this line" aria-label="Remove this line">&times;</button>
+      </div>`).join('')
+      : `<p class="sb-empty">Nothing here yet \u2014 add the first piece of work.</p>`;
+
+    root.querySelectorAll('.sb-label').forEach(el => {
+      const inp = el as HTMLInputElement;
+      inp.addEventListener('input', () => {
+        buildRows[+(inp.closest('.sb-row') as HTMLElement).dataset.i!].label = inp.value;
+        syncBuildCarry();
+      });
+    });
+
+    root.querySelectorAll('.sb-val').forEach(el => {
+      const inp = el as HTMLInputElement;
+      const rowOf = () => buildRows[+(inp.closest('.sb-row') as HTMLElement).dataset.i!];
+      inp.addEventListener('input', () => {
+        const parsed = parseSalesInput(inp.value);
+        // mid-typo stays on screen; only a figure that reads as one counts
+        if (parsed !== null && Number.isNaN(parsed)) return;
+        rowOf().value = parsed ?? 0;
+        updateBuildTotal();
+        syncBuildCarry();
+      });
+      inp.addEventListener('focus', () => inp.select());
+      inp.addEventListener('blur', () => {
+        const v = rowOf().value;
+        inp.value = v ? salesNum(v) : '';
+      });
+      inp.addEventListener('keydown', e => {
+        if ((e as KeyboardEvent).key !== 'Enter') return;
+        e.preventDefault();
+        addBuildRow();
+      });
+    });
+
+    root.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+      buildRows.splice(+(b as HTMLElement).dataset.del!, 1);
+      renderBuildRows();
+    }));
+
+    updateBuildTotal();
+    syncBuildCarry();
+  }
+
+  function addBuildRow() {
+    buildRows.push(newBuildItem());
+    renderBuildRows();
+    const rows = document.querySelectorAll('#sb-rows .sb-row input.sb-label');
+    (rows[rows.length - 1] as HTMLInputElement | undefined)?.focus();
+  }
+
+  function syncBuildCarry() {
+    const btn = document.getElementById('sb-copy') as HTMLButtonElement | null;
+    if (!btn) return;
+    const src = buildCarrySource();
+    const show = !!src && buildIsBlank();
+    btn.hidden = !show;
+    if (show && src) btn.textContent = `Copy ${salesMonthName(src.month)}`;
+  }
+
+  document.getElementById('sb-add')?.addEventListener('click', addBuildRow);
+  document.getElementById('sb-save')?.addEventListener('click', saveSalesBuild);
+  document.getElementById('sb-copy')?.addEventListener('click', () => {
+    const src = buildCarrySource();
+    if (!src) return;
+    buildRows = src.items.map(it => newBuildItem(it.label, it.value));
+    renderBuildRows();
+  });
+  document.querySelectorAll('#sales-build-modal .modal-close').forEach(b =>
+    b.addEventListener('click', saveSalesBuild));
+  document.getElementById('sales-build-modal')?.addEventListener('click', e => {
+    if (e.target === e.currentTarget) saveSalesBuild();
+  });
+  document.addEventListener('keydown', e => {
+    if (!buildCell || (e as KeyboardEvent).key !== 'Escape') return;
+    // Esc walks away from the box without writing, the same as it does in the sheet
+    e.stopPropagation();
+    closeSalesBuild();
+  }, true);
 
   function renderSales() {
     const root = document.getElementById('sales-inner');
@@ -9133,6 +9465,19 @@ body.plays-mode .board { display: none !important; }
               aria-label="${l.label}, ${salesMonthName(m)}">${d === null ? '—' : salesFmt(d)}</td>`;
           }
           const v = salesValue(m, l.key);
+          if (l.built) {
+            const items = salesItems(m, l.key);
+            // the breakdown itself, on hover - no second view needed to read it back
+            const tip = items.length
+              ? items.map(it => `${it.label || 'Unnamed'} \u00b7 ${salesFmt(it.value)}`).join('\n')
+              : 'Build this figure from the work behind it';
+            return `<td class="sales-cell${v !== null && v < 0 ? ' is-neg' : ''}"><button
+              type="button" class="sales-build${v === null ? ' is-empty' : ''}"
+              data-month="${m}" data-line="${l.key}" title="${escapeHtml(tip)}"
+              aria-label="${l.label}, ${salesMonthName(m)} \u2014 ${items.length
+                ? `${items.length} line${items.length === 1 ? '' : 's'}` : 'empty'}, opens the breakdown"
+              >${items.length > 1 ? `<i>${items.length}</i>` : ''}<span>${v === null ? '\u2014' : salesFmt(v)}</span></button></td>`;
+          }
           return `<td class="sales-cell${v !== null && v < 0 ? ' is-neg' : ''}"><input
             type="text" inputmode="decimal" spellcheck="false" autocomplete="off" placeholder="—"
             data-month="${m}" data-line="${l.key}"
@@ -9162,10 +9507,19 @@ body.plays-mode .board { display: none !important; }
           </tr>
         </tfoot>
       </table>
-      <p class="sales-hint">Type a figure into any box &mdash; <strong>Tab</strong> moves across, <strong>Enter</strong> moves down, <strong>Esc</strong> undoes. <strong>NP</strong> is the one worked-out column: Gross Profit less Expenses less Salary. The only other sums are the year totals along the bottom.</p>`;
+      <p class="sales-hint"><strong>Revenue</strong> and <strong>Passive Revenue</strong> open a breakdown &mdash; list the projects and work you can see, and the month's figure is their total. The rest are typed: <strong>Tab</strong> moves across, <strong>Enter</strong> moves down, <strong>Esc</strong> undoes. <strong>NP</strong> is the one worked-out column: Gross Profit less Expenses less Salary. The only other sums are the year totals along the bottom.</p>`;
 
-    const cells = Array.from(root.querySelectorAll('.sales-cell input')) as HTMLInputElement[];
-    cells.forEach((el, idx) => {
+    /* Inputs and breakdown buttons together, in the order they sit in the
+       grid, so Tab and Enter still walk the sheet as one surface even
+       though two of the five columns are no longer typed into. */
+    const cells = Array.from(root.querySelectorAll('.sales-cell input, .sales-cell .sales-build')) as HTMLElement[];
+    cells.forEach((cell, idx) => {
+      if (cell instanceof HTMLButtonElement) {
+        // Enter and Space reach this too, as the browser's own button handling
+        cell.addEventListener('click', () => openSalesBuild(cell.dataset.month!, cell.dataset.line!));
+        return;
+      }
+      const el = cell as HTMLInputElement;
       el.addEventListener('focus', () => el.select());
       el.addEventListener('blur', () => commitSalesCell(el));
       el.addEventListener('keydown', e => {
