@@ -40,13 +40,15 @@
       <!-- Top-right toolbar -->
       <div id="toolbar">
         <div id="mode-toggle">
+          <button class="mode-btn" data-mode="sales">Sales</button>
           <button class="mode-btn active" data-mode="goals">Goals</button>
-          <button class="mode-btn" data-mode="people">People</button>
+          <button class="mode-btn" data-mode="funnel">Funnel</button>
+          <button class="mode-btn" data-mode="opps">Opps</button>
+          <button class="mode-btn" data-mode="deals">Deals</button>
           <button class="mode-btn" data-mode="plays">Plays</button>
           <button class="mode-btn" data-mode="tasks">Tasks</button>
-          <button class="mode-btn" data-mode="deals">Deals</button>
-          <button class="mode-btn" data-mode="sales">Sales</button>
-          <button class="mode-btn" data-mode="funnel">Funnel</button>
+          <button class="mode-btn" data-mode="people">People</button>
+          <button class="mode-btn" data-mode="scripts">Scripts</button>
         </div>
         <div id="project-badge" title="Current project">No project</div>
         <div id="sync-indicator" title="Cloud sync">
@@ -83,6 +85,15 @@
       <div id="board-3" class="board" data-q="3"></div>
       <div id="board-4" class="board" data-q="4"></div>
       <div id="board-5" class="board" data-q="5"></div>
+
+      <!-- Opps View: the conversations with no number on them yet -->
+      <div id="opps-view">
+        <div id="opps-bar">
+          <span id="opps-count" class="people-count"></span>
+          <button id="add-opp" class="deal-new">+ New opp</button>
+        </div>
+        <div id="opps-inner"></div>
+      </div>
 
       <!-- Deals View -->
       <div id="deals-view">
@@ -153,6 +164,20 @@
       <!-- List View (a mode inside Tasks) -->
       <div id="list-view">
         <div id="list-inner"></div>
+      </div>
+
+      <!-- Scripts View: the words, and the moment they are for -->
+      <div id="scripts-view">
+        <aside id="scripts-list">
+          <div class="sc-list-head">
+            <h2>Moments</h2>
+            <button id="add-script" title="New script (N)" aria-label="New script">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div>
+          <div id="sc-moments"></div>
+        </aside>
+        <section id="script-pane"></section>
       </div>
 
       <!-- Goals View -->
@@ -3434,13 +3459,19 @@ body.multi-select-mode .sticky-note:hover {
   gap: 2px;
   padding: 3px;
   height: 40px;
+  /* nine tabs: let them scroll rather than squash or push off-screen */
+  max-width: calc(100vw - 150px);
+  overflow-x: auto;
+  scrollbar-width: none;
   background: white;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   box-sizing: border-box;
 }
+#mode-toggle::-webkit-scrollbar { display: none; }
 #toolbar #mode-toggle .mode-btn {
   width: auto;
+  flex: none;
   height: 34px;
   border: none;
   background: transparent;
@@ -4517,6 +4548,187 @@ body.deals-mode .board { display: none !important; }
   .dl-pair { grid-template-columns: 1fr; }
   .deal-form { padding: 0 18px 4px; }
   .deal-modal-head, .deal-modal-foot { padding-left: 18px; padding-right: 18px; }
+}
+
+
+/* ---- Opps -----------------------------------------------------------
+   Deals is the record of numbers that went out. This is the room before
+   that: talking, nothing quoted. Dashed edges and no money shouting, so
+   an opp never reads as a deal that is further along than it is. ---- */
+#opps-view {
+  position: absolute; inset: 0; display: none; overflow: auto;
+  background: #f7f5f1;
+}
+#opps-view.active { display: block; }
+body.opps-mode #minimap, body.opps-mode #hints, body.opps-mode #board-tools,
+body.opps-mode #props-palette, body.opps-mode #new-note-fab { display: none !important; }
+body.opps-mode .board { display: none !important; }
+
+#opps-bar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  max-width: 1340px; margin: 0 auto; padding: 78px 30px 18px;
+  background: linear-gradient(#f7f5f1 72%, rgba(247,245,241,0));
+}
+#opps-count { display: flex; gap: 34px; }
+#opps-inner { max-width: 1340px; margin: 0 auto; padding: 0 30px 70px; }
+.opp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+
+.opp {
+  display: flex; flex-direction: column;
+  padding: 20px 20px 12px; border-radius: 14px;
+  background: #fdfcfa; border: 1px dashed #ded9d0;
+  box-shadow: 0 1px 2px rgba(18,16,14,.03), 0 14px 30px -22px rgba(18,16,14,.28);
+  transition: transform .2s, box-shadow .2s, border-color .2s;
+}
+.opp:hover { transform: translateY(-3px); border-color: #c9c3b8; box-shadow: 0 2px 5px rgba(18,16,14,.05), 0 22px 44px -22px rgba(18,16,14,.36); }
+.opp-head { display: flex; gap: 11px; align-items: flex-start; }
+.opp-face {
+  width: 36px; height: 36px; flex: none; border-radius: 50%; overflow: hidden;
+  background: #f1efec; color: #8a847c; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+}
+.opp-face img { width: 100%; height: 100%; object-fit: cover; }
+.opp-who { min-width: 0; flex: 1; }
+.opp-who h3 { margin: 0; font-size: 14.5px; font-weight: 700; color: #12100e; letter-spacing: -.01em; line-height: 1.25; }
+.opp-who p { margin: 3px 0 0; font-size: 12px; color: #a19b93; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.opp-age { flex: none; font-size: 11px; color: #b5b0a9; font-variant-numeric: tabular-nums; padding-top: 2px; }
+
+.opp-worth {
+  margin: 16px 0 14px;
+  font-size: 26px; font-weight: 700; letter-spacing: -.03em; color: #57534e;
+  font-variant-numeric: tabular-nums; line-height: 1.05;
+}
+.opp-worth em { font-style: normal; font-weight: 500; font-size: 14px; color: #a19b93; }
+.opp-worth .opp-noworth { font-size: 15px; font-weight: 600; letter-spacing: 0; color: #c0bab1; }
+
+/* Where it is at, typed straight onto the card - the only field you
+   actually keep touching while a thing is still a conversation. */
+.opp-note {
+  min-height: 46px; padding: 10px 12px; border-radius: 9px;
+  background: #fffefb; border: 1px solid #ece8e0;
+  font-size: 12.5px; line-height: 1.55; color: #57534e;
+  white-space: pre-wrap; outline: none; transition: border-color .14s, background .14s;
+}
+.opp-note:hover { border-color: #ded9d0; }
+.opp-note:focus { border-color: #12100e; background: #fff; color: #12100e; }
+.opp-note:empty::before { content: attr(data-ph); color: #c8c4be; }
+
+.opp-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.opp-goal {
+  min-width: 0; font-size: 11px; color: #a19b93;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.opp-goal.none { color: #cdc8c0; }
+.opp-actions { margin-left: auto; display: flex; gap: 6px; flex: none; }
+.opp-actions button {
+  height: 27px; padding: 0 11px; border-radius: 999px;
+  border: 1px solid #e3ded5; background: transparent; color: #a19b93;
+  font-size: 11px; font-weight: 700; cursor: pointer;
+  transition: border-color .14s, color .14s, background .14s;
+}
+.opp-actions button:hover { border-color: #12100e; color: #12100e; }
+.opp-actions .is-go { border-color: #cdc6ba; color: #57534e; }
+.opp-actions .is-go:hover { background: #12100e; border-color: #12100e; color: #fff; }
+
+/* The one thing Deals still says about in-play work: how much of it there is */
+.dc-link {
+  align-self: flex-end; height: 26px; padding: 0 12px; border-radius: 999px;
+  border: 1px dashed #ded9d0; background: transparent; color: #a19b93;
+  font-size: 11.5px; font-weight: 700; cursor: pointer;
+}
+.dc-link:hover { border-style: solid; border-color: #12100e; color: #12100e; }
+
+@media (max-width: 700px) {
+  #opps-bar { padding: 70px 16px 14px; gap: 10px; flex-wrap: wrap; }
+  #opps-count { gap: 22px; }
+  #opps-inner { padding: 0 16px 60px; }
+  .opp-grid { grid-template-columns: 1fr; }
+}
+
+/* ---- Scripts ---------------------------------------------------------
+   Moments down the left, the words at reading size on the right. The page
+   is meant to be open while the phone is ringing, so the body type is big
+   enough to read standing up and nothing else is on screen. ---- */
+#scripts-view {
+  position: absolute; inset: 0; display: none; overflow: hidden;
+  background: #f7f5f1;
+}
+#scripts-view.active { display: grid; grid-template-columns: 268px 1fr; }
+body.scripts-mode #minimap, body.scripts-mode #hints, body.scripts-mode #board-tools,
+body.scripts-mode #props-palette, body.scripts-mode #new-note-fab { display: none !important; }
+body.scripts-mode .board { display: none !important; }
+
+#scripts-list {
+  display: flex; flex-direction: column; min-height: 0;
+  padding: 78px 0 0; background: #f2efe9; border-right: 1px solid #e6e2da;
+}
+.sc-list-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 18px 12px;
+}
+.sc-list-head h2 {
+  margin: 0; font-size: 11px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: #8a847c;
+}
+#add-script {
+  width: 26px; height: 26px; flex: none; display: flex; align-items: center; justify-content: center;
+  border: none; border-radius: 50%; background: #12100e; color: #fff; cursor: pointer;
+  transition: transform .16s;
+}
+#add-script:hover { transform: scale(1.08); }
+#sc-moments { flex: 1; overflow: auto; padding: 0 10px 24px; }
+.sc-moment {
+  display: block; width: 100%; text-align: left; border: none; background: transparent;
+  padding: 10px 12px; margin-bottom: 2px; border-radius: 9px; cursor: pointer;
+  color: #57534e; font-size: 13px; font-weight: 600; line-height: 1.3;
+  transition: background .14s, color .14s;
+}
+.sc-moment:hover { background: #e9e5dd; color: #12100e; }
+.sc-moment.on { background: #12100e; color: #fff; }
+.sc-moment span {
+  display: block; margin-top: 3px; font-size: 11.5px; font-weight: 500; color: #a19b93;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sc-moment.on span { color: rgba(255,255,255,.52); }
+.sc-none { padding: 10px 12px; font-size: 12px; line-height: 1.5; color: #b5b0a9; }
+
+#script-pane { overflow: auto; padding: 78px 0 80px; }
+.sc-doc { max-width: 680px; margin: 0 auto; padding: 0 40px; }
+.sc-when {
+  font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+  color: #8a847c; outline: none; padding-bottom: 7px;
+  border-bottom: 1px solid transparent; transition: border-color .14s;
+}
+.sc-when:focus { border-bottom-color: #d8d3ca; color: #12100e; }
+.sc-when:empty::before { content: attr(data-ph); color: #c8c4be; }
+.sc-body {
+  margin-top: 24px; font-size: 20px; line-height: 1.68; letter-spacing: -.004em;
+  color: #12100e; white-space: pre-wrap; outline: none; min-height: 120px;
+}
+.sc-body:empty::before { content: attr(data-ph); color: #c8c4be; }
+.sc-tools {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 38px; padding-top: 16px; border-top: 1px solid #e6e2da;
+}
+.sc-tools button {
+  height: 32px; padding: 0 14px; border-radius: 999px;
+  border: 1px solid #e3ded5; background: #fffefb; color: #78716c;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: border-color .14s, color .14s;
+}
+.sc-tools button:hover { border-color: #12100e; color: #12100e; }
+.sc-tools .sc-saved { font-size: 11.5px; color: #b5b0a9; }
+.sc-tools .sc-del { margin-left: auto; border-color: transparent; background: transparent; color: #b5b0a9; }
+.sc-tools .sc-del:hover { color: #b91c1c; border-color: #f0d6d6; }
+.sc-blank { max-width: 680px; margin: 0 auto; padding: 40px; color: #b5b0a9; font-size: 14px; line-height: 1.6; }
+
+@media (max-width: 760px) {
+  #scripts-view.active { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  #scripts-list { padding-top: 70px; max-height: 40vh; border-right: none; border-bottom: 1px solid #e6e2da; }
+  #script-pane { padding: 18px 0 70px; }
+  .sc-doc { padding: 0 20px; }
+  .sc-body { font-size: 18px; }
 }
 
 /* ---- Sales -----------------------------------------------------------
@@ -5666,7 +5878,18 @@ body.plays-mode .board { display: none !important; }
     sentAt?: number;
     wonAt?: number;
     lostAt?: number;
-    notes?: string;
+    notes?: string;    // where it is at, while it is still only a conversation
+    createdAt?: number;
+  }
+
+  /* What to say, and the moment it is for. Two fields because that is the
+     whole job: open the page mid-call, find the moment, read the words. */
+  interface Script {
+    id: string;
+    when: string;      // "Cold call, first ten seconds"
+    body: string;
+    createdAt: number;
+    updatedAt?: number;
   }
 
   interface EmailTemplate {
@@ -5764,6 +5987,7 @@ body.plays-mode .board { display: none !important; }
     emailTemplates?: EmailTemplate[];
     plays?: Play[];
     deals?: Deal[];
+    scripts?: Script[];
     sales?: SalesCell[];
     // ids of things deleted here, so a delete survives a merge from another device
     tombs?: { id: string; at: number }[];
@@ -5881,7 +6105,7 @@ body.plays-mode .board { display: none !important; }
   }
 
   function emptyState(): State {
-    return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES], props: [], arrows: [], goals: [], boardLabels: [], plays: [], deals: [], sales: [], tombs: [] };
+    return { notes: [], nextZIndex: 1, boardTitles: [...DEFAULT_TITLES], props: [], arrows: [], goals: [], boardLabels: [], plays: [], deals: [], scripts: [], sales: [], tombs: [] };
   }
 
   /* Any blob becoming `state` goes through here. Older projects predate
@@ -5899,6 +6123,7 @@ body.plays-mode .board { display: none !important; }
       goals: Array.isArray(raw.goals) ? raw.goals : [],
       plays: Array.isArray(raw.plays) ? raw.plays : [],
       deals: Array.isArray(raw.deals) ? raw.deals : [],
+      scripts: Array.isArray(raw.scripts) ? raw.scripts : [],
       sales: Array.isArray(raw.sales) ? raw.sales : [],
       tombs: Array.isArray(raw.tombs) ? raw.tombs : [],
       boardLabels: Array.isArray(raw.boardLabels) ? raw.boardLabels : [],
@@ -5918,8 +6143,12 @@ body.plays-mode .board { display: none !important; }
       if (force || viewDirty.list) { renderList(); viewDirty.list = false; }
     } else if (viewMode === 'plays') {
       renderPlaysView();
+    } else if (viewMode === 'opps') {
+      renderOpps();
     } else if (viewMode === 'deals') {
       renderDeals();
+    } else if (viewMode === 'scripts') {
+      renderScripts();
     } else if (viewMode === 'sales') {
       renderSales();
     } else if (viewMode === 'funnel') {
@@ -5937,7 +6166,7 @@ body.plays-mode .board { display: none !important; }
      later - plays, email templates, props, arrows, board labels - was simply
      never read, and a device would sit there insisting it had none. Keys are
      discovered rather than listed, so a new one works without touching this. */
-  const ID_COLLECTIONS = ['notes', 'goals', 'props', 'arrows', 'boardLabels', 'plays', 'deals', 'sales'];
+  const ID_COLLECTIONS = ['notes', 'goals', 'props', 'arrows', 'boardLabels', 'plays', 'deals', 'scripts', 'sales'];
 
   /* How recently an item was touched. Only notes ever carried updatedAt, so
      for every other collection this used to compare 0 against 0 - meaning the
@@ -7711,9 +7940,9 @@ body.plays-mode .board { display: none !important; }
     save();
     refreshView(true);
   }
-  type ViewMode = 'goals' | 'people' | 'plays' | 'tasks' | 'list' | 'deals' | 'sales' | 'funnel';
+  type ViewMode = 'goals' | 'people' | 'plays' | 'tasks' | 'list' | 'opps' | 'deals' | 'sales' | 'funnel' | 'scripts';
   // list still works, it just no longer earns a place in the nav
-  const VIEW_MODES: ViewMode[] = ['goals', 'people', 'plays', 'tasks', 'deals', 'sales', 'funnel'];
+  const VIEW_MODES: ViewMode[] = ['sales', 'goals', 'funnel', 'opps', 'deals', 'plays', 'tasks', 'people', 'scripts'];
   let viewMode: ViewMode = 'tasks';
 
   function getGoals(): Goal[] {
@@ -7728,10 +7957,14 @@ body.plays-mode .board { display: none !important; }
     document.body.classList.toggle('list-mode', mode === 'list');
     document.body.classList.toggle('plays-mode', mode === 'plays');
     document.body.classList.toggle('people-mode', mode === 'people');
+    document.body.classList.toggle('opps-mode', mode === 'opps');
     document.body.classList.toggle('deals-mode', mode === 'deals');
+    document.body.classList.toggle('scripts-mode', mode === 'scripts');
     document.body.classList.toggle('sales-mode', mode === 'sales');
     document.body.classList.toggle('funnel-mode', mode === 'funnel');
+    document.getElementById('opps-view')?.classList.toggle('active', mode === 'opps');
     document.getElementById('deals-view')?.classList.toggle('active', mode === 'deals');
+    document.getElementById('scripts-view')?.classList.toggle('active', mode === 'scripts');
     document.getElementById('sales-view')?.classList.toggle('active', mode === 'sales');
     document.getElementById('funnel-view')?.classList.toggle('active', mode === 'funnel');
     document.getElementById('people-view')?.classList.toggle('active', mode === 'people');
@@ -7742,6 +7975,14 @@ body.plays-mode .board { display: none !important; }
     document.querySelectorAll('.mode-btn').forEach(b => {
       b.classList.toggle('active', (b as HTMLElement).dataset.mode === mode);
     });
+    /* The strip scrolls on a narrow screen, so the tab you just landed on can
+       be off the edge of it. Centre it rather than leaving the page looking
+       like nothing is selected. */
+    const strip = document.getElementById('mode-toggle');
+    const on = strip?.querySelector('.mode-btn.active') as HTMLElement | null;
+    if (strip && on && strip.scrollWidth > strip.clientWidth) {
+      strip.scrollLeft = on.offsetLeft - (strip.clientWidth - on.offsetWidth) / 2;
+    }
     refreshView();
   }
 
@@ -8723,7 +8964,7 @@ body.plays-mode .board { display: none !important; }
     const deals = getDeals();
     editingDeal = id
       ? JSON.parse(JSON.stringify(deals.find(d => d.id === id))) as Deal
-      : { id: `deal-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, title: '' };
+      : { id: `deal-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, title: '', createdAt: Date.now() };
 
     const v = (el: string, val: string) => { (document.getElementById(el) as HTMLInputElement).value = val; };
     (document.getElementById('deal-modal-title') as HTMLElement).textContent = id ? 'Edit Deal' : 'New Deal';
@@ -8748,6 +8989,7 @@ body.plays-mode .board { display: none !important; }
   }
 
   document.getElementById('add-deal')?.addEventListener('click', () => openDealModal());
+  document.getElementById('add-opp')?.addEventListener('click', () => openDealModal());
   document.querySelectorAll('#deal-modal .modal-close').forEach(b =>
     b.addEventListener('click', () => { document.getElementById('deal-modal')!.classList.remove('visible'); editingDeal = null; }));
 
@@ -8879,16 +9121,20 @@ body.plays-mode .board { display: none !important; }
     const lost = deals.filter(d => dealState(d) === 'lost');
 
 
+    /* In play lives in Opps now. Deals is only the quotes that went out and
+       what became of them, so the count row is money rather than headcount -
+       with one line back to the room the work came from. */
     if (countEl) {
       const q = dealTotals(quoted), w = dealTotals(won);
-      countEl.innerHTML = deals.length ? `
-        <span class="dc-stat"><i>In play</i><b>${inplay.length}</b><u>conversation${inplay.length === 1 ? '' : 's'}</u></span>
+      countEl.innerHTML = (quoted.length || won.length || lost.length) ? `
         <span class="dc-stat"><i>Quoted</i><b>${money(q.capex)}</b>${q.ongoing ? `<u>+${money(q.ongoing)}/mo</u>` : ''}</span>
-        <span class="dc-stat won"><i>Won</i><b>${money(w.capex)}</b>${w.ongoing ? `<u>+${money(w.ongoing)}/mo</u>` : ''}</span>` : '';
+        <span class="dc-stat won"><i>Won</i><b>${money(w.capex)}</b>${w.ongoing ? `<u>+${money(w.ongoing)}/mo</u>` : ''}</span>
+        ${inplay.length ? `<button class="dc-link" id="deals-to-opps">${inplay.length} still in play →</button>` : ''}` : '';
     }
 
-    if (!deals.length) {
-      root.innerHTML = `<div class="deals-empty"><p>No deals yet.</p><span>A deal is a quote you have sent — its value, who it is for, and the way back into it.</span></div>`;
+    if (!quoted.length && !won.length && !lost.length) {
+      root.innerHTML = `<div class="deals-empty"><p>No quotes sent yet.</p><span>A deal is a quote you have sent — its value, who it is for, and the way back into it. Conversations before that live in Opps.</span></div>`;
+      document.getElementById('deals-to-opps')?.addEventListener('click', () => setViewMode('opps'));
       return;
     }
 
@@ -8900,7 +9146,8 @@ body.plays-mode .board { display: none !important; }
         <div class="deal-grid">${list.map(dealCardHtml).join('')}</div>
       </section>` : '';
 
-    root.innerHTML = section('In play', inplay, 'is-inplay') + section('Quoted', quoted) + section('Won', won, 'is-won') + section('Lost', lost, 'is-lost');
+    root.innerHTML = section('Quoted', quoted) + section('Won', won, 'is-won') + section('Lost', lost, 'is-lost');
+    document.getElementById('deals-to-opps')?.addEventListener('click', () => setViewMode('opps'));
 
     root.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => openQuote((b as HTMLElement).dataset.open!)));
     root.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openDealModal((b as HTMLElement).dataset.edit!)));
@@ -8918,6 +9165,246 @@ body.plays-mode .board { display: none !important; }
       } catch { /* clipboard unavailable */ }
     }));
   }
+
+
+  // ============ OPPS ============
+  /* Everything still unquoted, and nothing else. Deals answers "what did I
+     send and what happened"; this answers "who am I talking to, and what is
+     the next thing I say to them". The moment a quote date goes on one of
+     these it leaves this page for Deals - there is no status to keep honest. */
+
+  function oppAge(d: Deal): string {
+    if (!d.createdAt) return '';
+    const days = Math.floor((Date.now() - d.createdAt) / 86400000);
+    if (days <= 0) return 'today';
+    if (days === 1) return '1 day in';
+    if (days < 14) return `${days} days in`;
+    if (days < 60) return `${Math.round(days / 7)} weeks in`;
+    return `${Math.round(days / 30)} months in`;
+  }
+
+  function oppCardHtml(d: Deal): string {
+    const person = d.personId ? state.notes.find(n => n.id === d.personId) : undefined;
+    const goal = d.goalId ? getGoals().find(g => g.id === d.goalId) : undefined;
+    const cx = capexOf(d), og = ongoingOf(d);
+    const worth = (cx || og)
+      ? `${cx ? money(cx) : ''}${cx && og ? ' + ' : ''}${og ? `${money(og)}<em>/month</em>` : ''}`
+      : `<span class="opp-noworth">No number yet</span>`;
+    const age = oppAge(d);
+
+    return `
+      <article class="opp" data-id="${d.id}">
+        <header class="opp-head">
+          ${person ? `<span class="opp-face">${person.avatar
+            ? `<img src="${person.avatar}" alt="">`
+            : `<span>${escapeHtml(initials(person.name || noteHeadline(person)))}</span>`}</span>` : ''}
+          <div class="opp-who">
+            <h3>${escapeHtml(d.title)}</h3>
+            ${person ? `<p>${escapeHtml(person.name || noteHeadline(person))}${person.company ? ` · ${escapeHtml(person.company)}` : ''}</p>` : ''}
+          </div>
+          ${age ? `<span class="opp-age">${age}</span>` : ''}
+        </header>
+
+        <div class="opp-worth">${worth}</div>
+
+        <div class="opp-note" contenteditable="true" spellcheck="false"
+             data-note="${d.id}" data-ph="Where it is at, and the next move">${escapeHtml(d.notes || '')}</div>
+
+        <footer class="opp-foot">
+          <span class="opp-goal ${goal ? '' : 'none'}">${goal ? `◆ ${escapeHtml((goal.text || 'Untitled goal').split('\n')[0])}` : 'No goal'}</span>
+          <div class="opp-actions">
+            <button data-edit="${d.id}">Edit</button>
+            <button class="is-go" data-quoted="${d.id}">Quoted</button>
+            <button data-won="${d.id}">Won</button>
+            <button data-lost="${d.id}">Lost</button>
+          </div>
+        </footer>
+      </article>`;
+  }
+
+  function renderOpps() {
+    const root = document.getElementById('opps-inner');
+    const countEl = document.getElementById('opps-count');
+    if (!root) return;
+    const opps = getDeals().filter(d => dealState(d) === 'inplay');
+
+    if (countEl) {
+      const t = dealTotals(opps);
+      const blank = opps.filter(d => !capexOf(d) && !ongoingOf(d)).length;
+      countEl.innerHTML = opps.length ? `
+        <span class="dc-stat"><i>In play</i><b>${opps.length}</b><u>conversation${opps.length === 1 ? '' : 's'}</u></span>
+        <span class="dc-stat"><i>On the table</i><b>${t.capex ? money(t.capex) : (t.ongoing ? money(t.ongoing) + '/mo' : '—')}</b>${t.capex && t.ongoing ? `<u>+${money(t.ongoing)}/mo</u>` : ''}</span>
+        ${blank ? `<span class="dc-stat"><i>No number yet</i><b>${blank}</b><u>of ${opps.length}</u></span>` : ''}` : '';
+    }
+
+    if (!opps.length) {
+      root.innerHTML = `<div class="deals-empty"><p>Nothing in play.</p><span>An opp is a conversation with no number on it yet. Put a quote date on one and it moves to Deals.</span></div>`;
+      return;
+    }
+
+    root.innerHTML = `<div class="opp-grid">${opps.map(oppCardHtml).join('')}</div>`;
+
+    root.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openDealModal((b as HTMLElement).dataset.edit!)));
+    root.querySelectorAll('[data-quoted]').forEach(b => b.addEventListener('click', () => setDealOutcome((b as HTMLElement).dataset.quoted!, 'quoted')));
+    root.querySelectorAll('[data-won]').forEach(b => b.addEventListener('click', () => setDealOutcome((b as HTMLElement).dataset.won!, 'won')));
+    root.querySelectorAll('[data-lost]').forEach(b => b.addEventListener('click', () => setDealOutcome((b as HTMLElement).dataset.lost!, 'lost')));
+
+    /* The note saves on blur and does NOT redraw: nothing on this page is
+       computed from it, and a redraw mid-sentence is how you lose a thought. */
+    root.querySelectorAll('[data-note]').forEach(el => {
+      el.addEventListener('blur', () => {
+        const node = el as HTMLElement;
+        const d = getDeals().find(x => x.id === node.dataset.note);
+        if (!d) return;
+        const text = (node.innerText || '').replace(/\s+$/, '');
+        if ((d.notes || '') === text) return;
+        d.notes = text || undefined;
+        save();
+      });
+      el.addEventListener('keydown', e => {
+        if ((e as KeyboardEvent).key === 'Escape') (el as HTMLElement).blur();
+      });
+    });
+  }
+
+  // ============ SCRIPTS ============
+  /* Moments down the left, the words at reading size on the right. Which
+     one is open is a local preference, not project data - the laptop and
+     the phone are looking at different parts of the same call. */
+  const SCRIPT_OPEN_KEY = 'stiki-script-open';
+  let currentScriptId: string | null = localStorage.getItem(SCRIPT_OPEN_KEY);
+
+  function getScripts(): Script[] {
+    if (!state.scripts) state.scripts = [];
+    return state.scripts;
+  }
+
+  const scriptTitle = (sc: Script) => (sc.when || '').trim() || 'Untitled moment';
+  const scriptPeek = (sc: Script) => ((sc.body || '').trim().split('\n')[0] || '').slice(0, 70);
+
+  function openScript(id: string | null) {
+    currentScriptId = id;
+    if (id) localStorage.setItem(SCRIPT_OPEN_KEY, id); else localStorage.removeItem(SCRIPT_OPEN_KEY);
+  }
+
+  function addScript() {
+    const sc: Script = {
+      id: `script-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      when: '', body: '', createdAt: Date.now(),
+    };
+    getScripts().push(sc);
+    openScript(sc.id);
+    save();
+    renderScripts(true);
+    (document.querySelector('.sc-when') as HTMLElement)?.focus();
+  }
+
+  function deleteScript(id: string) {
+    const sc = getScripts().find(x => x.id === id);
+    if (!sc || !confirm(`Delete "${scriptTitle(sc)}"?`)) return;
+    tombstone(id);
+    state.scripts = getScripts().filter(x => x.id !== id);
+    if (currentScriptId === id) openScript(null);
+    save();
+    renderScripts(true);
+  }
+
+  function commitScriptField(el: HTMLElement) {
+    const sc = getScripts().find(x => x.id === el.dataset.id);
+    if (!sc) return;
+    const field = el.dataset.field as 'when' | 'body';
+    const text = (el.innerText || '').replace(/\s+$/, '');
+    if ((sc[field] || '') === text) return;
+    sc[field] = text;
+    save();
+    renderScriptList();   // the left column shows both fields, so it follows
+  }
+
+  function renderScriptList() {
+    const list = document.getElementById('sc-moments');
+    if (!list) return;
+    const scripts = getScripts();
+
+    list.innerHTML = scripts.length
+      ? scripts.map(sc => `
+        <button class="sc-moment ${sc.id === currentScriptId ? 'on' : ''}" data-id="${sc.id}">
+          ${escapeHtml(scriptTitle(sc))}
+          <span>${escapeHtml(scriptPeek(sc) || 'Nothing written yet')}</span>
+        </button>`).join('')
+      : `<p class="sc-none">No scripts yet. Add one: the moment it is for, then the words.</p>`;
+
+    list.querySelectorAll('.sc-moment').forEach(b => b.addEventListener('click', () => {
+      openScript((b as HTMLElement).dataset.id!);
+      renderScripts(true);
+    }));
+  }
+
+  function renderScriptPane() {
+    const pane = document.getElementById('script-pane');
+    if (!pane) return;
+    const scripts = getScripts();
+    const sc = scripts.find(x => x.id === currentScriptId) || scripts[0];
+
+    if (!sc) {
+      pane.innerHTML = `<div class="sc-blank">A script is one moment and the words for it — the first ten seconds of a cold call, what you say when they ask you to send something through, how you ask for the meeting.
+        <div class="sc-tools"><button class="sc-first">Write the first one</button></div></div>`;
+      pane.querySelector('.sc-first')?.addEventListener('click', addScript);
+      return;
+    }
+    if (sc.id !== currentScriptId) openScript(sc.id);
+
+    pane.innerHTML = `
+      <div class="sc-doc">
+        <div class="sc-when" contenteditable="true" spellcheck="false"
+             data-id="${sc.id}" data-field="when" data-ph="When to use this">${escapeHtml(sc.when || '')}</div>
+        <div class="sc-body" contenteditable="true"
+             data-id="${sc.id}" data-field="body" data-ph="What you say.">${escapeHtml(sc.body || '')}</div>
+        <div class="sc-tools">
+          <button class="sc-copy">Copy</button>
+          <span class="sc-saved">${sc.updatedAt ? `Edited ${formatDate(sc.updatedAt)}` : ''}</span>
+          <button class="sc-del">Delete</button>
+        </div>
+      </div>`;
+
+    pane.querySelectorAll('[data-field]').forEach(el => {
+      el.addEventListener('blur', () => commitScriptField(el as HTMLElement));
+      el.addEventListener('keydown', e => {
+        const ev = e as KeyboardEvent;
+        if (ev.key === 'Escape') (el as HTMLElement).blur();
+        // the heading is one line; Enter there means "on to the words"
+        if (ev.key === 'Enter' && (el as HTMLElement).dataset.field === 'when') {
+          ev.preventDefault();
+          commitScriptField(el as HTMLElement);
+          (pane.querySelector('.sc-body') as HTMLElement)?.focus();
+        }
+      });
+    });
+
+    pane.querySelector('.sc-copy')?.addEventListener('click', async () => {
+      const btn = pane.querySelector('.sc-copy') as HTMLElement;
+      const body = (pane.querySelector('.sc-body') as HTMLElement)?.innerText || '';
+      try {
+        await navigator.clipboard.writeText(body);
+        btn.textContent = 'Copied';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1600);
+      } catch { /* clipboard unavailable */ }
+    });
+    pane.querySelector('.sc-del')?.addEventListener('click', () => deleteScript(sc.id));
+  }
+
+  /* force: this redraw was asked for (added, deleted, picked a moment), so it
+     happens whatever has focus. Unforced is the background one - a pull from
+     the cloud repaints the open view every 30 seconds, and redrawing the pane
+     under a cursor would eat the sentence being typed. */
+  function renderScripts(force = false) {
+    renderScriptList();
+    const pane = document.getElementById('script-pane');
+    const active = document.activeElement as HTMLElement | null;
+    if (!force && pane && active && active.isContentEditable && pane.contains(active)) return;
+    renderScriptPane();
+  }
+
+  document.getElementById('add-script')?.addEventListener('click', addScript);
 
   // ============ FUNNEL ============
   /* The climb, and the only view that answers whether the target gets met.
@@ -10515,6 +11002,14 @@ body.plays-mode .board { display: none !important; }
       return;
     }
     if (viewMode === 'list') return;
+    if (viewMode === 'scripts') {
+      if (e.key === 'n' || e.key === 'N') { e.preventDefault(); addScript(); }
+      return;
+    }
+    if (viewMode === 'opps') {
+      if (e.key === 'n' || e.key === 'N') { e.preventDefault(); openDealModal(); }
+      return;
+    }
 
     if ((e.key === 't' || e.key === 'T') && selectedId) {
       e.preventDefault();
