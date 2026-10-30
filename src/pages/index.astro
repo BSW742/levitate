@@ -5097,6 +5097,66 @@ tr.is-fwd-open .sales-np { box-shadow: inset 1px 0 0 #e6e2da, inset 0 1px 0 #cfc
 
 .sales-hint { margin: 14px 2px 0; font-size: 11.5px; line-height: 1.6; color: #b5b0a9; }
 
+/* ---- What it pays you: the sheet's year, halved and taxed ---- */
+.sales-take {
+  margin-top: 26px; padding: 22px 24px 20px;
+  background: #fffefb; border: 1px solid #e9e5dd; border-radius: 14px;
+}
+.st-head { margin-bottom: 18px; }
+.st-head h3 {
+  margin: 0; font-size: 11px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: #8a847c;
+}
+.st-head span { display: block; margin-top: 5px; font-size: 12px; color: #b5b0a9; }
+.st-blank { margin: 0; font-size: 13px; line-height: 1.6; color: #b5b0a9; }
+
+.st-grid { display: grid; grid-template-columns: minmax(0, 420px) 300px; justify-content: space-between; gap: 34px; align-items: start; }
+.st-work { display: flex; flex-direction: column; }
+.st-row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  padding: 9px 0; border-bottom: 1px solid #f4f1ea;
+  font-size: 13px; color: #78716c;
+}
+.st-row b {
+  font-size: 14px; font-weight: 700; color: #12100e;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.st-row i {
+  font-style: normal; margin-left: 7px; font-size: 11px; color: #c0bab1;
+  font-variant-numeric: tabular-nums;
+}
+.st-row.is-sub { color: #12100e; font-weight: 600; }
+.st-row.is-op { border-bottom: none; padding-bottom: 2px; color: #a8a29e; }
+.st-row.is-op b { color: #a8a29e; letter-spacing: .02em; }
+.st-row.is-gross { border-top: 1px solid #e6e2da; color: #12100e; font-weight: 700; }
+.st-row.is-gross b { font-size: 16px; }
+.st-row.is-out b { color: #b45309; }
+.st-row.is-neg b { color: #b45309; }
+
+.st-net { padding-top: 2px; }
+.st-net i {
+  display: block; font-style: normal;
+  font-size: 10px; font-weight: 800; letter-spacing: .13em;
+  text-transform: uppercase; color: #b5b0a9;
+}
+.st-net b {
+  display: block; margin-top: 8px;
+  font-size: 40px; font-weight: 700; letter-spacing: -.035em; line-height: 1.02;
+  color: #12100e; font-variant-numeric: tabular-nums;
+}
+.st-net.is-neg b { color: #b45309; }
+.st-net span { display: block; margin-top: 8px; font-size: 13px; color: #78716c; font-variant-numeric: tabular-nums; }
+.st-net u { display: block; margin-top: 4px; text-decoration: none; font-size: 11.5px; color: #b5b0a9; }
+.st-note { margin: 18px 0 0; padding-top: 14px; border-top: 1px solid #f4f1ea;
+  font-size: 11.5px; line-height: 1.6; color: #c0bab1; }
+
+@media (max-width: 860px) {
+  .sales-take { padding: 18px 16px 16px; }
+  .st-grid { grid-template-columns: 1fr; gap: 20px; }
+  .st-net { border-top: 2px solid #12100e; padding-top: 14px; }
+  .st-net b { font-size: 34px; }
+}
+
 /* Revenue and Passive are assembled, not keyed: the box is a button onto
    the list of work behind the figure. Dressed exactly like the inputs
    beside it - the row has to read across as one line, not as a control
@@ -9802,6 +9862,91 @@ body.plays-mode .board { display: none !important; }
     Math.abs(v).toLocaleString('en-NZ', {
       minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2 });
 
+  /* ---- What the year actually pays you -------------------------------
+     Salary and NP are one pot, you take half, and that half is income -
+     so it gets taxed like income rather than admired gross.
+
+     PAYE bands as they have stood since 1 April 2025 (ird.govt.nz), which
+     are the bands for the 2026/27 year this sheet covers, plus the ACC
+     earners' levy at 1.75% on the first $156,641 of earnings. These are a
+     year's rates against a year's income: they are only true of the twelve
+     months summed, which is why this sits under the sheet and not in a
+     column beside it. */
+  const NZ_TAX_BANDS: { upTo: number; rate: number }[] = [
+    { upTo: 15600,    rate: 0.105 },
+    { upTo: 53500,    rate: 0.175 },
+    { upTo: 78100,    rate: 0.30 },
+    { upTo: 180000,   rate: 0.33 },
+    { upTo: Infinity, rate: 0.39 },
+  ];
+  const ACC_LEVY_RATE = 0.0175;
+  const ACC_LEVY_CAP = 156641;      // maximum liable earnings, 2026/27
+
+  function nzTakeHome(gross: number) {
+    const g = Math.max(0, gross);
+    let paye = 0, floor = 0, marginal = NZ_TAX_BANDS[0].rate;
+    for (const b of NZ_TAX_BANDS) {
+      const inBand = Math.min(g, b.upTo) - floor;
+      if (inBand <= 0) break;
+      paye += inBand * b.rate;
+      marginal = b.rate;
+      floor = b.upTo;
+    }
+    const acc = Math.min(g, ACC_LEVY_CAP) * ACC_LEVY_RATE;
+    return { gross: g, paye, acc, net: g - paye - acc, marginal, rate: g ? (paye + acc) / g : 0 };
+  }
+
+  /* The sheet's whole year, through the same halving the NP cell does for
+     a single month. */
+  function salesTakeHome() {
+    const salary = salesLineTotal('salary');
+    const np = salesLineTotal('np');
+    const together = salary + np;
+    const half = together / 2;
+    return { salary, np, together, half, ...nzTakeHome(half) };
+  }
+
+  function salesTakeHtml(): string {
+    const t = salesTakeHome();
+    const yearEnd = salesMonthName(SALES_MONTHS[SALES_MONTHS.length - 1]);
+    const head = `<header class="st-head"><h3>What it pays you</h3><span>Year to ${yearEnd} &middot; your half of Salary and NP, after tax</span></header>`;
+
+    if (!t.salary && !t.np) {
+      return `<section class="sales-take is-empty">${head}
+        <p class="st-blank">Fill in Salary and Gross Profit above and this works out the half you take, and what is left of it after PAYE and the ACC levy.</p>
+      </section>`;
+    }
+
+    const money = (v: number) => salesFmt(Math.round(v));
+    const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
+
+    return `<section class="sales-take">${head}
+      <div class="st-grid">
+        <div class="st-work">
+          <div class="st-row"><span>Salary</span><b>${money(t.salary)}</b></div>
+          <div class="st-row${t.np < 0 ? ' is-neg' : ''}"><span>NP</span><b>${money(t.np)}</b></div>
+          <div class="st-row is-sub${t.together < 0 ? ' is-neg' : ''}"><span>Together</span><b>${money(t.together)}</b></div>
+          <div class="st-row is-op"><span>Your half</span><b>&divide; 2</b></div>
+          <div class="st-row is-gross${t.half < 0 ? ' is-neg' : ''}"><span>Gross</span><b>${salesFmtExact(t.half)}</b></div>
+          ${t.half > 0 ? `
+            <div class="st-row is-out"><span>PAYE</span><b>&minus;${money(t.paye)}</b></div>
+            <div class="st-row is-out"><span>ACC levy <i>1.75% to ${salesFmt(ACC_LEVY_CAP)}</i></span><b>&minus;${money(t.acc)}</b></div>` : ''}
+        </div>
+        <div class="st-net${t.half > 0 ? '' : ' is-neg'}">
+          <i>Net, for the year</i>
+          ${t.half > 0 ? `
+            <b>${money(t.net)}</b>
+            <span>${money(t.net / 12)} a month &middot; ${pct(t.rate)} of it to tax</span>
+            <u>Top dollar taxed at ${pct(t.marginal)}${t.gross > ACC_LEVY_CAP ? ', ACC levy capped out' : ''}</u>`
+          : `
+            <b>&mdash;</b>
+            <span>Nothing to take, so nothing to tax &mdash; the year as it stands does not pay you.</span>`}
+        </div>
+      </div>
+      <p class="st-note">PAYE on the bands in force for 2026/27 &mdash; 10.5% to ${salesFmt(15600)}, 17.5% to ${salesFmt(53500)}, 30% to ${salesFmt(78100)}, 33% to ${salesFmt(180000)}, 39% above &mdash; plus the ACC earners' levy. Worked on the year as a whole, because that is how the bands work; a payslip would also carry KiwiSaver and any student loan.</p>
+    </section>`;
+  }
+
   function salesLineTotal(line: string): number {
     if (line === 'np') return SALES_MONTHS.reduce((t, m) => t + (salesNp(m) ?? 0), 0);
     return SALES_MONTHS.reduce((t, m) => t + (salesValue(m, line) ?? 0), 0);
@@ -9819,6 +9964,9 @@ body.plays-mode .board { display: none !important; }
       td.className = [l.derived ? 'sales-np' : '', t === 0 ? 'is-zero' : t < 0 ? 'is-neg' : ''].filter(Boolean).join(' ');
       td.textContent = t === 0 ? '—' : salesFmt(t);
     });
+    // the summary is built off those totals, so it moves with them
+    const take = document.getElementById('sales-take-wrap');
+    if (take) take.innerHTML = salesTakeHtml();
   }
 
   function commitSalesCell(el: HTMLInputElement) {
@@ -10152,6 +10300,7 @@ body.plays-mode .board { display: none !important; }
           </tr>
         </tfoot>
       </table>
+      <div id="sales-take-wrap">${salesTakeHtml()}</div>
       <p class="sales-hint"><strong>Revenue</strong> and <strong>Passive Revenue</strong> open a breakdown &mdash; list the projects and work you can see, and the month's figure is their total. The rest are typed: <strong>Tab</strong> moves across, <strong>Enter</strong> moves down, <strong>Esc</strong> undoes. <strong>NP</strong> is the one worked-out column: Gross Profit less Expenses less Salary &mdash; click it to see what a year of months like that one is worth to you. The only other sums are the year totals along the bottom.</p>`;
 
     /* Inputs and breakdown buttons together, in the order they sit in the
