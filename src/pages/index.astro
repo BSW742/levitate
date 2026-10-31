@@ -9933,11 +9933,11 @@ body.plays-mode .board { display: none !important; }
             <div class="st-row is-out"><span>ACC levy <i>1.75% to ${salesFmt(ACC_LEVY_CAP)}</i></span><b>&minus;${money(t.acc)}</b></div>` : ''}
         </div>
         <div class="st-net${t.half > 0 ? '' : ' is-neg'}">
-          <i>Net, for the year</i>
+          <i>Net, for the fortnight</i>
           ${t.half > 0 ? `
-            <b>${money(t.net)}</b>
-            <span>${money(t.net / 12)} a month &middot; ${pct(t.rate)} of it to tax</span>
-            <u>Top dollar taxed at ${pct(t.marginal)}${t.gross > ACC_LEVY_CAP ? ', ACC levy capped out' : ''}</u>`
+            <b>${money(t.net / 26)}</b>
+            <span>${money(t.net)} a year &middot; ${money(t.net / 12)} a month</span>
+            <u>${pct(t.rate)} of it to tax &middot; top dollar at ${pct(t.marginal)}${t.gross > ACC_LEVY_CAP ? ', ACC levy capped out' : ''}</u>`
           : `
             <b>&mdash;</b>
             <span>Nothing to take, so nothing to tax &mdash; the year as it stands does not pay you.</span>`}
