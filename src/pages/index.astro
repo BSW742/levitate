@@ -10046,40 +10046,61 @@ body.plays-mode .board { display: none !important; }
      expenses, salary - and the revenue cell is written as passive plus the
      project work, so its breakdown opens showing what it is made of.
 
-     It fills that year once and only while the whole year is empty, so it
-     can never land on top of a figure someone entered. Delete a month and
-     it stays deleted. The sums land on $2,000,000 of Salary + NP for the
-     year, which is what the forecast was built to hit. */
+     Expenses are flat at $30,000, passive starts at $90,000 and climbs a
+     thousand a month, cost of sales starts at $25,000 and climbs the same.
+     Those three are given; project work is what has to be sold on top to
+     leave $2,000,000 of Salary + NP for the year:
+
+       Revenue = 2,000,000 + cost of sales + expenses = $2,726,000
+       less passive of $1,146,000, so $1,580,000 of project work.
+
+     It fills that year while the year is empty, so it can never land on
+     top of figures that are not its own, and it replaces its own when the
+     plan changes - the version below is what a browser records having
+     written. Delete the year and it stays deleted. */
   const YE28_SEED_KEY = 'stiki-ye28-seeded';
+  const YE28_PLAN_VERSION = 'v2';
   const YE28_PLAN: Record<string, [number, number, number, number, number]> = {
-    '2027-04': [58000, 190000, 60000, 66000, 18000],
-    '2027-05': [61000, 215000, 66000, 67000, 18000],
-    '2027-06': [64000, 240000, 73000, 68000, 18000],
-    '2027-07': [68000, 265000, 80000, 70000, 18000],
-    '2027-08': [72000, 275000, 83000, 71000, 18000],
-    '2027-09': [76000, 280000, 85000, 72000, 18000],
-    '2027-10': [80000, 290000, 89000, 73000, 18000],
-    '2027-11': [84000, 265000, 84000, 74000, 18000],
-    '2027-12': [86000, 150000, 57000, 70000, 18000],
-    '2028-01': [88000, 120000, 50000, 68000, 18000],
-    '2028-02': [93000, 250000, 82000, 76000, 18000],
-    '2028-03': [98000, 285000, 92000, 77000, 18000],
+    '2027-04': [90000, 110000, 25000, 30000, 18000],
+    '2027-05': [91000, 120000, 26000, 30000, 18000],
+    '2027-06': [92000, 130000, 27000, 30000, 18000],
+    '2027-07': [93000, 145000, 28000, 30000, 18000],
+    '2027-08': [94000, 150000, 29000, 30000, 18000],
+    '2027-09': [95000, 155000, 30000, 30000, 18000],
+    '2027-10': [96000, 160000, 31000, 30000, 18000],
+    '2027-11': [97000, 145000, 32000, 30000, 18000],
+    '2027-12': [98000, 85000, 33000, 30000, 18000],
+    '2028-01': [99000, 65000, 34000, 30000, 18000],
+    '2028-02': [100000, 150000, 35000, 30000, 18000],
+    '2028-03': [101000, 165000, 36000, 30000, 18000],
   };
 
   function seedYe28() {
-    if (localStorage.getItem(YE28_SEED_KEY)) return;
+    const mark = localStorage.getItem(YE28_SEED_KEY);
+    if (mark === YE28_PLAN_VERSION) return;   // this plan is already in
+    if (mark === 'held') return;              // that year was someone else's, leave it alone
+
     const months = Object.keys(YE28_PLAN);
     const cells = getSales();
-    // somebody has already been in that year - on this device or another one
-    if (cells.some(c => c && months.includes(c.month))) {
+
+    /* Never written here before, and the year already holds figures: they
+       are not ours and never will be. */
+    if (!mark && cells.some(c => c && months.includes(c.month))) {
       localStorage.setItem(YE28_SEED_KEY, 'held');
       return;
     }
+
+    /* Otherwise the figures in that year are an earlier version of this
+       plan, so they are updated in place rather than deleted and re-added -
+       same ids, new values, which merges cleanly onto the other devices
+       instead of racing a tombstone. */
     const now = Date.now();
     const put = (month: string, line: string, value: number, items?: SalesItem[]) => {
-      const cell: SalesCell = { id: salesCellId(month, line), month, line, value, createdAt: now };
+      const id = salesCellId(month, line);
+      const at = cells.findIndex(c => c && c.id === id);
+      const cell: SalesCell = { id, month, line, value, createdAt: at >= 0 ? cells[at].createdAt : now };
       if (items) cell.items = items;
-      cells.push(cell);
+      if (at >= 0) cells[at] = cell; else cells.push(cell);
     };
     for (const [month, [passive, work, cos, expenses, salary]] of Object.entries(YE28_PLAN)) {
       put(month, 'passive', passive);
@@ -10091,8 +10112,8 @@ body.plays-mode .board { display: none !important; }
       put(month, 'expenses', expenses);
       put(month, 'salary', salary);
     }
-    localStorage.setItem(YE28_SEED_KEY, String(now));
-    save();   // stamps the new cells and sends them up
+    localStorage.setItem(YE28_SEED_KEY, YE28_PLAN_VERSION);
+    save();   // stamps the changed cells and sends them up
   }
 
   function salesLineTotal(line: string): number {
