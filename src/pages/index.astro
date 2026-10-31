@@ -9835,8 +9835,12 @@ body.plays-mode .board { display: none !important; }
 
   /* Revenue used to stop where it was typed: Gross Profit was keyed by hand,
      so the top line fed nothing and editing it changed no figure on the
-     sheet. Now GP is revenue - both lines of it - less what it cost to earn,
-     and a change to Revenue runs all the way down to what the year pays you.
+     sheet. Now GP is revenue less what it cost to earn, and a change to
+     Revenue runs all the way down to what the year pays you.
+
+     Passive Revenue is not added here. It is a slice of Revenue, not a
+     second income - how much of the month was recurring rather than
+     one-off - so counting it again would invent money.
 
      Sheets written before Cost of Sales existed still hold a typed GP.
      Re-deriving those on sight would move numbers nobody touched, so a month
@@ -9849,9 +9853,8 @@ body.plays-mode .board { display: none !important; }
       if (typed !== null) return typed;
     }
     const rev = salesValue(month, 'revenue');
-    const pas = salesValue(month, 'passive');
-    if (rev === null && pas === null && cos === null) return null;
-    return (rev ?? 0) + (pas ?? 0) - (cos ?? 0);
+    if (rev === null && cos === null) return null;
+    return (rev ?? 0) - (cos ?? 0);
   }
 
   // a month still carrying a hand-typed Gross Profit, for the tooltip to own up to
@@ -10020,7 +10023,7 @@ body.plays-mode .board { display: none !important; }
       gpTd.textContent = g === null ? '—' : salesFmt(g);
       gpTd.title = salesGpIsTyped(month)
         ? 'Typed before Cost of Sales existed \u2014 enter a cost of sales and this works itself out from revenue'
-        : 'Revenue and Passive Revenue, less Cost of Sales';
+        : 'Revenue less Cost of Sales \u2014 Passive Revenue is part of Revenue, not on top of it';
     }
     const td = document.querySelector(`#sales-inner td.is-np[data-month="${month}"]`) as HTMLElement | null;
     if (!td) return;
@@ -10290,7 +10293,7 @@ body.plays-mode .board { display: none !important; }
             return `<td class="sales-cell sales-calc is-gp${g === null ? ' is-zero' : g < 0 ? ' is-neg' : ''}"
               data-month="${m}" title="${salesGpIsTyped(m)
                 ? 'Typed before Cost of Sales existed \u2014 enter a cost of sales and this works itself out from revenue'
-                : 'Revenue and Passive Revenue, less Cost of Sales'}"
+                : 'Revenue less Cost of Sales \u2014 Passive Revenue is part of Revenue, not on top of it'}"
               >${g === null ? '—' : salesFmt(g)}</td>`;
           }
           if (l.derived) {
@@ -10346,7 +10349,7 @@ body.plays-mode .board { display: none !important; }
         </tfoot>
       </table>
       <div id="sales-take-wrap">${salesTakeHtml()}</div>
-      <p class="sales-hint"><strong>Revenue</strong> and <strong>Passive Revenue</strong> open a breakdown &mdash; list the projects and work you can see, and the month's figure is their total. The rest are typed: <strong>Tab</strong> moves across, <strong>Enter</strong> moves down, <strong>Esc</strong> undoes. Two columns are worked out rather than typed: <strong>Gross Profit</strong> is Revenue and Passive Revenue less Cost of Sales, and <strong>NP</strong> is Gross Profit less Expenses less Salary &mdash; click NP to see what a year of months like that one is worth to you. So the top line now reaches the bottom one. The only other sums are the year totals along the bottom.</p>`;
+      <p class="sales-hint"><strong>Revenue</strong> and <strong>Passive Revenue</strong> open a breakdown &mdash; list the projects and work you can see, and the month's figure is their total. The rest are typed: <strong>Tab</strong> moves across, <strong>Enter</strong> moves down, <strong>Esc</strong> undoes. Two columns are worked out rather than typed: <strong>Gross Profit</strong> is Revenue less Cost of Sales, and <strong>NP</strong> is Gross Profit less Expenses less Salary &mdash; click NP to see what a year of months like that one is worth to you. <strong>Passive Revenue</strong> is a slice of Revenue, the recurring part of it, so it sits alongside rather than adding to it. The only other sums are the year totals along the bottom.</p>`;
 
     /* Inputs and breakdown buttons together, in the order they sit in the
        grid, so Tab and Enter still walk the sheet as one surface even
