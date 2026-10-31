@@ -10046,33 +10046,38 @@ body.plays-mode .board { display: none !important; }
      expenses, salary - and the revenue cell is written as passive plus the
      project work, so its breakdown opens showing what it is made of.
 
-     Expenses are flat at $30,000, passive starts at $90,000 and climbs a
-     thousand a month, cost of sales starts at $25,000 and climbs the same.
-     Those three are given; project work is what has to be sold on top to
-     leave $2,000,000 of Salary + NP for the year:
+     Built around the recurring line rather than around project work.
+     Expenses are flat at $30,000 and cost of sales starts at $25,000 and
+     climbs a thousand a month, so the revenue the year needs is fixed:
 
        Revenue = 2,000,000 + cost of sales + expenses = $2,726,000
-       less passive of $1,146,000, so $1,580,000 of project work.
+
+     Passive opens at $90,000 and is sold up to $150,000 a month by March -
+     $1,441,000 of the year, 53% of revenue - which leaves $1,285,000 of
+     project work rather than the $2,825,000 the first cut of this needed.
+     Recurring passes project work in September and carries December and
+     January on its own, which is the whole point of putting it in the
+     engine room: the summer stops being dangerous.
 
      It fills that year while the year is empty, so it can never land on
      top of figures that are not its own, and it replaces its own when the
      plan changes - the version below is what a browser records having
      written. Delete the year and it stays deleted. */
   const YE28_SEED_KEY = 'stiki-ye28-seeded';
-  const YE28_PLAN_VERSION = 'v2';
+  const YE28_PLAN_VERSION = 'v3';
   const YE28_PLAN: Record<string, [number, number, number, number, number]> = {
-    '2027-04': [90000, 110000, 25000, 30000, 18000],
-    '2027-05': [91000, 120000, 26000, 30000, 18000],
-    '2027-06': [92000, 130000, 27000, 30000, 18000],
-    '2027-07': [93000, 145000, 28000, 30000, 18000],
-    '2027-08': [94000, 150000, 29000, 30000, 18000],
-    '2027-09': [95000, 155000, 30000, 30000, 18000],
-    '2027-10': [96000, 160000, 31000, 30000, 18000],
-    '2027-11': [97000, 145000, 32000, 30000, 18000],
-    '2027-12': [98000, 85000, 33000, 30000, 18000],
-    '2028-01': [99000, 65000, 34000, 30000, 18000],
-    '2028-02': [100000, 150000, 35000, 30000, 18000],
-    '2028-03': [101000, 165000, 36000, 30000, 18000],
+    '2027-04': [90000, 135000, 25000, 30000, 18000],
+    '2027-05': [94000, 130000, 26000, 30000, 18000],
+    '2027-06': [99000, 125000, 27000, 30000, 18000],
+    '2027-07': [105000, 125000, 28000, 30000, 18000],
+    '2027-08': [111000, 120000, 29000, 30000, 18000],
+    '2027-09': [117000, 115000, 30000, 30000, 18000],
+    '2027-10': [123000, 110000, 31000, 30000, 18000],
+    '2027-11': [129000, 100000, 32000, 30000, 18000],
+    '2027-12': [135000, 60000, 33000, 30000, 18000],
+    '2028-01': [141000, 50000, 34000, 30000, 18000],
+    '2028-02': [147000, 110000, 35000, 30000, 18000],
+    '2028-03': [150000, 105000, 36000, 30000, 18000],
   };
 
   function seedYe28() {
