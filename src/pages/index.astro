@@ -429,7 +429,8 @@
             <button type="button" id="sb-add" class="sb-add">+ Add a line</button>
             <button type="button" id="sb-copy" class="sb-copy" hidden></button>
           </div>
-          <p class="sb-note">Each line is a piece of work you can see &mdash; a project, a retainer, a job in the pipe. The month's figure is their total.</p>
+          <p id="sb-passive" class="sb-warn" hidden></p>
+          <p class="sb-note">Each line is a piece of work you can see &mdash; a project, a retainer, a job in the pipe. The month's figure is their total. Revenue opens on the month's <strong>Passive</strong> figure, so what you add is on top of what already recurs.</p>
         </div>
 
         <div class="sb-foot">
@@ -5095,6 +5096,12 @@ tr.is-fwd-open .sales-calc { box-shadow: inset 1px 0 0 #e6e2da, inset 0 1px 0 #c
 .sales-legend .sl-now::before { background: #fffcf0; border-color: #a3801f; }
 .sales-legend .sl-fwd::before { background: #f0ece3; border-color: #cfc8ba; }
 
+.sales-build.is-base span { color: #b5b0a9; font-weight: 600; }
+.sb-warn {
+  margin: 12px 0 0; padding: 9px 12px; border-radius: 9px;
+  background: #fdf8e8; border: 1px solid #efe3c2;
+  font-size: 11.5px; line-height: 1.5; color: #8a6f22;
+}
 .sales-hint { margin: 14px 2px 0; font-size: 11.5px; line-height: 1.6; color: #b5b0a9; }
 
 /* ---- What it pays you: the sheet's year, halved and taxed ---- */
@@ -9725,7 +9732,7 @@ body.plays-mode .board { display: none !important; }
      is the year total per line, along the bottom. */
   const SALES_LINES = [
     { key: 'revenue',  label: 'Revenue',         derived: false, built: true  },
-    { key: 'passive',  label: 'Passive Revenue', derived: false, built: true  },
+    { key: 'passive',  label: 'Passive',         derived: false, built: true  },
     { key: 'cos',      label: 'Cost of Sales',   derived: false, built: false },
     { key: 'gp',       label: 'Gross Profit',    derived: true,  built: false },
     { key: 'expenses', label: 'Expenses',        derived: false, built: false },
@@ -9846,13 +9853,26 @@ body.plays-mode .board { display: none !important; }
      Re-deriving those on sight would move numbers nobody touched, so a month
      with no cost of sales keeps the figure it was given; entering one hands
      that month over to the arithmetic. */
+  /* A month you have not touched is not a month with no revenue: the
+     recurring work keeps happening. So an empty Revenue box reads as that
+     month's Passive figure, and the breakdown builds on top of it rather
+     than instead of it - the forecast is assembled incrementally, from a
+     base that is already there. A Revenue figure of your own always wins:
+     once a month has work listed in it, that list is the month. */
+  function salesRevenue(month: string): number | null {
+    const own = salesValue(month, 'revenue');
+    return own !== null ? own : salesValue(month, 'passive');
+  }
+  const salesRevenueIsBase = (month: string) =>
+    salesValue(month, 'revenue') === null && salesValue(month, 'passive') !== null;
+
   function salesGp(month: string): number | null {
     const cos = salesValue(month, 'cos');
     if (cos === null) {
       const typed = salesValue(month, 'gp');
       if (typed !== null) return typed;
     }
-    const rev = salesValue(month, 'revenue');
+    const rev = salesRevenue(month);
     if (rev === null && cos === null) return null;
     return (rev ?? 0) - (cos ?? 0);
   }
@@ -9979,6 +9999,8 @@ body.plays-mode .board { display: none !important; }
   function salesLineTotal(line: string): number {
     if (line === 'np') return SALES_MONTHS.reduce((t, m) => t + (salesNp(m) ?? 0), 0);
     if (line === 'gp') return SALES_MONTHS.reduce((t, m) => t + (salesGp(m) ?? 0), 0);
+    // the inherited months count too, or the total contradicts the column
+    if (line === 'revenue') return SALES_MONTHS.reduce((t, m) => t + (salesRevenue(m) ?? 0), 0);
     return SALES_MONTHS.reduce((t, m) => t + (salesValue(m, line) ?? 0), 0);
   }
 
@@ -10124,6 +10146,15 @@ body.plays-mode .board { display: none !important; }
       /* A figure that was keyed before this existed, or by an older copy of
          the app, opens as its own single line rather than being thrown away. */
       : typed !== null ? [newBuildItem('', typed)] : [];
+
+    /* An untouched Revenue month opens on its recurring base, so the work
+       you add is incremental to it. Only when the month is otherwise empty:
+       a month that already lists work is yours, and dropping a line into it
+       would quietly add money you did not put there. */
+    const base = line === 'revenue' && !items.length && typed === null
+      ? salesValue(month, 'passive') : null;
+    if (base !== null) buildRows = [newBuildItem('Passive', base)];
+
     if (!buildRows.length) buildRows.push(newBuildItem());
 
     (document.getElementById('sb-title') as HTMLElement).textContent =
@@ -10207,6 +10238,7 @@ body.plays-mode .board { display: none !important; }
         rowOf().value = parsed ?? 0;
         updateBuildTotal();
         syncBuildCarry();
+        syncBuildPassive();
       });
       inp.addEventListener('focus', () => inp.select());
       inp.addEventListener('blur', () => {
@@ -10227,6 +10259,7 @@ body.plays-mode .board { display: none !important; }
 
     updateBuildTotal();
     syncBuildCarry();
+    syncBuildPassive();
   }
 
   function addBuildRow() {
@@ -10234,6 +10267,19 @@ body.plays-mode .board { display: none !important; }
     renderBuildRows();
     const rows = document.querySelectorAll('#sb-rows .sb-row input.sb-label');
     (rows[rows.length - 1] as HTMLInputElement | undefined)?.focus();
+  }
+
+  /* The Passive line here is a copy taken when the month was first built.
+     Change the Passive column afterwards and the two disagree - which is
+     allowed, but should never be a surprise. */
+  function syncBuildPassive() {
+    const el = document.getElementById('sb-passive') as HTMLElement | null;
+    if (!el || !buildCell) return;
+    const col = buildCell.line === 'revenue' ? salesValue(buildCell.month, 'passive') : null;
+    const row = buildRows.find(r => r.label.trim().toLowerCase() === 'passive');
+    const drift = col !== null && !!row && row.value !== col;
+    el.hidden = !drift;
+    if (drift) el.textContent = `Passive is ${salesFmt(col!)} this month, but the line here says ${salesFmt(row!.value)}.`;
   }
 
   function syncBuildCarry() {
@@ -10305,15 +10351,18 @@ body.plays-mode .board { display: none !important; }
               aria-label="${l.label}, ${salesMonthName(m)} \u2014 opens what a year of this month is worth"
               >${d === null ? '—' : salesFmt(d)}</button></td>`;
           }
-          const v = salesValue(m, l.key);
+          const v = l.key === 'revenue' ? salesRevenue(m) : salesValue(m, l.key);
           if (l.built) {
             const items = salesItems(m, l.key);
+            const base = l.key === 'revenue' && salesRevenueIsBase(m);
             // the breakdown itself, on hover - no second view needed to read it back
             const tip = items.length
               ? items.map(it => `${it.label || 'Unnamed'} \u00b7 ${salesFmt(it.value)}`).join('\n')
-              : 'Build this figure from the work behind it';
+              : base
+                ? 'Nothing added yet, so this is the Passive figure \u2014 open it to build on top'
+                : 'Build this figure from the work behind it';
             return `<td class="sales-cell${v !== null && v < 0 ? ' is-neg' : ''}"><button
-              type="button" class="sales-build${v === null ? ' is-empty' : ''}"
+              type="button" class="sales-build${v === null ? ' is-empty' : ''}${base ? ' is-base' : ''}"
               data-month="${m}" data-line="${l.key}" title="${escapeHtml(tip)}"
               aria-label="${l.label}, ${salesMonthName(m)} \u2014 ${items.length
                 ? `${items.length} line${items.length === 1 ? '' : 's'}` : 'empty'}, opens the breakdown"
@@ -10349,7 +10398,7 @@ body.plays-mode .board { display: none !important; }
         </tfoot>
       </table>
       <div id="sales-take-wrap">${salesTakeHtml()}</div>
-      <p class="sales-hint"><strong>Revenue</strong> and <strong>Passive Revenue</strong> open a breakdown &mdash; list the projects and work you can see, and the month's figure is their total. The rest are typed: <strong>Tab</strong> moves across, <strong>Enter</strong> moves down, <strong>Esc</strong> undoes. Two columns are worked out rather than typed: <strong>Gross Profit</strong> is Revenue less Cost of Sales, and <strong>NP</strong> is Gross Profit less Expenses less Salary &mdash; click NP to see what a year of months like that one is worth to you. <strong>Passive Revenue</strong> is a slice of Revenue, the recurring part of it, so it sits alongside rather than adding to it. The only other sums are the year totals along the bottom.</p>`;
+      <p class="sales-hint"><strong>Revenue</strong> and <strong>Passive</strong> open a breakdown &mdash; list the projects and work you can see, and the month's figure is their total. A month with nothing listed takes its Revenue from <strong>Passive</strong>, and opening it starts you on that base, so the forecast is built up incrementally. The rest are typed: <strong>Tab</strong> moves across, <strong>Enter</strong> moves down, <strong>Esc</strong> undoes. Two columns are worked out rather than typed: <strong>Gross Profit</strong> is Revenue less Cost of Sales, and <strong>NP</strong> is Gross Profit less Expenses less Salary &mdash; click NP to see what a year of months like that one is worth to you. <strong>Passive</strong> is the part of Revenue that recurs, so it sits inside the top line rather than adding to it. The only other sums are the year totals along the bottom.</p>`;
 
     /* Inputs and breakdown buttons together, in the order they sit in the
        grid, so Tab and Enter still walk the sheet as one surface even
