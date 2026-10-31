@@ -5053,19 +5053,19 @@ tr.is-fwd-open .sales-mo, tr.is-fwd-open .sales-cell { box-shadow: inset 0 1px 0
 
 /* NP is worked out, not typed: no input in the box, and a rule down its
    left edge marking it off from the columns entered by hand. */
-.sales-sheet .sales-np { box-shadow: inset 1px 0 0 #e6e2da; }
-td.sales-np {
+.sales-sheet .sales-calc { box-shadow: inset 1px 0 0 #e6e2da; }
+td.sales-calc {
   height: 38px; padding: 0 14px;
   font-size: 13.5px; font-weight: 700; color: #12100e;
   text-align: right; white-space: nowrap;
 }
-td.sales-np.is-neg { color: #b45309; }
-td.sales-np.is-zero { color: #ded9d0; font-weight: 600; }
-tr.is-fwd td.sales-np { color: #57534e; }
-tr.is-fwd td.sales-np.is-neg { color: #c2660f; }
-tr.is-fwd td.sales-np.is-zero { color: #ded9d0; font-weight: 600; }
+td.sales-calc.is-neg { color: #b45309; }
+td.sales-calc.is-zero { color: #ded9d0; font-weight: 600; }
+tr.is-fwd td.sales-calc { color: #57534e; }
+tr.is-fwd td.sales-calc.is-neg { color: #c2660f; }
+tr.is-fwd td.sales-calc.is-zero { color: #ded9d0; font-weight: 600; }
 /* both rules at once where the forecast divider crosses the NP column */
-tr.is-fwd-open .sales-np { box-shadow: inset 1px 0 0 #e6e2da, inset 0 1px 0 #cfc8ba; }
+tr.is-fwd-open .sales-calc { box-shadow: inset 1px 0 0 #e6e2da, inset 0 1px 0 #cfc8ba; }
 
 .sales-sheet tfoot td {
   padding: 15px 14px;
@@ -5259,7 +5259,7 @@ tr.is-fwd .sales-build:hover, tr.is-fwd .sales-build:focus-visible { color: #121
   font-variant-numeric: tabular-nums; text-align: right;
   transition: background .12s;
 }
-td.sales-np.is-openable { padding: 0; }
+td.sales-calc.is-openable { padding: 0; }
 .sales-np-open:hover { background: #f5f2ec; }
 .sales-np-open:focus-visible {
   outline: none; background: #fff; box-shadow: inset 0 0 0 2px #12100e;
@@ -9726,7 +9726,8 @@ body.plays-mode .board { display: none !important; }
   const SALES_LINES = [
     { key: 'revenue',  label: 'Revenue',         derived: false, built: true  },
     { key: 'passive',  label: 'Passive Revenue', derived: false, built: true  },
-    { key: 'gp',       label: 'Gross Profit',    derived: false, built: false },
+    { key: 'cos',      label: 'Cost of Sales',   derived: false, built: false },
+    { key: 'gp',       label: 'Gross Profit',    derived: true,  built: false },
     { key: 'expenses', label: 'Expenses',        derived: false, built: false },
     { key: 'salary',   label: 'Salary',          derived: false, built: false },
     { key: 'np',       label: 'NP',              derived: true,  built: false },
@@ -9832,11 +9833,36 @@ body.plays-mode .board { display: none !important; }
   const salesFmt = (v: number) =>
     (v < 0 ? '-' : '') + '$' + Math.abs(v).toLocaleString('en-NZ');
 
-  /* The one derived figure. null - rather than $0 - while none of the three
-     lines it is built from has been filled in, so an untouched month reads
-     as blank instead of as a month that nets out to nothing. */
+  /* Revenue used to stop where it was typed: Gross Profit was keyed by hand,
+     so the top line fed nothing and editing it changed no figure on the
+     sheet. Now GP is revenue - both lines of it - less what it cost to earn,
+     and a change to Revenue runs all the way down to what the year pays you.
+
+     Sheets written before Cost of Sales existed still hold a typed GP.
+     Re-deriving those on sight would move numbers nobody touched, so a month
+     with no cost of sales keeps the figure it was given; entering one hands
+     that month over to the arithmetic. */
+  function salesGp(month: string): number | null {
+    const cos = salesValue(month, 'cos');
+    if (cos === null) {
+      const typed = salesValue(month, 'gp');
+      if (typed !== null) return typed;
+    }
+    const rev = salesValue(month, 'revenue');
+    const pas = salesValue(month, 'passive');
+    if (rev === null && pas === null && cos === null) return null;
+    return (rev ?? 0) + (pas ?? 0) - (cos ?? 0);
+  }
+
+  // a month still carrying a hand-typed Gross Profit, for the tooltip to own up to
+  const salesGpIsTyped = (month: string) =>
+    salesValue(month, 'cos') === null && salesValue(month, 'gp') !== null;
+
+  /* null - rather than $0 - while none of the lines it is built from has been
+     filled in, so an untouched month reads as blank instead of as a month
+     that nets out to nothing. */
   function salesNp(month: string): number | null {
-    const gp = salesValue(month, 'gp');
+    const gp = salesGp(month);
     const ex = salesValue(month, 'expenses');
     const sal = salesValue(month, 'salary');
     if (gp === null && ex === null && sal === null) return null;
@@ -9949,6 +9975,7 @@ body.plays-mode .board { display: none !important; }
 
   function salesLineTotal(line: string): number {
     if (line === 'np') return SALES_MONTHS.reduce((t, m) => t + (salesNp(m) ?? 0), 0);
+    if (line === 'gp') return SALES_MONTHS.reduce((t, m) => t + (salesGp(m) ?? 0), 0);
     return SALES_MONTHS.reduce((t, m) => t + (salesValue(m, line) ?? 0), 0);
   }
 
@@ -9961,7 +9988,7 @@ body.plays-mode .board { display: none !important; }
       if (!td) return;
       const t = salesLineTotal(l.key);
       // rebuilt rather than toggled, but the column rule has to survive it
-      td.className = [l.derived ? 'sales-np' : '', t === 0 ? 'is-zero' : t < 0 ? 'is-neg' : ''].filter(Boolean).join(' ');
+      td.className = [l.derived ? 'sales-calc' : '', t === 0 ? 'is-zero' : t < 0 ? 'is-neg' : ''].filter(Boolean).join(' ');
       td.textContent = t === 0 ? '—' : salesFmt(t);
     });
     // the summary is built off those totals, so it moves with them
@@ -9977,15 +10004,25 @@ body.plays-mode .board { display: none !important; }
     if (next !== before) setSalesValue(month, line, next);
     el.value = next === null ? '' : salesFmt(next);
     el.closest('.sales-cell')?.classList.toggle('is-neg', next !== null && next < 0);
-    paintSalesNp(month);
+    paintSalesDerived(month);
     updateSalesTotals();
   }
 
-  /* Repaint one month's NP box in place, for the same reason the totals are
-     repainted rather than re-rendered: a full renderSales() would rebuild
-     the inputs mid-edit and throw away the focus Tab is handing on. */
-  function paintSalesNp(month: string) {
-    const td = document.querySelector(`#sales-inner td.sales-np[data-month="${month}"]`) as HTMLElement | null;
+  /* Repaint one month's worked-out boxes in place, for the same reason the
+     totals are repainted rather than re-rendered: a full renderSales() would
+     rebuild the inputs mid-edit and throw away the focus Tab is handing on. */
+  function paintSalesDerived(month: string) {
+    const gpTd = document.querySelector(`#sales-inner td.is-gp[data-month="${month}"]`) as HTMLElement | null;
+    if (gpTd) {
+      const g = salesGp(month);
+      gpTd.classList.toggle('is-neg', g !== null && g < 0);
+      gpTd.classList.toggle('is-zero', g === null);
+      gpTd.textContent = g === null ? '—' : salesFmt(g);
+      gpTd.title = salesGpIsTyped(month)
+        ? 'Typed before Cost of Sales existed \u2014 enter a cost of sales and this works itself out from revenue'
+        : 'Revenue and Passive Revenue, less Cost of Sales';
+    }
+    const td = document.querySelector(`#sales-inner td.is-np[data-month="${month}"]`) as HTMLElement | null;
     if (!td) return;
     const v = salesNp(month);
     td.classList.toggle('is-neg', v !== null && v < 0);
@@ -10248,10 +10285,18 @@ body.plays-mode .board { display: none !important; }
       <tr class="${cls.join(' ')}">
         <td class="sales-mo">${MONTH_ABBR[+m.slice(5) - 1]} <em>${m.slice(0, 4)}</em>${m === nowKey ? '<i>now</i>' : ''}</td>
         ${SALES_LINES.map(l => {
+          if (l.derived && l.key === 'gp') {
+            const g = salesGp(m);
+            return `<td class="sales-cell sales-calc is-gp${g === null ? ' is-zero' : g < 0 ? ' is-neg' : ''}"
+              data-month="${m}" title="${salesGpIsTyped(m)
+                ? 'Typed before Cost of Sales existed \u2014 enter a cost of sales and this works itself out from revenue'
+                : 'Revenue and Passive Revenue, less Cost of Sales'}"
+              >${g === null ? '—' : salesFmt(g)}</td>`;
+          }
           if (l.derived) {
             const d = salesNp(m);
             const p = salesPotential(m);
-            return `<td class="sales-cell sales-np is-openable${d === null ? ' is-zero' : d < 0 ? ' is-neg' : ''}"
+            return `<td class="sales-cell sales-calc is-np is-openable${d === null ? ' is-zero' : d < 0 ? ' is-neg' : ''}"
               data-month="${m}"><button type="button" class="sales-np-open" data-month="${m}"
               title="${p ? `Gross Profit less Expenses less Salary \u2014 a year of months like this is worth ${salesFmt(p.year)} to you` : 'Gross Profit less Expenses less Salary'}"
               aria-label="${l.label}, ${salesMonthName(m)} \u2014 opens what a year of this month is worth"
@@ -10285,7 +10330,7 @@ body.plays-mode .board { display: none !important; }
         <thead>
           <tr>
             <th class="sales-mh">Month</th>
-            ${SALES_LINES.map(l => `<th${l.derived ? ' class="sales-np"' : ''}>${l.label}</th>`).join('')}
+            ${SALES_LINES.map(l => `<th${l.derived ? ' class="sales-calc"' : ''}>${l.label}</th>`).join('')}
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -10294,14 +10339,14 @@ body.plays-mode .board { display: none !important; }
             <td class="sales-mh">Total</td>
             ${SALES_LINES.map(l => {
               const t = salesLineTotal(l.key);
-              const cls = [l.derived ? 'sales-np' : '', t === 0 ? 'is-zero' : t < 0 ? 'is-neg' : ''].filter(Boolean).join(' ');
+              const cls = [l.derived ? 'sales-calc' : '', t === 0 ? 'is-zero' : t < 0 ? 'is-neg' : ''].filter(Boolean).join(' ');
               return `<td class="${cls}">${t === 0 ? '—' : salesFmt(t)}</td>`;
             }).join('')}
           </tr>
         </tfoot>
       </table>
       <div id="sales-take-wrap">${salesTakeHtml()}</div>
-      <p class="sales-hint"><strong>Revenue</strong> and <strong>Passive Revenue</strong> open a breakdown &mdash; list the projects and work you can see, and the month's figure is their total. The rest are typed: <strong>Tab</strong> moves across, <strong>Enter</strong> moves down, <strong>Esc</strong> undoes. <strong>NP</strong> is the one worked-out column: Gross Profit less Expenses less Salary &mdash; click it to see what a year of months like that one is worth to you. The only other sums are the year totals along the bottom.</p>`;
+      <p class="sales-hint"><strong>Revenue</strong> and <strong>Passive Revenue</strong> open a breakdown &mdash; list the projects and work you can see, and the month's figure is their total. The rest are typed: <strong>Tab</strong> moves across, <strong>Enter</strong> moves down, <strong>Esc</strong> undoes. Two columns are worked out rather than typed: <strong>Gross Profit</strong> is Revenue and Passive Revenue less Cost of Sales, and <strong>NP</strong> is Gross Profit less Expenses less Salary &mdash; click NP to see what a year of months like that one is worth to you. So the top line now reaches the bottom one. The only other sums are the year totals along the bottom.</p>`;
 
     /* Inputs and breakdown buttons together, in the order they sit in the
        grid, so Tab and Enter still walk the sheet as one surface even
