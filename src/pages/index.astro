@@ -10040,6 +10040,61 @@ body.plays-mode .board { display: none !important; }
     </section>`;
   }
 
+  /* ---- The YE28 plan ---------------------------------------------------
+     April 2027 to March 2028, carried in the app rather than typed in sixty
+     times. Five figures a month: passive, project work, cost of sales,
+     expenses, salary - and the revenue cell is written as passive plus the
+     project work, so its breakdown opens showing what it is made of.
+
+     It fills that year once and only while the whole year is empty, so it
+     can never land on top of a figure someone entered. Delete a month and
+     it stays deleted. The sums land on $2,000,000 of Salary + NP for the
+     year, which is what the forecast was built to hit. */
+  const YE28_SEED_KEY = 'stiki-ye28-seeded';
+  const YE28_PLAN: Record<string, [number, number, number, number, number]> = {
+    '2027-04': [58000, 190000, 60000, 66000, 18000],
+    '2027-05': [61000, 215000, 66000, 67000, 18000],
+    '2027-06': [64000, 240000, 73000, 68000, 18000],
+    '2027-07': [68000, 265000, 80000, 70000, 18000],
+    '2027-08': [72000, 275000, 83000, 71000, 18000],
+    '2027-09': [76000, 280000, 85000, 72000, 18000],
+    '2027-10': [80000, 290000, 89000, 73000, 18000],
+    '2027-11': [84000, 265000, 84000, 74000, 18000],
+    '2027-12': [86000, 150000, 57000, 70000, 18000],
+    '2028-01': [88000, 120000, 50000, 68000, 18000],
+    '2028-02': [93000, 250000, 82000, 76000, 18000],
+    '2028-03': [98000, 285000, 92000, 77000, 18000],
+  };
+
+  function seedYe28() {
+    if (localStorage.getItem(YE28_SEED_KEY)) return;
+    const months = Object.keys(YE28_PLAN);
+    const cells = getSales();
+    // somebody has already been in that year - on this device or another one
+    if (cells.some(c => c && months.includes(c.month))) {
+      localStorage.setItem(YE28_SEED_KEY, 'held');
+      return;
+    }
+    const now = Date.now();
+    const put = (month: string, line: string, value: number, items?: SalesItem[]) => {
+      const cell: SalesCell = { id: salesCellId(month, line), month, line, value, createdAt: now };
+      if (items) cell.items = items;
+      cells.push(cell);
+    };
+    for (const [month, [passive, work, cos, expenses, salary]] of Object.entries(YE28_PLAN)) {
+      put(month, 'passive', passive);
+      put(month, 'revenue', passive + work, [
+        { id: `${month}-base`, label: 'Passive', value: passive },
+        { id: `${month}-work`, label: 'Project work', value: work },
+      ]);
+      put(month, 'cos', cos);
+      put(month, 'expenses', expenses);
+      put(month, 'salary', salary);
+    }
+    localStorage.setItem(YE28_SEED_KEY, String(now));
+    save();   // stamps the new cells and sends them up
+  }
+
   function salesLineTotal(line: string): number {
     if (line === 'np') return SALES_MONTHS.reduce((t, m) => t + (salesNp(m) ?? 0), 0);
     if (line === 'gp') return SALES_MONTHS.reduce((t, m) => t + (salesGp(m) ?? 0), 0);
@@ -12662,6 +12717,10 @@ body.plays-mode .board { display: none !important; }
        here on. Snapshotting an empty state would mark everything as new and
        let this device's copy win every merge it takes part in. */
     snapshotItems();
+
+    /* After the baseline and after the merge: by here we know whether any
+       device has already put figures into that year. */
+    seedYe28();
 
     // ?view= (arriving from the PDA nav) beats the remembered mode
     const urlView = new URLSearchParams(location.search).get('view');
