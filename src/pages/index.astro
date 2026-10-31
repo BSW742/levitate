@@ -109,7 +109,15 @@
         <div id="sales-bar">
           <div class="sales-title">
             <i>Financial year</i>
-            <b>April 2026 &ndash; March 2027</b>
+            <div class="sales-year">
+              <button id="sales-year-prev" class="sy-step" type="button" title="Previous financial year" aria-label="Previous financial year">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <b id="sales-year-label">April 2026 &ndash; March 2027</b>
+              <button id="sales-year-next" class="sy-step" type="button" title="Next financial year" aria-label="Next financial year">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
           </div>
           <div class="sales-legend">
             <span class="sl-past">Actual</span>
@@ -4976,6 +4984,15 @@ body.sales-mode .board { display: none !important; }
   text-transform: uppercase; color: #b5b0a9;
 }
 .sales-title b { font-size: 22px; font-weight: 700; letter-spacing: -.025em; color: #12100e; }
+.sales-year { display: flex; align-items: center; gap: 4px; margin-left: -7px; }
+.sy-step {
+  width: 26px; height: 26px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  border: none; border-radius: 50%; background: transparent; color: #b5b0a9;
+  cursor: pointer; transition: background .14s, color .14s;
+}
+.sy-step:hover { background: #ece8e0; color: #12100e; }
+.sy-step:disabled { opacity: .3; cursor: default; background: transparent; color: #b5b0a9; }
 
 #sales-inner { max-width: 1340px; margin: 0 auto; padding: 0 30px 70px; }
 
@@ -9743,15 +9760,42 @@ body.plays-mode .board { display: none !important; }
   // how far Enter has to jump to land on the same line a month down
   const SALES_INPUT_COLS = SALES_LINES.filter(l => !l.derived).length;
 
-  /* April 2026 through March 2027, as ['2026-04' ... '2027-03']. Spelled out
-     from a start rather than hardcoded so next year is a one-line change. */
-  const SALES_FY_START_YEAR = 2026;
+  /* A financial year as ['2026-04' ... '2027-03']. The sheet shows one at a
+     time and the arrows beside the heading walk between them; every figure
+     is addressed by month, so next year is simply a year nobody has typed
+     into yet rather than anything that needs creating. Which year is open
+     is this browser's business, not the project's - two devices can sit on
+     different years without fighting over a synced field. */
+  const SALES_FY_FIRST_YEAR = 2026;   // nothing was recorded before this
   const SALES_FY_START_MONTH = 4;
-  const SALES_MONTHS: string[] = Array.from({ length: 12 }, (_, i) => {
-    const n = SALES_FY_START_MONTH - 1 + i;
-    const y = SALES_FY_START_YEAR + Math.floor(n / 12);
-    return `${y}-${String((n % 12) + 1).padStart(2, '0')}`;
-  });
+  const SALES_FY_KEY = 'stiki-sales-fy';
+
+  const salesMonthsFor = (startYear: number): string[] =>
+    Array.from({ length: 12 }, (_, i) => {
+      const n = SALES_FY_START_MONTH - 1 + i;
+      const y = startYear + Math.floor(n / 12);
+      return `${y}-${String((n % 12) + 1).padStart(2, '0')}`;
+    });
+
+  let salesFyStart = (() => {
+    const saved = parseInt(localStorage.getItem(SALES_FY_KEY) || '', 10);
+    return Number.isFinite(saved) && saved >= SALES_FY_FIRST_YEAR ? saved : SALES_FY_FIRST_YEAR;
+  })();
+  let SALES_MONTHS: string[] = salesMonthsFor(salesFyStart);
+
+  const salesFyLabel = (startYear: number) => `April ${startYear} \u2013 March ${startYear + 1}`;
+
+  function setSalesFy(startYear: number) {
+    const next = Math.max(SALES_FY_FIRST_YEAR, startYear);
+    if (next === salesFyStart) return;
+    salesFyStart = next;
+    localStorage.setItem(SALES_FY_KEY, String(next));
+    SALES_MONTHS = salesMonthsFor(next);
+    renderSales();
+  }
+
+  document.getElementById('sales-year-prev')?.addEventListener('click', () => setSalesFy(salesFyStart - 1));
+  document.getElementById('sales-year-next')?.addEventListener('click', () => setSalesFy(salesFyStart + 1));
   const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const salesMonthName = (m: string) => `${MONTH_ABBR[+m.slice(5) - 1]} ${m.slice(0, 4)}`;
 
@@ -9962,7 +10006,7 @@ body.plays-mode .board { display: none !important; }
 
     if (!t.salary && !t.np) {
       return `<section class="sales-take is-empty">${head}
-        <p class="st-blank">Fill in Salary and Gross Profit above and this works out the half you take, and what is left of it after PAYE and the ACC levy.</p>
+        <p class="st-blank">Fill in Revenue and Salary above and this works out the half you take, and what is left of it after PAYE and the ACC levy.</p>
       </section>`;
     }
 
@@ -10196,9 +10240,12 @@ body.plays-mode .board { display: none !important; }
      while the list is still blank, so it can never wipe anything. */
   function buildCarrySource(): { month: string; items: SalesItem[] } | null {
     if (!buildCell) return null;
-    const i = SALES_MONTHS.indexOf(buildCell.month);
-    if (i <= 0) return null;
-    const prev = SALES_MONTHS[i - 1];
+    /* By date rather than by position in the array: April's previous month
+       is last March, which is a different financial year and so not in the
+       list at all - and the first month of a new year is exactly when
+       copying last month forward is most useful. */
+    const [y, mo] = buildCell.month.split('-').map(Number);
+    const prev = mo === 1 ? `${y - 1}-12` : `${y}-${String(mo - 1).padStart(2, '0')}`;
     const items = salesItems(prev, buildCell.line);
     return items.length ? { month: prev, items } : null;
   }
@@ -10325,6 +10372,11 @@ body.plays-mode .board { display: none !important; }
        behind or ahead of today still shades correctly instead of reading as
        twelve months of history. */
     const firstFwd = SALES_MONTHS.findIndex(m => m > nowKey);
+
+    const label = document.getElementById('sales-year-label');
+    if (label) label.textContent = salesFyLabel(salesFyStart);
+    const prevBtn = document.getElementById('sales-year-prev') as HTMLButtonElement | null;
+    if (prevBtn) prevBtn.disabled = salesFyStart <= SALES_FY_FIRST_YEAR;
 
     const rows = SALES_MONTHS.map((m, i) => {
       const cls = [m === nowKey ? 'is-now' : m > nowKey ? 'is-fwd' : 'is-past'];
